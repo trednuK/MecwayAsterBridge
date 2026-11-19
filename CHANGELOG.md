@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- **DKT shells in implicit dynamics: right response (KNOWN_BUGS 156; results change).**
+  Code-Aster computed the initial acceleration from the nearly singular DKT mass
+  (`MECANONLINE_78`): with a step load the LS-07b strip moved up to about +10 mm instead of
+  around 0.94 mm down, and bonded shell strips stopped with `MECANONLINE9_7`. With a DKT
+  elset in `HHT` or `NEWMARK` the bridge now writes a zero initial acceleration
+  (`ETAT_INIT` `ACCE`) and an extra small first solver step (1/100 of the first step, not
+  stored; not when an imposed displacement is not zero at t = 0); that is an
+  approximation (the load rises over that small step). Verification DY-40a..e, g and h:
+  within 0.7 % of Mecway with CCX. Models without DKT and explicit dynamics are unchanged.
+- **`COQUE_3D` in dynamics with small displacements.** Code-Aster has no mass for
+  `COQUE_3D` with `GROT_GDEP` (`ELEMENTS3_91`): dynamics with quadratic shells stopped
+  with the default settings. The bridge now computes `COQUE_3D` in `DYNA_NON_LINE` with
+  `PETIT` and a WARNING (KNOWN_BUGS 159, verification DY-40f); pressure on those shells
+  stays a fixed load there. New KNOWN_BUGS 160: explicit dynamics with `COQUE_3D` stops.
 - **Nonlinear static without *Quasi-static*: load tables up to t = 1 s, like Mecway
   (results change).** Without `<timesteps>` Mecway computes one step and takes every table
   (force, imposed displacement, temperature) at t = 1 s, also when the table runs further
@@ -85,7 +99,7 @@
   says that MUMPS does not check for a singular matrix (`FACTOR_57` or an unreliable
   result). Also measured in implicit dynamics, buckling and XFEM (LS-07w..z); HOMARD refuses
   bonded contact before the run; explicit dynamics, harmonic and the other analyses NOT verified
-  (side findings: KNOWN_BUGS 156, 157).
+  (side findings: KNOWN_BUGS 156, now fixed, and 157).
 - **Behaviour change: contact method `auto` is the new default in Nonlinear Static**
   (`contact_algo`, page Contact). Every unilateral contact with Mecway's *normal stiffness*
   in a 3D Nonlinear Static analysis is now computed with penalty (`PENALISATION`), as Mecway

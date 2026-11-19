@@ -275,7 +275,7 @@ elsets that stay geometrically linear; the details per elset are INFO lines in t
 | solid, elastic | `GREEN_LAGRANGE`, or `GDEF_LOG` if that was chosen | `GROT_GDEP` not allowed on 3D (`COMPOR5_22`) |
 | solid, plastic | `GDEF_LOG`, or `SIMO_MIEHE` if that was chosen (with `VMIS_CINE_LINE` always `GDEF_LOG`) | `GREEN_LAGRANGE` with `VMIS_*` refused, `SIMO_MIEHE` with `VMIS_CINE_LINE` too (`COMPOR1_44`) |
 | DKT/DST | `GREEN_LAGRANGE` (with `VMIS_CINE_LINE` `PETIT`) | `GROT_GDEP` did not converge, `GDEF_LOG` refused (`COMPOR1_99`); `GREEN_LAGRANGE` gave the same result as `PETIT`, so effectively geometrically linear. Large rotations of shells: `elem_shell` = `COQUE_3D` |
-| `COQUE_3D` | `GROT_GDEP` | alarm `COMPOR1_47`: rotations < 2π; NL-02b exact |
+| `COQUE_3D` | `GROT_GDEP`; in dynamics `PETIT` | alarm `COMPOR1_47`: rotations < 2π; NL-02b exact. Dynamics: no mass with `GROT_GDEP` (`ELEMENTS3_91`), so small displacements with a WARNING (DY-40f, KNOWN_BUGS 159) |
 | beam `POU_D_E`/`POU_D_T` | `PETIT` | `GROT_GDEP` on `POU_D_E` did not converge (KNOWN_BUGS 11); for large rotations `elem_beam` = `POU_D_T_GD` |
 | beam `POU_D_T_GD` | `GROT_GDEP` with `ELAS_POUTRE_GR` | large rotations of beams (§2.9) |
 | cable (tension only) | always `GROT_GDEP` | `RELATION='CABLE'` requires it; small pretension `N_INIT` = `cable_n_init_factor` × E × A (default 1e-6, page **Elements**), otherwise a straight cable is singular |
@@ -285,7 +285,7 @@ elsets that stay geometrically linear; the details per elset are INFO lines in t
 
 **Follower loads.** With a large-displacement form, uniform pressure is a follower
 load (`TYPE_CHARGE='SUIV'`), as in Mecway (Mecway, 2026, §9.14), on solids and
-`COQUE_3D`; on DKT/DST Code-Aster cannot do this (`CALCUL_42`), and the pressure stays
+`COQUE_3D` (not in dynamics, where `COQUE_3D` is `PETIT`: WARNING); on DKT/DST Code-Aster cannot do this (`CALCUL_42`), and the pressure stays
 fixed there (WARNING). Hydrostatic pressure stays fixed. Centrifugal force uses the
 deformed radius in `STAT_NON_LINE` (spin softening, as Mecway §9.20) when only solids
 rotate. Plasticity on beams is computed elastically (WARNING).
@@ -444,6 +444,30 @@ out a parameter study and choose the value closest to zero that still gives a go
 solution. With -0.3, DY-01 followed the scheme exactly (period +1.21 %, peak −0.87 %,
 R-ALPHA). With HHT a step load gets a slightly too small impulse in the first step
 (Code-Aster uses F₀ = 0; DY-01a: peak −0.44 %).
+
+**Initial acceleration with DKT shells (KNOWN_BUGS 156, fixed).** Without an initial state,
+`DYNA_NON_LINE` computes the initial acceleration from M a₀ = F(0) − K u₀. The mass of DKT
+shells is nearly singular in the rotations (`MECANONLINE_78`), and a₀ was then wrong as soon
+as a load is not zero at t = 0 (a step load, gravity): the LS-07b strip moved up to about
++10 mm against a 1 N load downward (static 0.94 mm). With a DKT elset in `HHT` or `NEWMARK` the
+bridge therefore writes a zero initial acceleration (`ETAT_INIT` `ACCE`, together with `VITE`
+for an initial velocity) and an extra first solver step of 1/100 of the first step (INFO in
+the log; not stored in the results). That is an approximation, not what Mecway does: the
+load rises over that small step (a lag of half of it), and the velocity after it lacks a₀
+times half the step (for gravity g·Δt/200, with Δt the first solver step). Measured (DY-40):
+strip peak +0.70 % against Mecway with CCX; a hex20 bar in the same model 0.03 % of the
+peak, against the same run with Code-Aster's own initial acceleration (2.9 % without the
+small step). No small step when an imposed displacement, rotation or velocity is not zero
+at t = 0: it would jump within it (mid-span velocities up to 12 m/s instead of 2 m/s with
+`NEWMARK`); such a run is the same as before (DY-40h), and a step load in the same model
+then lags half a first step. A constant temperature reaches its full value at 1e-4 of the
+duration, which can lie after the small step (NOT measured). Explicit schemes
+(`MASS_DIAG`) and `COQUE_3D` do not need it.
+
+**`COQUE_3D` in dynamics.** Code-Aster has no mass matrix for `COQUE_3D` with `GROT_GDEP`
+(`ELEMENTS3_91`); in `DYNA_NON_LINE` the bridge computes those shells with `PETIT`
+(WARNING), also when `deformation` asks for large displacements (§2.3, KNOWN_BUGS 159).
+Explicit dynamics with `COQUE_3D` does not run at all (KNOWN_BUGS 160).
 
 **`MODI_EQUI`.** The bridge keeps the CA default `'OUI'`: the full HHT scheme, second
 order, which mainly damps high frequencies and which U2.06.13 recommends (`'NON'` =

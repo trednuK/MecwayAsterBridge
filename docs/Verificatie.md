@@ -521,7 +521,8 @@ opeenvolgende meshes.
   dubbele voorwaarde). Bij XFEM verliezen de slave-knopen ook de `DDL_IMPO` op hun
   XFEM-vrijheidsgraden; dat verandert niets: met de oplegging op de slave- in plaats van
   de masterknopen komt hetzelfde uit. De schaalroutes (LS-07r `LIAISON_DDL`, LS-07a `LIAISON_MAIL` COQUE)
-  rekenen in dynamica ook zonder dubbele voorwaarde niet (KNOWN_BUGS 156). HOMARD
+  rekenen in dynamica sinds de beginversnelling nul voor DKT, met hetzelfde resultaat als
+  de strook uit één stuk LS-07b (DY-40c..e). HOMARD
   (`adapt_homard`) weigert verlijmd contact voor de run.
 
 ### LS-08 Node temperature (thermische spanning per knoop)
@@ -2636,6 +2637,40 @@ U-documentatie gevonden):
 - **Interpretatie**: de omzetting werkt voor alle opgelegde bewegingen. Mecway staat een
   constante ≠ 0 in een constraint equation alleen bij statisch toe (manual §9.42); de
   bridge vertaalt haar toch, met een WARNING.
+
+### DY-40 Schalen in impliciete dynamica (KNOWN_BUGS 156 opgelost)
+
+- **Doel**: DKT in `DYNA_NON_LINE` met een last die op t = 0 niet nul is: de bridge
+  schrijft een beginversnelling nul en een extra kleine eerste rekenstap
+  ([Instellingen §2.5](Instellingen_contact_en_nietlineair.md#25-tijdschema-dynamica-schema-hht_alpha));
+  `COQUE_3D` met `PETIT` in dynamica (`ELEMENTS3_91`).
+- **Modellen**: de strook van LS-07b (0,2 × 0,02 × 0,002 m, 20 × 4 quad4, staal, dichtheid
+  7850 kg/m³), ingeklemd, staplast 1 N −Z op de tiprand, 0 … 0,05 s, uitvoer elke 0,5 ms
+  (eerste mode 42 Hz, T = 23,8 ms). DY-40a standaardinstellingen (HHT, `GROT_GDEP`), DY-40b
+  `NEWMARK`; DY-40c de verlijmde strook LS-07a (`LIAISON_MAIL` COQUE), DY-40d LS-07f
+  (`LIAISON_DDL`, 30°), DY-40e LS-07r (LS-07f met een dubbele voorwaarde, KNOWN_BUGS 147);
+  DY-40f dezelfde strook in quad8 (`COQUE_3D`, standaardinstellingen); DY-40g de strook en
+  een losse hex20-balk van dezelfde maat in één model; DY-40h de strook met u_z = −1 mm op
+  de tip vanaf t = 0 (een sprong) en zonder kracht.
+- **Referentie**: Mecway 36 met CCX op dezelfde modellen (headless, stapgrootte 0,5 ms; de
+  tip als gemiddelde van de knopen van het uitgezette mesh): grootste doorbuiging
+  −1,83997 mm (quad4), −1,83305 mm (quad8), balk −1,83144 mm; statisch −0,93915 mm. Ook
+  het aantal opgeslagen tijdstippen (101: de kleine stap wordt niet opgeslagen). DY-40h:
+  dezelfde run met de bridge van voor de beginversnelling nul (Code-Aster 17.4): midden
+  −0,80341 mm.
+- **Resultaat**: piek −1,85286 mm (+0,70 %), NEWMARK −1,84248 mm (+0,14 %), verlijmde
+  stroken −1,85177 mm (+0,64 %, gelijk voor LS-07a, f en r), quad8 −1,85433 mm (+1,16 %),
+  balk −1,83615 mm (+0,26 %); DY-40h gelijk in alle cijfers (geen kleine stap); overal 101
+  opgeslagen tijdstippen, geen `MECANONLINE_78`. Voor de oplossing: DKT tot ongeveer
+  +10 mm (snelheden van 4e11 m/s), de verlijmde stroken
+  stopten met `MECANONLINE9_7`, quad8 met `ELEMENTS3_91`.
+- **Interpretatie**: een beginversnelling nul laat de last over de eerste rekenstap
+  opkomen; met de kleine stap is die vertraging verwaarloosbaar: de balk in DY-40g wijkt
+  0,03 % van de piek af van dezelfde run met de eigen beginversnelling van Code-Aster
+  (2,9 % met een beginversnelling nul over een hele stap, een vertraging van een halve
+  stap). Het resterende verschil met CCX is de
+  discretisatie in de tijd (48 stappen per periode) en van de schalen (statisch DKT
+  +0,36 %, KNOWN_BUGS 2).
 
 ### DY-70 .. DY-73 Temperatuur in dynamica
 

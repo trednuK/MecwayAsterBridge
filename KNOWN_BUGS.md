@@ -945,8 +945,9 @@ Code-Aster value per node) and logs the largest difference per variable.
    (LS-07z: the slave nodes also lose the `DDL_IMPO` on their XFEM DOFs, which changes
    nothing: equal to the model without the double condition and to the one with the
    `DDL_IMPO` on the slave instead of the master nodes; before `FACTOR_11`). The shell
-   routes (LS-07r `LIAISON_DDL`, LS-07a `LIAISON_MAIL` COQUE) in dynamics not: they do not converge without the
-   double condition either (KNOWN_BUGS 156). HOMARD (`adapt_homard`) refuses bonded contact
+   routes (LS-07r `LIAISON_DDL`, LS-07a `LIAISON_MAIL` COQUE) compute in dynamics since the zero
+   initial acceleration for DKT, with the same result as the one-piece strip LS-07b
+   (DY-40c..e). HOMARD (`adapt_homard`) refuses bonded contact
    before the run (`bridge_homard.check_scope`), so stale `BROV` groups cannot occur; the
    Mecway refine loop (`adapt_refine`) rebuilds the groups every loop (code reading, NOT
    run). Explicit dynamics, harmonic and the other analyses NOT verified. Not looked at:
@@ -1003,17 +1004,6 @@ Code-Aster value per node) and logs the largest difference per variable.
    priority (possible fix: an option to close the window of the previous run at the next
    *Start*).
 
-156\. **DKT shells in implicit dynamics: implausible response, bonded shell ties do not
-   converge** (confirmed, Code-Aster 17.4, 19 Nov 2026, `dyna_impl_3d`, HHT, `PETIT` and
-   `GROT_GDEP`; cause NOT investigated). The LS-07b strip (one mesh, quad4 DKT, density
-   7850 kg/m³) under a step load of 1 N (−Z) at the tip moves up to +10 mm (+Z) instead of
-   oscillating around the static 0.94 mm downward (first bending mode ~42 Hz; Code-Aster
-   converges, no ALARM). The bonded strips LS-07a (`LIAISON_MAIL` COQUE) and LS-07f
-   (`LIAISON_DDL`, NPREC = -1) stop with `MECANONLINE9_7` (Newton residual stuck at
-   ~1e-3, also with NEWMARK), also without any double condition; in Nonlinear Static
-   LS-07f converges (0.94220 mm). The quad8 rib of LS-07i (COQUE_3D) gives a plausible
-   response (LS-07x). Status: open; check the DKT mass and load in `DYNA_NON_LINE` first.
-
 157\. **XFEM: a crack front that reaches a free face stops with `CALCUL_20`** (confirmed,
    Code-Aster 17.4, 19 Nov 2026; `bridge_mesh.write_mesh` section 2b). The error
    estimator's boundary elements on free faces (`BRERRVRIJ`, `error_estimator` on by
@@ -1024,6 +1014,30 @@ Code-Aster value per node) and logs the largest difference per variable.
    mesh without bonded contact); BR-07..14 have no free face at the crack. Workaround:
    `error_estimator` off. Smallest fix: no `BRERRVRIJ` when `bridge_xfem.is_requested`
    (the `error_estimator_requested` test in section 2b). Status: open.
+
+159\. **Shells with large rotations in dynamics: `COQUE_3D` is computed with small
+   displacements** (confirmed, Code-Aster 17.4, 19 Nov 2026;
+   `bridge_to_aster._deformation_for`). Code-Aster has no mass matrix for `COQUE_3D` with
+   `GROT_GDEP` (`ELEMENTS3_91` in `MASS_MECA`), and large rotations of `COQUE_3D` require
+   `GROT_GDEP` (`ELEMENTS3_93`). In `DYNA_NON_LINE` the bridge therefore gives `COQUE_3D`
+   (all quadratic shells, and linear ones with `elem_shell` = `COQUE_3D`)
+   `DEFORMATION='PETIT'` with a WARNING, also when `deformation` asks for large
+   displacements; pressure on those shells then stays a fixed load
+   (`_follower_pressure_groups`). DKT/DST are geometrically linear anyway. Mecway with CCX
+   computes large rotations of shells in dynamics (NOT measured). Before: a run with
+   default settings stopped with `ELEMENTS3_91`. Verification DY-40f (peak +1.16 % against
+   Mecway with CCX). Status: limitation (Code-Aster).
+
+160\. **Explicit dynamics with `COQUE_3D` stops** (confirmed, Code-Aster 17.4, 19 Nov 2026;
+   `dyna_expl_3d`). The LS-07b strip with `elem_shell` = `COQUE_3D` stops with
+   `DYNAMIQUE_4` (no stable time step for any element); with `STOP_CFL='NON'` (edited by
+   hand) with `CALCUL_37` (`MEC3QU9H` cannot compute `MASS_MECA_EXPLI`), with `PETIT` and
+   `GROT_GDEP` alike; since item 159 the bridge also gives `COQUE_3D` `PETIT` with its
+   WARNING in explicit dynamics (`DYNA_NON_LINE` as well), before the run stops. Quadratic
+   shells (always `COQUE_3D`) can therefore not be computed explicitly. DKT can: DY-20c
+   (a DKT plate moved rigidly) and a measurement outside the verification (the LS-07b
+   strip with a 1 N step load: −0.978 mm at 6 ms against −0.976 mm with CCX). Smallest fix: an ERROR before the run when `dyna_expl_3d` meets `COQUE_3D`, with
+   the advice to use `dyna_impl_3d` or linear shells. Status: open.
 
 ## Open questions (Mecway behaviour not checked)
 

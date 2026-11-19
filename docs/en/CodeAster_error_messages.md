@@ -811,13 +811,20 @@ from contact (`SANS_GROUP_NO`).
 - **Message** (alarm): the mass matrix for the initial acceleration is nearly singular;
   the initial acceleration may be too large at some nodes.
 - **Cause**: degrees of freedom without mass: a material without density, or rotations
-  without rotational inertia.
+  without rotational inertia. DKT shells: their mass is nearly singular in the
+  rotations; without the measure below the initial acceleration was then wrong for a load
+  that is not zero at t = 0 (LS-07b strip, 1 N step load: tip up to about +10 mm instead of
+  around 0.94 mm down; bonded strips `MECANONLINE9_7`; KNOWN_BUGS 156, fixed).
 - **Seen**: D12_rotinertia (maximum angle 0.012611, equal to theory), F4_model, and
   example 1 of `ASTER_lines_examples.md` in *Dynamic (implicit)* (beam without density;
-  06-10-2026). The bridge warns beforehand about an elset without density.
-- **Solution**: give the material a density in Mecway; otherwise none needed if the
-  results are correct.
-- **Status**: harmless (in the cases seen) / model (no density).
+  06-10-2026); DKT: verification DY-40 (19-11-2026). The bridge warns beforehand about an
+  elset without density.
+- **Solution**: give the material a density in Mecway. With DKT in implicit dynamics the
+  bridge writes a zero initial acceleration (`ETAT_INIT` `ACCE`) and an extra small first
+  solver step ([Settings §2.5](Settings_contact_and_nonlinear.md#25-time-scheme-dynamics-schema-hht_alpha));
+  the alarm then no longer appears.
+- **Status**: fixed in the bridge (DKT) / model (no density); otherwise harmless in the
+  cases seen.
 
 ---
 
@@ -1124,6 +1131,21 @@ large angle works robustly with an imposed displacement as a `FORMULE` (example 
   (example 9), or a master node without rotational degrees of freedom. Only with your own
   code.
 - **Status**: limitation.
+
+### `ELEMENTS3_91` – no mass for COQUE_3D with large rotations
+
+- **Message** (error): the mass computation is not implemented for `COQUE_3D` elements
+  with large rotations, deformation `GROT_GDEP` (option `MASS_MECA`).
+- **Cause**: `DYNA_NON_LINE` with `COQUE_3D` (quadratic shells, or `elem_shell` =
+  `COQUE_3D`) and `DEFORMATION='GROT_GDEP'`, the default `deformation` of
+  `dyna_impl_3d`. Large rotations of `COQUE_3D` require `GROT_GDEP` (`ELEMENTS3_93`),
+  so there is no other form.
+- **Seen**: the LS-07b strip with `elem_shell` = `COQUE_3D` and a quad8 strip in
+  *Dynamic (implicit)* (19-11-2026).
+- **Solution**: in the bridge: `COQUE_3D` gets `PETIT` in dynamics, with a WARNING
+  (verification DY-40f); pressure on those shells then stays a fixed load. Large
+  rotations of shells in dynamics are not possible (KNOWN_BUGS 159).
+- **Status**: fixed in the bridge (limitation: small displacements).
 
 Also with large rotations: `COMPOR5_22`, `COMPOR1_44`, `COMPOR1_47`, `COMPOR1_99`,
 `DVP_2` (`POU_D_T_GD` with `ELAS`), `CALCUL_37` (`POU_D_T_GD` with
@@ -1611,6 +1633,7 @@ and beams in the model).
 | `DVP_2` | [2](#dvp_2--floating-point-exception) | fixed in the bridge (a, b); message with results up to the error (d) |
 | `DYNAMIQUE_4` | [5](#dynamique_4--stability-limit-cannot-be-computed-explicit) | fixed in the bridge |
 | `ELEMENTS2_63` | [2](#elements2_63--ther_nl-missing-in-the-material-thermal) | fixed in the bridge |
+| `ELEMENTS3_91` | [6](#elements3_91--no-mass-for-coque_3d-with-large-rotations) | fixed in the bridge |
 | `ELEMENTS4_4` | [7](#elements4_4-elements4_64--sipm_elno-not-possible) | fixed in the bridge |
 | `ELEMENTS4_64` | [7](#elements4_4-elements4_64--sipm_elno-not-possible) | fixed in the bridge |
 | `ELEMENTS4_92` | [2](#elements4_92--pressure-as-a-function-on-a-shell) | fixed in the bridge |
@@ -1639,7 +1662,7 @@ and beams in the model).
 | `MECANONLINE9_50` | [5](#mecanonline9_50--step-guard-ended) | fixed in the bridge (the run continues) |
 | `MECANONLINE9_7` | [5](#mecanonline9_7--newton-does-not-converge) | model / limitation (per case) |
 | `MECANONLINE_3` | [2](#mecanonline_3-with-alarm-calculel_54--element-not-for-nonlinear-analysis) | fixed in the bridge |
-| `MECANONLINE_78` | [3](#mecanonline_78--mass-matrix-nearly-singular) | harmless (in the cases seen) / model (no density) |
+| `MECANONLINE_78` | [3](#mecanonline_78--mass-matrix-nearly-singular) | fixed in the bridge (DKT) / model (no density) |
 | `MESH1_4` | [1](#mesh1_4--line_quad-on-part-of-the-mesh) | harmless |
 | `MODELE1_14` | [2](#modele1_3-modele1_14-modele1_53-charges2_4--thermal-shells-as-plan) | harmless (deliberate choice) |
 | `MODELE1_3` | [2](#modele1_3-modele1_14-modele1_53-charges2_4--thermal-shells-as-plan) | harmless (deliberate choice) |
