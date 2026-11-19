@@ -35,9 +35,9 @@ independently before you rely on them.**
   version 17.4; accessed 6 October 2026). The official site
   [<https://www.code-aster.org>](https://open-simulation-center.org/downloads/code_aster/code_aster/17.4.0) does also list a Windows version.
 - Nothing else to install with `pip`. The bridge uses only the Python that comes with
-  Mecway and with Code-Aster. For a large mesh, the Windows release also includes one
-  program, `Scripts\aster_fast.exe` (see Installation). Without that file the bridge
-  still runs; preparing the Code-Aster files is just slower.
+  Mecway and with Code-Aster. For a large mesh you can build `Scripts\aster_fast.exe`
+  (see Installation). Without that file the bridge still runs; preparing the
+  Code-Aster files is just slower.
 
 ## Installation
 

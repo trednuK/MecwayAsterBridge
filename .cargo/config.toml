@@ -1,0 +1,8 @@
+# Windows gives the main thread 1 MiB of stack. Linux tests hide that.
+# 8 MiB is the usual Linux default, so a large frame does not abort
+# with STATUS_STACK_OVERFLOW (0xC00000FD).
+[target.x86_64-pc-windows-gnu]
+rustflags = ["-C", "link-arg=-Wl,--stack,8388608"]
+
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "link-arg=/STACK:8388608"]

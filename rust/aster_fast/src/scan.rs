@@ -99,7 +99,10 @@ fn read_model(path: &Path) -> io::Result<(Vec<u8>, bool)> {
     let f = File::open(path)?;
     let mut r = BufReader::new(f);
     let mut data = Vec::new();
-    let mut buf = [0u8; 1 << 20];
+    // Heap buffer. A 1 MiB array on the stack overflows the Windows main
+    // thread (reserve is 1 MiB) and prep dies with STATUS_STACK_OVERFLOW
+    // before any of the file is parsed.
+    let mut buf = vec![0u8; 1 << 20];
     let pat = b"<solution";
     loop {
         let n = r.read(&mut buf)?;

@@ -12,7 +12,10 @@
   `cargo build --release --manifest-path rust/aster_fast/Cargo.toml` and copy
   `target/release/aster_fast` (Windows: `aster_fast.exe`) next to `Scripts/`, or set
   `ASTER_FAST` to that path. The Windows executable is attached to fork release
-  **V2026.14-fast.1** (and is already inside `Scripts/` in the Windows zip). IronPython
+  **V2026.14-fast.2** (and is already inside `Scripts/` in the Windows zip).
+  fast.1 aborted on Windows before reading the file: a 1 MiB read buffer sat
+  on the 1 MiB stack (`STATUS_STACK_OVERFLOW`). The buffer is on the heap now,
+  and the Windows build reserves 8 MiB of stack. IronPython
   cannot load a Rust extension, so this is a separate program. `tests/test_bridge_fast.py`.
 
 ## V2026.15 – 19 November 2026
