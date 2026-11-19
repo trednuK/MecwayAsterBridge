@@ -9,7 +9,8 @@
 #   - D20 -> C_PLAN with dyna_impl_3d (S16b);
 #   - ERROR (model_data None) for: S20 without thickness, Z != 0, SA0 with
 #     X < 0, a beam in 2D, A20 with a static analysis, D20 with a static
-#     analysis, route 'tabel';
+#     analysis; a kept setting result_route 'tabel' (removed route) no
+#     longer refuses;
 #   - A20 (S16d) -> PHENOMENE ACOUSTIQUE, MODELISATION PLAN (+ PLAN_ABSO for
 #     an impedance) in the .comm; ERROR for Z != 0, a beam, the harmonic
 #     analysis;
@@ -29,7 +30,7 @@
 #     per plane modelisation (bridge_to_aster._deformation_for); contact
 #     (S44b) only with STAT_NON_LINE;
 #   - the chain T31 + Thermal stress with C_PLAN/D_PLAN (plane, factor t;
-#     ERROR for route tabel, welding, two thicknesses); the failure loop in
+#     ERROR for welding, two thicknesses); the failure loop in
 #     route A (C_PLAN, D_PLAN, AXIS), the KNOWN_BUGS 144 WARNING, and
 #     WARNING without the loop for contact and route B (D20);
 #   - axisymmetric shells (S44e piece 1): line3 + '#ASTER-PLANE AXIS' ->
@@ -123,7 +124,7 @@ def _extract(text, analysis="lin_static_3d", route="liml"):
         del LOG[:]
         return bfl.extract_aster_data_from_liml(path)
     finally:
-        bridge_utils.CONFIG_BRIDGE["result_route"] = "liml"
+        bridge_utils.CONFIG_BRIDGE.pop("result_route", None)
         shutil.rmtree(tmp, ignore_errors=True)
 
 
@@ -163,7 +164,8 @@ def test_errors():
         check(md is None and _errors(), "{0}: ERROR and stop ({1})".format(
             what, LOG[-3:]))
     md = _extract(_liml("S20", PS), route="tabel")
-    check(md is None, "route tabel: ERROR")
+    check(md is not None, "kept setting result_route 'tabel': no ERROR "
+          "(route removed): {0}".format(_errors()))
     md = _extract(_liml("S20", PS), analysis="nonlin_static_3d")
     check(md is None, "S20 with nonlin_static_3d: ERROR")
     md = _extract(_liml("D20", PS), analysis="dyna_impl_3d")
@@ -243,9 +245,6 @@ def test_route_a():
           not md.get("shell_upgrades", {}).get("P"),
           "T31 chain + AXIS: plane AXIS, modelisation AXIS: {0}".format(
               _errors()))
-    md = _extract(_liml("T31", PS, loads=_switch("**ASTER-PLANE AXIS") + ts),
-                  analysis="ther_3d", route="tabel")
-    check(md is None and _errors(), "T31 chain + AXIS, route tabel: ERROR")
     # S44 leftovers: the chain in C_PLAN / D_PLAN (bridge_plane._plane_chain)
     for sw in ("C_PLAN", "D_PLAN"):
         md = _extract(_liml("T31", PS, loads=_switch("**ASTER-PLANE " + sw) +
@@ -258,10 +257,6 @@ def test_route_a():
               not md.get("shell_sections", {}).get("P"),
               "T31 chain + {0}: plane {0}, factor t: {1}".format(
                   sw, _errors()))
-    md = _extract(_liml("T31", PS, loads=_switch("**ASTER-PLANE C_PLAN") +
-                        ts), analysis="ther_3d", route="tabel")
-    check(md is None and any("thickness" in m for m in _errors()),
-          "T31 chain + C_PLAN, route tabel: ERROR")
     md = _extract(_liml("T31", PS, loads=_switch(
         "**ASTER-PLANE C_PLAN" + chr(10) + "**ASTER-LASBRON Q=1000") + ts),
         analysis="ther_3d")

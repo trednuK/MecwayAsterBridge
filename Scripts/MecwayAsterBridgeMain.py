@@ -25,7 +25,7 @@
 #   bridge_mesh          : write_mesh()                         (.liml -> mesh)
 #   bridge_to_aster      : generate_AsterSolver_files()         (dict -> .comm/.export)
 #   bridge_run_aster     : run_AsterSolver()                    (start solver)
-#   bridge_from_aster    : AsterToMecway_results()              (.resu -> Mecway)
+#   bridge_results_liml  : splice_results()                     (results -> .liml)
 #   bridge_thermal       : parse_thermal() / build_thermal()    (T30/T31 ->
 #                          THER_LINEAIRE / THER_NON_LINE)
 #   (modal V30 / buckling B30: bridge_to_aster._build_modal -> CALC_MODES;
@@ -79,9 +79,6 @@
 #      (Results...). After a run the window comes back, with the outcome
 #      in the status box; Close stops the bridge.
 #   1. Optional: solve the model in Mecway (check: are there errors?)
-#   1b. Route tabel: does the Mecway solution match the model? Otherwise
-#      stop (the results can only be loaded on the nodes of the
-#      solution; a solution without nodes gets a message of its own)
 #   2. Save the model (.liml); with mw.liml_text() (Mecway 36): not saved
 #      now, a model-only copy <model>_<run_id>_model.liml instead
 #      (bridge_liml_text), which steps 3-6 read; route liml saves the
@@ -123,7 +120,8 @@ from bridge_utils       import (CONFIG_BRIDGE, log, resolve_auto_analysis,
                                 set_run_log, log_file_name, tr, run_name,
                                 run_names, path_too_long, work_dir_path,
                                 exe_aster_path, set_model_path,
-                                BRIDGE_VERSION, log_size, log_errors)
+                                BRIDGE_VERSION, log_size, log_errors,
+                                legacy_route_note)
 from bridge_gui         import (run_settings_dialog, results_dialog,
                                 claim_instance, release_instance,
                                 instance_busy_text)
@@ -133,8 +131,7 @@ from bridge_to_aster    import generate_AsterSolver_files, results_file
 from bridge_run_aster   import (run_AsterSolver, aster_mess_errors,
                                 penetration_report)
 from bridge_convergence import stopped_text
-from bridge_from_aster  import (AsterToMecway_results, check_solution_mesh,
-                                empty_solution_reason,
+from bridge_from_aster  import (empty_solution_reason,
                                 _compare_with_mecway,
                                 _compare_modes_with_mecway)
 from bridge_results_liml import (splice_results, read_step,
@@ -171,7 +168,7 @@ import bridge_liml_text
 # Setting hide_failed: "expected" the failed elements of the last run
 # (bridge_failure.failed_elements, element numbers as text), for the note
 # on elements that stay visible; None outside a run or with the option off.
-# "loaded": the last run put its results into the .liml (route liml), also
+# "loaded": the last run put its results into the .liml, also
 # when it returned False for .mess errors or a stop.
 _HIDE = {"expected": None, "loaded": False}
 
@@ -254,8 +251,8 @@ def _save_check():
 def _run(settings):
     """
     One bridge run with the settings of the main window: save the model
-    (with mw.liml_text(): read a copy, and in route 'liml' save only when
-    the results go in), translate it, start Code-Aster and load the
+    (with mw.liml_text(): read a copy and save only when the results go
+    in), translate it, start Code-Aster and load the
     results. Messages go
     through _notify (status box of the main window). Returns True if the
     results are in Mecway.
@@ -336,72 +333,34 @@ def _run(settings):
                 return False
             log("INFO: Mecway solve completed.")
 
-        # --- Step 1b: Does the solution match the model? ---
-        # solution.set_variable() can only store values on the nodes of
-        # the last Mecway solve. After a model change (seen in Mecway:
-        # mesh refined from 12 to 45 nodes) the results on 33 nodes were
-        # silently dropped. Hence the check before the Code-Aster run.
-        # Only needed for the table route (set_variable); the liml route
-        # writes the solution itself. A Mecway solve that fails raises
-        # nothing and leaves a solution without nodes (e.g. contact on
-        # shell edges): then a message of its own, not "predates the
-        # last change to the model".
-        route = CONFIG_BRIDGE.get("result_route", "liml")
+        # A saved setting of the removed route 'tabel' (bridge_utils.py
+        # kept from an older bridge): one WARNING, the run goes via the
+        # .liml as always (legacy_route_note).
+        note = legacy_route_note()
+        if note:
+            log(note)
+        # Mecway solve as a check: without a solution there is nothing to
+        # compare (a failed Mecway solve raises nothing and leaves a
+        # solution without nodes); the run goes on.
         solved_now = CONFIG_BRIDGE.get("mecway_solve_first", False)
         empty = (empty_solution_reason(solution, solved_now)
-                 if route == "tabel" or solved_now else "")
-        if empty and route == "tabel":
-            needs = tr("De route 'tabel' schrijft de resultaten in die "
-                       "solution en heeft er een nodig.",
-                       "The route 'tabel' writes the results into that "
-                       "solution and needs one.")
-            log("ERROR: {0} {1}".format(empty, needs))
-            _notify(empty + " " + needs + tr(
-                "\n\nKies de route 'liml' (standaard, pagina Algemeen): "
-                "die heeft geen Mecway-solution nodig. 2D-analyses en "
-                "modellen die Mecway zelf niet kan oplossen (bijvoorbeeld "
-                "contact op schaalranden) werken alleen zo.",
-                "\n\nChoose the route 'liml' (the default, General page): "
-                "it needs no Mecway solution. 2D analyses and models that "
-                "Mecway cannot solve itself (for example contact on shell "
-                "edges) only work that way.") + ("" if solved_now else tr(
-                    " Kan Mecway het model wel oplossen, los het dan eerst "
-                    "op in Mecway.",
-                    " If Mecway can solve the model, solve it in Mecway "
-                    "first.")) + tr(" Code-Aster wordt niet gestart.",
-                                    " Code-Aster is not started."))
-            return False
-        if empty and solved_now:
-            # route liml: the run goes on, only the comparison is lost
+                 if solved_now else "")
+        if empty:
             log(tr("WARNING: {0} De vergelijking met Mecway vervalt.",
                    "WARNING: {0} There is no comparison with "
                    "Mecway.").format(empty))
-        sol_ok, sol_reason = (check_solution_mesh(mw, solution)
-                              if route == "tabel" else (True, ""))
-        if not sol_ok:
-            log("ERROR: {0}".format(sol_reason))
-            _notify(tr("{0}\n\nLos het model eerst op in Mecway, of zet "
-                          "in het startscherm 'Eerst Mecway-solve ter "
-                          "controle' aan. Code-Aster wordt niet gestart.",
-                          "{0}\n\nSolve the model in Mecway first, or turn "
-                          "on 'Mecway solve first as a check' in the start "
-                          "screen. Code-Aster is not started.").format(
-                              sol_reason))
-            return False
 
         # --- Step 2: A copy of the model, or save ---
         # With mw.liml_text() (Mecway 36) the run reads a model-only copy
         # in the work folder (bridge_liml_text), which is also the job's
-        # liml_path, and the user's file is not saved now: route 'tabel'
-        # fills Mecway's own solution through the API (also for an
-        # untitled model), route 'liml' saves right before the results go
-        # into the file (_load_liml_results), so that a run without
+        # liml_path, and the user's file is saved only right before the
+        # results go into it (_load_liml_results), so that a run without
         # results leaves the file as it was. Without the API, and an
-        # untitled model in route 'liml': save first, as before.
+        # untitled model: save first, as before.
         model_liml = None
         if bridge_liml_text.wants_snapshot(bridge_liml_text.available(mw),
-                                           route, mw.file_name()):
-            save_error = _save_check() if route == "liml" else None
+                                           mw.file_name()):
+            save_error = _save_check()
             if save_error:
                 _notify(save_error + tr(" Code-Aster wordt niet gestart.",
                                         " Code-Aster is not started."))
@@ -411,9 +370,8 @@ def _run(settings):
         if model_liml:
             model_copy["path"] = model_liml
             log("INFO: Model not saved now; the run reads the copy {0} "
-                "(mw.liml_text){1}.".format(
-                    model_liml, "; the model is saved when the results go "
-                    "into it" if route == "liml" else ""))
+                "(mw.liml_text); the model is saved when the results go "
+                "into it.".format(model_liml))
         else:
             save_error = _save_model()
             if save_error:
@@ -475,23 +433,6 @@ def _run(settings):
             CONFIG_BRIDGE["active_analysis"] = resolved
             log("INFO: Active analysis 'auto': Mecway analysis type '{0}' -> "
                 "'{1}'.".format(mecway_type, resolved))
-
-        # The table route reads only one time step from tables with all
-        # steps (bridge_from_aster): with dynamics (TOUT_ORDRE) it would
-        # mix steps, and the Mecway solution has time steps. Modes
-        # (CALC_MODES) are not time steps; set_variable() would not set
-        # them as <mode>.
-        if route == "tabel" and CONFIG_BRIDGE["analyses"].get(
-                CONFIG_BRIDGE["active_analysis"], {}).get(
-                    "solver_command") in ("DYNA_NON_LINE", "CALC_MODES",
-                                          "DYNA_VIBRA", "COMB_SISM_MODAL"):
-            _notify(tr("De resultaatroute 'tabel' werkt niet voor dynamische, "
-                       "modale en knikanalyses. Kies 'liml' (pagina "
-                       "Algemeen). Code-Aster wordt niet gestart.",
-                       "The result route 'tabel' does not work for dynamic, "
-                       "modal and buckling analyses. Choose 'liml' (General "
-                       "page). Code-Aster is not started."))
-            return False
 
         # Pre-flight check: materials are needed for a meaningful analysis
         # (thermal: materials with <thermal>, bridge_thermal.py; a model of
@@ -607,21 +548,12 @@ def _run(settings):
         # also a failed or stopped run) and optionally the same text as
         # Mecway's Saved monitor in the .liml (save_monitor_liml).
         monitor, summary_file = _run_summary(active_liml, run_id, run_start)
-        if route == "liml":
-            loaded = _load_liml_results(active_liml, model_data, run_start,
-                                        monitor, mess_errors,
-                                        snapshot=model_copy["path"])
-        else:
-            if CONFIG_BRIDGE.get("save_monitor_liml", False):
-                log("INFO: Saved monitor not written: only with the result "
-                    "route 'liml' (the route 'tabel' fills the existing "
-                    "Mecway solution through the API).")
-            loaded = AsterToMecway_results(work_dir_path(),
-                                           resu_name, mw, solution)
+        loaded = _load_liml_results(active_liml, model_data, run_start,
+                                    monitor, mess_errors,
+                                    snapshot=model_copy["path"])
         # results not in Mecway: the copy stays for a run by hand too
         model_copy["keep"] = model_copy["keep"] or not loaded
-        # also when _run returns False below (.mess errors, stopped); the
-        # route 'tabel' only logs that hiding does not apply to it
+        # also when _run returns False below (.mess errors, stopped)
         _HIDE["loaded"] = bool(loaded)
         summary_note = (u"\n\n" + tr(u"Samenvatting van de run: {0}",
                                       u"Summary of the run: {0}").format(
@@ -748,7 +680,7 @@ def _remove_stale_outputs():
 
 def _monitor_header(liml, run_id, analysis):
     """First lines of the Saved monitor text (bridge_monitor). liml None:
-    a model that was never saved (route 'tabel')."""
+    a model that was never saved."""
     return [u"MecwayAsterBridge {0} - Code-Aster".format(BRIDGE_VERSION),
             tr(u"Model: {0}", u"Model: {0}").format(
                 liml or tr(u"(niet opgeslagen)", u"(not saved)")),
@@ -761,13 +693,12 @@ def _run_summary(active_liml, run_id, run_start):
     Summary of this run (bridge_monitor.py): written to
     <model>_<run_id>_aster_summary.txt (setting aster_summary, not "off");
     returns (text for Mecway's Saved monitor or None, path of the summary
-    file or None). The text only with save_monitor_liml (route liml), with
+    file or None). The text only with save_monitor_liml, with
     aster_summary "off" then in mode "summary". Nothing without a .mess of
     this run.
     """
     mode = CONFIG_BRIDGE.get("aster_summary", "summary")
-    in_liml = (CONFIG_BRIDGE.get("save_monitor_liml", False) and
-               CONFIG_BRIDGE.get("result_route", "liml") == "liml")
+    in_liml = CONFIG_BRIDGE.get("save_monitor_liml", False)
     mess = os.path.join(work_dir_path(), run_name(".mess"))
     if not os.path.exists(mess) or os.path.getmtime(mess) < run_start:
         return None, None
@@ -841,7 +772,7 @@ def _save_before_write(snapshot, fragment=None):
 def _load_liml_results(active_liml, model_data, run_start, monitor=None,
                        mess_errors=None, snapshot=None):
     """
-    result_route "liml": Code-Aster wrote Mecway's own <results>
+    Code-Aster wrote Mecway's own <results>
     (aster_results_export.py). Optionally compare with the Mecway solve,
     paste the fragment into the .liml (previous version: .bak) and open it
     again. monitor: text for Mecway's Saved monitor (_run_summary) or None;
@@ -1417,14 +1348,6 @@ def _adapt_step():
         analysis, model_data.get("aster_custom", {}).get("options"))
     if settings is None:
         return False
-    if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
-        _notify(tr(u"Adaptieve verfijning: alleen met resultaatroute 'liml' "
-                   u"(de fout per element komt uit het resultaatbestand); "
-                   u"niet verfijnd.",
-                   u"Adaptive refinement: only with result route 'liml' (the "
-                   u"error per element comes from the result file); not "
-                   u"refined."))
-        return False
     work_dir = work_dir_path()
     summary = read_error_summary(os.path.join(work_dir, run_name(".mess")))
     step = bridge_adapt.after_run(_ADAPT["history"], settings, model_data,
@@ -1812,10 +1735,6 @@ def _hide_after_run():
     afterwards."""
     if not bridge_hide_failed.enabled():
         return True
-    if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
-        log("INFO: Hide failed elements: not applied with the result route "
-            "'tabel' (it fills Mecway's own solution).")
-        return True
     liml = mw.file_name()
     configuration, _warning = pick_configuration(liml)
     _opened, ok, text = _hide_failed(liml, configuration, _HIDE["expected"])
@@ -1962,12 +1881,10 @@ def _section_results_action():
 
 
 def _section_after_run():
-    """After a run with the liml route, once also with adaptive refinement:
+    """After a run, once also with adaptive refinement:
     only when the model has an outline. A failure here leaves the results
     of the run as they are. write_mesh of this run already checked the
     SECTIE-RICHTING lines, on all beams."""
-    if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
-        return
     try:
         if not bridge_section_view.has_shape_lines(mw.file_name()):
             return

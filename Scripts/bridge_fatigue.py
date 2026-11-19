@@ -931,13 +931,6 @@ def fatigue_block(model_data, analysis, work_dir):
         return None
     if not curves:
         return "", ""
-    if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
-        log(tr(u"INFO: Vermoeiing: de velden damage/life gaan alleen via "
-               u"result_route 'liml' naar Mecway; met 'tabel' alleen de log "
-               u"en de cyclustabel.",
-               u"INFO: Fatigue: the fields damage/life only go to Mecway "
-               u"with result_route 'liml'; with 'tabel' only the log and "
-               u"the cycle table."))
     opts = plan["options"]
     scripts = os.path.dirname(os.path.abspath(__file__))
     route = ("blocks" if plan["blocks"] else "signal" if plan["signal"]

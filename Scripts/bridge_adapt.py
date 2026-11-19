@@ -191,8 +191,8 @@ def read_element_errors(fragment_path, elements, variable=ERROR_VARIABLE):
                (model_data["mesh_elements"]): the number of values per
                element is its number of nodes (elementnodevariable, nodes in
                the order of <elem nodes>).
-    Returns {eid: eta_e}; {} if the field is missing (error estimator off,
-    or route 'tabel').
+    Returns {eid: eta_e}; {} if the field is missing (error estimator
+    off).
     """
     n_nodes = dict((e[0], len(e[2])) for e in elements)
     ids_chunks, val_chunks = None, None

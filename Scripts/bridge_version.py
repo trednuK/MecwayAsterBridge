@@ -150,8 +150,8 @@ def aster_tested(version):
 def check_mecway(liml_path):
     """
     Logs the Mecway version of the .liml (INFO) and a WARNING if it is
-    not tested. liml_path: the saved model, or in route 'tabel' with
-    mw.liml_text() the copy of the open model (bridge_liml_text): then the
+    not tested. liml_path: the saved model, or with mw.liml_text() the
+    copy of the open model (bridge_liml_text): then the
     version of the running Mecway, not of the one that last saved the
     file. Returns (version or None, message for the user or None).
     """

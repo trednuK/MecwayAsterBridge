@@ -209,16 +209,12 @@ def test_decisions(tmp):
           blt.saved_path(None) is None and blt.saved_path("") is None and
           blt.saved_path("Untitled") is None)
     check("wants_snapshot: no API -> save first (Mecway 33-35)",
-          not blt.wants_snapshot(False, "tabel", saved) and
-          not blt.wants_snapshot(False, "liml", saved))
-    check("wants_snapshot: route tabel, saved and untitled",
-          blt.wants_snapshot(True, "tabel", saved) and
-          blt.wants_snapshot(True, "tabel", None) and
-          blt.wants_snapshot(True, "tabel", "Untitled"))
-    check("wants_snapshot: route liml only for a saved model",
-          blt.wants_snapshot(True, "liml", saved) and
-          not blt.wants_snapshot(True, "liml", None) and
-          not blt.wants_snapshot(True, "liml", "Untitled"))
+          not blt.wants_snapshot(False, saved))
+    check("wants_snapshot: a saved model with the API",
+          blt.wants_snapshot(True, saved))
+    check("wants_snapshot: untitled -> save first",
+          not blt.wants_snapshot(True, None) and
+          not blt.wants_snapshot(True, "Untitled"))
     check("save_problem: folder gone",
           blt.save_problem(os.path.join(tmp, "gone", "m.liml")) == "folder")
     check("save_problem: new file in an existing folder",

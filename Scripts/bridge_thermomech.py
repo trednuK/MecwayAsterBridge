@@ -1081,8 +1081,6 @@ def export_block(work_dir, model_data, fields):
     (heat flux); same NUME_ORDRE (ARCHIVAGE on the thermal times)."""
     import bridge_to_aster as bta
     import os
-    if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
-        return "#-- no export (result_route is not 'liml') --\n"
     scripts = os.path.dirname(os.path.abspath(__file__))
     return (
         "# Results in Mecway's own format (mechanical + thermal)\n"

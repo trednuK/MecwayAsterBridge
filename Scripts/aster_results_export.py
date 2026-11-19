@@ -139,12 +139,11 @@ def tr(nl, en):
 # ==========================================
 # FIELD TABLE
 #
-# Mirror of RESULT_FIELD_SPECS / STRUCT_FIELD_SPECS in
-# bridge_from_aster.py: (group, result, Code-Aster field, component,
-# Mecway name, kind).
+# Per result group of RESULT_FIELD_SPECS in bridge_from_aster.py:
+# (group, result, Code-Aster field, component, Mecway name, kind).
 #   group     : key from RESULT_FIELD_SPECS (= CONFIG_BRIDGE
 #               analyses[...]["fields"]); shell/beam fields under their
-#               parent field as in STRUCT_FIELD_SPECS.
+#               parent field.
 #   result    : "res" or a key from extra_results (res_sup, ...).
 #   kind      : KNOOP      nodal field (..._NOEU, DEPL, VITE, REAC_NODA)
 #               ELNO_MIN / ELNO_MAX  ELNO field, per node min/max over the

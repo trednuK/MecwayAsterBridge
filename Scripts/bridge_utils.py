@@ -62,11 +62,6 @@ CONFIG_BRIDGE = {
     # First run a Mecway solve as a check for model errors
     # (mw.solve(); the Mecway API documents no return value).
     "mecway_solve_first": False,
-    # Results to Mecway: "liml" = Code-Aster writes Mecway's own
-    # result format (all time steps, small file) and the bridge reopens
-    # the .liml; "tabel" = POST_RELEVE_T tables + set_variable()
-    # (node values only, existing Mecway time steps only).
-    "result_route":    "liml",
     # Open the convergence and message window (aster_convergence_monitor.py,
     # separate window) as soon as Code-Aster starts; for a linear analysis
     # the statistics of the linear solver, the messages and the diagnosis.
@@ -893,6 +888,34 @@ def work_dir_path():
     return resolve_work_dir(CONFIG_BRIDGE.get("work_dir"),
                             CONFIG_BRIDGE.get("work_dir_beside_model"),
                             _MODEL["path"])
+
+
+_LEGACY_ROUTE = {"noted": False}
+
+
+def legacy_route_note(config=None):
+    """
+    The result route 'tabel' was removed in V2026.15; results always go
+    through the .liml. A bridge_utils.py kept from an older bridge may still
+    hold "result_route": "tabel" (the start screen no longer shows or
+    rewrites that line). Returns, once per Mecway session, the WARNING
+    text for such a value (anything but "liml"), else "". config: the
+    settings dict (default CONFIG_BRIDGE).
+    """
+    value = (CONFIG_BRIDGE if config is None else config).get(
+        "result_route", "liml")
+    if value == "liml" or _LEGACY_ROUTE["noted"]:
+        return u""
+    _LEGACY_ROUTE["noted"] = True
+    return tr(u"WARNING: De resultaatroute '{0}' bestaat niet meer (sinds "
+              u"V2026.15); de resultaten gaan via de .liml. Haal de regel "
+              u"\"result_route\" weg uit bridge_utils.py. Resultaten... "
+              u"haalt resultaten uit de .liml en laadt ze later weer in.",
+              u"WARNING: The result route '{0}' no longer exists (since "
+              u"V2026.15); the results go through the .liml. Remove the line "
+              u"\"result_route\" from bridge_utils.py. Results... takes "
+              u"results out of the .liml and loads them again later.").format(
+                  value)
 
 
 def exe_aster_path():

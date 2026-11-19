@@ -96,8 +96,6 @@ GENERAL_SPECS = [
      "configuration_choice", None),
     ("mecway_solve_first", ("Eerst Mecway-solve ter controle",
                             "Mecway solve first as a check"), "bool", None),
-    ("result_route", ("Resultaten naar Mecway", "Results to Mecway"),
-     "choice", ("liml", "tabel")),
     ("convergence_monitor", ("Convergentie- en meldingenscherm",
                              "Convergence and messages window"),
      "bool", None),
@@ -503,7 +501,7 @@ ANALYSIS_SPECS = [
 SECTION_BEFORE = {
     "language": ("Taal en installatie", "Language and installation"),
     "active_analysis": ("Analyse", "Analysis"),
-    "result_route": ("Resultaten en weergave", "Results and display"),
+    "convergence_monitor": ("Resultaten en weergave", "Results and display"),
     "elem_hex8": ("Elementformulering", "Element formulation"),
     "fields": ("Resultaten", "Results"),
     "time_limit": ("Code-Aster-run", "Code-Aster run"),
@@ -555,7 +553,7 @@ _SCHEMES = {"dyna_impl_3d": ("HHT", "NEWMARK"),
             "dyna_expl_3d": ("DIFF_CENT", "TCHAMWA")}
 
 _GENERAL_DEFAULTS = {"language": "en", "configuration": "auto",
-                     "mecway_solve_first": False, "result_route": "liml",
+                     "mecway_solve_first": False,
                      "convergence_monitor": True, "med_export": False,
                      "keep_base": False, "keep_base_runs": 3,
                      "vtu_export": False,
@@ -2436,12 +2434,11 @@ def _show_winforms_dialog(current, status=u"", model=None):
             ok_btn = add_button(tr("Starten", "Start"), 130, on_ok, tr(
                 "Instellingen opslaan, het model opslaan en Code-Aster "
                 "starten (Mecway 36 en later: het model wordt pas "
-                "opgeslagen als de resultaten erin gaan, met route "
-                "'tabel' niet). Na de run komt dit venster terug.",
+                "opgeslagen als de resultaten erin gaan). Na de run komt "
+                "dit venster terug.",
                 "Save the settings, save the model and start Code-Aster "
                 "(Mecway 36 and later: the model is saved only when the "
-                "results go into it, not with route 'tabel'). This window "
-                "returns after the run."),
+                "results go into it). This window returns after the run."),
                 right=True,
                 primary=True)
             cancel_btn = add_button(tr("Sluiten", "Close"), 100,

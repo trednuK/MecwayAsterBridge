@@ -103,7 +103,7 @@ S7, S8, S5, S9).
 | S46 | Review all KNOWN_BUGS: per item reproduce with the current versions (Code-Aster 17.4, Mecway 35), check whether it is real or a wrong setting/assumption of the test (as KNOWN_BUGS 95 turned out), then fix or document; priority of the user (11 Nov 2026) | in progress | – | 74 items in four groups; work per group, headless only; branch `stap-S46`, progress table in §S46 |
 | S45b | Results after a time limit, phases 2 and 3 of S45 (KNOWN_BUGS 137): extra time after `CALC_MODES` in modal, spectrum, cyclic and acoustic (phase 2, D2), the thermal chains (thermomechanical D7, filler material D9, HOMARD D10), the message for a solve without intermediate results (D6); partial results of `DYNA_VIBRA` (phase 3, D5, after a measurement) | later | S45 | **low priority** (user, 13 Nov 2026): after S44 and the S46 KNOWN_BUGS sweep; the value there is mostly a clearer message, and raising *Time limit run_aster* works too |
 | S47 | Bonded shell faces with the distance between the mid-surfaces (lever arm), KNOWN_BUGS 128 | later | S46 | asked 13 Nov 2026: interesting, but not a formulation of the solver manuals, so only with explicit documentation (NL+EN, theory and limits) and a WARNING whenever it is applied; until then a WARNING for shell faces bonded face to face and for a shell face bonded to a solid face (S46, `bridge_mesh._warn_bonded_offset`); see §S47 |
-| S48 | Mecway 36: support it (§2/§5/§6 of After_an_update) and use its new scripting API (`mw.liml_text()`, `solution.set_element_node_variable()`) | in progress (plan reviewed 17 Nov 2026; item 2 done 18 Nov 2026; items 3 and 4 built 18 Nov 2026, user decisions open); API items: target V2026.15, after V2026.14 (user, 17 Nov 2026) | V2026.14 published (it brings the Mecway 36 support) | see §S48; Mecway 36 support (item 2) is done for V2026.14; then the API items one by one, starting with `mw.liml_text()`, then `solution.set_element_node_variable()`, each with its own reviewed plan |
+| S48 | Mecway 36: support it (§2/§5/§6 of After_an_update) and use its new scripting API (`mw.liml_text()`, `solution.set_element_node_variable()`) | in progress (plan reviewed 17 Nov 2026; item 2 done 18 Nov 2026; item 3 done 19 Nov 2026; item 4 dropped 19 Nov 2026 with the removal of route `tabel`); API items: target V2026.15, after V2026.14 (user, 17 Nov 2026) | V2026.14 published (it brings the Mecway 36 support) | see §S48; Mecway 36 support (item 2) is done for V2026.14; then the API items one by one, starting with `mw.liml_text()`, then `solution.set_element_node_variable()`, each with its own reviewed plan |
 | – | Rotordynamics | later | – | not relevant yet (user, 11 Nov 2026) |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |
@@ -2898,7 +2898,16 @@ hidden Mecway 36 runs (VM-01a route `liml`: success, launcher missing, without t
 Code-Aster error with and without the Saved monitor; route `tabel` saved and untitled; LS-20a with
 three configurations twice). Next (user, 19 Nov 2026): phase out route `tabel`; results must stay
 storable outside the `.liml` and reloadable (Results...).
-**Status of item 4 (18 Nov 2026, plan reviewed twice by Fable):** built the non-optional part with
+**Route `tabel` removed (19 Nov 2026, user: "Remove in V2026.15"; plan reviewed by Fable):** the setting
+`result_route`, the table code (`bridge_from_aster.AsterToMecway_results` and helpers, the POST_RELEVE_T
+builders in `bridge_to_aster`, the `.resu` line), `bridge_element_node.py` (item 4) and every route guard
+in the feature modules are gone; a kept `"result_route"` other than `liml` gives one WARNING
+(`bridge_utils.legacy_route_note`). The generated `.comm` is byte-identical (regression_scope: 0
+different; template and export-block comments that still name the route are kept on purpose and
+reworded in a later step with `check_code_unchanged.py`). Untitled models are saved first again (the
+untitled case of route `tabel` is gone). KNOWN_BUGS 7 and 148 removed. Test: `tests/test_route_removed.py`.
+**Status of item 4 (18 Nov 2026, plan reviewed twice by Fable; dropped 19 Nov 2026 with route
+`tabel`, the code is gone):** built the non-optional part with
 `bridge_element_node.py`: route `tabel` replaces Mecway's own values per element node (stresses,
 strains, von Mises, shell layers) by Code-Aster's node values on the elements Mecway had them for
 (decided by `element_node_value`, so 2D works too); cleared shell components are cleared per element

@@ -2,28 +2,29 @@
 
 ## Unreleased
 
-- **Mecway 36: route `tabel` replaces Mecway's own stresses per element node** (KNOWN_BUGS 7).
-  Route `tabel` wrote Code-Aster's results per node only, and Mecway kept showing the stresses
-  per element node of its own solve. With Mecway's new `solution.set_element_node_variable()`
-  the values per element node of stresses, strains, von Mises and the shell layers now become
-  Code-Aster's node values too (only on elements that Mecway had them for). Not done, with a
-  WARNING: a Mecway without that function (older versions: NOT verified), a solution with time
-  steps or modes (so not Nonlinear static), a section view in the solution, a value on a node
-  outside those elements.
-  Beam forces are not touched. Route `liml` (the default) has Code-Aster's own values per
-  element. Verified headless in Mecway 36, not yet in the Mecway window.
+- **Result route `tabel` removed.** The results now always go through the `.liml`:
+  Code-Aster writes Mecway's own results and the bridge puts them into the model (all time
+  steps or modes, values per element, every analysis type). The old table route (POST_RELEVE_T
+  tables in a `.resu`, node values of the last time only, loaded into Mecway's own solution)
+  needed a Mecway solve first, worked only for static analyses and showed Mecway's own values
+  per element node and beam forces next to Code-Aster's node values (KNOWN_BUGS 7 and 148,
+  now gone). The setting *Results to Mecway* is gone from the start screen; a `bridge_utils.py`
+  kept from an older bridge with `"result_route": "tabel"` gives one WARNING and the run goes
+  through the `.liml` (remove that line). Results stay storable apart from the model:
+  *Results...* takes them out of the `.liml` and loads any run again later. The generated
+  `.comm` of a run is unchanged.
 
 - **Mecway 36: a run and *Show section* read the open model without saving it first.**
   With Mecway's new `mw.liml_text()` the bridge reads a copy of the open model
   (`<model>_<run-id>_model.liml` in the work folder, which the Code-Aster job reads too, e.g.
-  for fatigue). Route `liml` saves the `.liml` only right before the results go into it, so
-  a run that ends without results (an error, Stop) leaves the file as it was; route `tabel`
-  does not save it at all, also for a model that was never saved (route `liml` still saves
-  such a model first). In route `liml` a read-only model or a folder that is gone still
-  stops the run before Code-Aster. The copy is removed after a run without errors whose
-  results were loaded, and stays otherwise (the `.comm` reads it when run again by hand). Unsaved changes stay unsaved during the run: save the model yourself before a long
-  run. *Show section* no longer saves either. Older Mecway versions (no `mw.liml_text()`)
-  behave as before. Verified headless in Mecway 36, not yet in the Mecway window.
+  for fatigue) and saves the `.liml` only right before the results go into it, so a run that
+  ends without results (an error, Stop) leaves the file as it was. A model that was never
+  saved is still saved first. A read-only model or a folder that is gone still stops the run
+  before Code-Aster. The copy is removed after a run without errors whose results were
+  loaded, and stays otherwise (the `.comm` reads it when run again by hand). Unsaved changes
+  stay unsaved during the run: save the model yourself before a long run. *Show section* no
+  longer saves either. Older Mecway versions (no `mw.liml_text()`) behave as before.
+  Verified headless in Mecway 36, not yet in the Mecway window.
 
 - **CCX keyword modifications** (Mecway's *CCX keyword*, e.g. `ADJUST` on `*CONTACT PAIR`)
   are CalculiX input: the bridge now reports them, a WARNING per active modification and one

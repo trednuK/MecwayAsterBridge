@@ -847,105 +847,14 @@ check("read_step: shell values in a list per node",
 
 
 # ==========================================
-# TABLE ROUTE
+# EMPTY MECWAY SOLUTION (mecway_solve_first: no comparison)
 # ==========================================
-class Point(object):
-    def __init__(self, xyz):
-        self.x, self.y, self.z = xyz
-
-
-class FakeMw(object):
+class FakeSolution(object):
     def __init__(self, nodes):
         self.xyz = nodes
 
     def all_nodes(self):
         return sorted(self.xyz)
-
-    def node(self, nid):
-        return Point(self.xyz[nid])
-
-    def set_solution_active(self):
-        pass
-
-    def display(self):
-        pass
-
-
-class FakeSolution(object):
-    def __init__(self, nodes, shells=None, name="Doorsnede", old=None):
-        self.xyz = nodes
-        self.shells = shells
-        self.name = name
-        self.old = old or {}
-        self.written = {}
-
-    def all_nodes(self):
-        return sorted(self.xyz)
-
-    def node(self, nid):
-        return Point(self.xyz[nid])
-
-    def components(self):
-        return ["Beam"] + ([self.name] if self.shells else [])
-
-    def component_elements(self, name):
-        return [100] if name == self.name else [1]
-
-    def nodes(self, eid):
-        return self.shells if eid == 100 else [1, 2]
-
-    def node_value(self, name, nid, time_step=None):
-        if name not in self.old:
-            raise SystemError("Solution variable does not exist")
-        return self.old[name].get(nid)
-
-    def set_variable(self, name, values, time_step=None, mode=None):
-        self.written[name] = list(values)
-
-
-NODES = {1: (0.0, 0.0, 0.0), 2: (1.0, 0.0, 0.0)}
-WITH = dict(NODES)
-WITH.update({3: (0.0, 0.1, 0.0), 4: (1.0, 0.1, 0.0)})
-mw = FakeMw(NODES)
-check("table: plain solution", bridge_from_aster.check_solution_mesh(
-    mw, FakeSolution(NODES)) == (True, ""))
-check("table: shells tolerated", bridge_from_aster.check_solution_mesh(
-    mw, FakeSolution(WITH, [3, 4])) == (True, ""))
-check("table: suffix of the elset name",
-      bridge_from_aster.check_solution_mesh(
-          mw, FakeSolution(WITH, [3, 4], "Doorsnede_1")) == (True, ""))
-check("table: other extra nodes still a mismatch",
-      not bridge_from_aster.check_solution_mesh(
-          mw, FakeSolution(WITH))[0])
-check("table: extra nodes in an other component still a mismatch",
-      not bridge_from_aster.check_solution_mesh(
-          mw, FakeSolution(WITH, [3, 4], "Doorsnede2"))[0])
-check("table: only part of the extra nodes in the shells",
-      not bridge_from_aster.check_solution_mesh(
-          mw, FakeSolution(WITH, [3]))[0])
-FEWER = {1: (0.0, 0.0, 0.0)}
-check("table: too few nodes still a mismatch",
-      not bridge_from_aster.check_solution_mesh(
-          mw, FakeSolution(FEWER))[0])
-check("table: too few nodes keep the node-count text",
-      "predates" in bridge_from_aster.check_solution_mesh(
-          mw, FakeSolution(FEWER))[1])
-
-# A failed Mecway solve leaves a solution without nodes: its own reason,
-# not "predates the last change to the model".
-NO_SOL = bridge_from_aster.empty_solution_reason(None)
-check("table: empty reason for a normal solution",
-      bridge_from_aster.empty_solution_reason(FakeSolution(NODES)) == "")
-check("table: no solution has a reason", bool(NO_SOL) and
-      "predates" not in NO_SOL)
-check("table: no solution in check_solution_mesh",
-      bridge_from_aster.check_solution_mesh(mw, None) == (False, NO_SOL))
-check("table: solution without nodes",
-      bridge_from_aster.check_solution_mesh(mw, FakeSolution({}))
-      == (False, NO_SOL))
-SOLVED = bridge_from_aster.empty_solution_reason(FakeSolution({}), True)
-check("table: own text right after mw.solve()",
-      SOLVED and SOLVED != NO_SOL and "without an error" in SOLVED)
 
 
 class UnreadableSolution(FakeSolution):
@@ -953,41 +862,19 @@ class UnreadableSolution(FakeSolution):
         raise SystemError("not readable")
 
 
-check("table: unreadable nodes are not 'empty'",
+# A failed Mecway solve leaves a solution without nodes: its own reason.
+NO_SOL = bridge_from_aster.empty_solution_reason(None)
+check("empty reason for a normal solution",
+      bridge_from_aster.empty_solution_reason(
+          FakeSolution({1: (0.0, 0.0, 0.0)})) == "")
+check("no solution has a reason", bool(NO_SOL))
+check("solution without nodes: the same reason",
+      bridge_from_aster.empty_solution_reason(FakeSolution({})) == NO_SOL)
+SOLVED = bridge_from_aster.empty_solution_reason(FakeSolution({}), True)
+check("own text right after mw.solve()",
+      SOLVED and SOLVED != NO_SOL and "without an error" in SOLVED)
+check("unreadable nodes are not 'empty'",
       bridge_from_aster.empty_solution_reason(UnreadableSolution({})) == "")
-check("table: unreadable nodes keep their own reason",
-      "Cannot read the nodes of the solution" in
-      bridge_from_aster.check_solution_mesh(mw, UnreadableSolution({}))[1])
-
-RESU = ("INTITULE NOEUD DX DY DZ DRX DRY DRZ\n"
-        "displacements 1 0.0 0.0 0.0 0.0 0.0 0.0\n"
-        "displacements 2 1.0 2.0 2.0 0.1 0.2 0.3\n")
-f = _builtin_open(os.path.join(TMP, "t.resu"), "w")
-f.write(RESU)
-f.close()
-del LOG[:]
-plain = FakeSolution(NODES)
-check("table: plain run loads", bridge_from_aster.AsterToMecway_results(
-    TMP, "t.resu", mw, plain))
-check("table: plain run writes model values", plain.written["displx"] ==
-      [0.0, 1.0] and plain.written["displmag"] == [0.0, 3.0] and
-      not [m for m in LOG if "section view" in m])
-OLD = {"displx": {3: 5.0, 4: 6.0}, "disply": {3: 7.0, 4: 8.0},
-       "displz": {3: 9.0, 4: 1.5}, "displmag": {3: 11.0, 4: 12.0},
-       "rotx": {3: 0.5, 4: 0.6}}
-del LOG[:]
-fake = FakeSolution(WITH, [3, 4], old=OLD)
-check("table: run with shells loads", bridge_from_aster.AsterToMecway_results(
-    TMP, "t.resu", mw, fake))
-check("table: shell values stay", fake.written["displx"] ==
-      [0.0, 1.0, 5.0, 6.0] and fake.written["displmag"] ==
-      [0.0, 3.0, 11.0, 12.0] and fake.written["rotx"] == [0.0, 0.1, 0.5, 0.6])
-check("table: no None over a value of a shell", all(
-    v is not None for name in OLD for v in fake.written[name]))
-check("table: variable without an old value: None, no error",
-      fake.written["roty"] == [0.0, 0.2, None, None])
-check("table: the user hears that the shells are old",
-      len([m for m in LOG if "previous calculation" in m]) == 1)
 
 # ==========================================
 # A LARGE FILE IS NOT LOADED WHOLE

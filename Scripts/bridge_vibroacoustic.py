@@ -645,12 +645,6 @@ def build_vibroacoustic_modes(work_dir, model_data, msh_path, resu_name,
     """
     import bridge_to_aster as bta
     log("--- Generating Aster Files (CALC_MODES vibro-akoestisch) ---")
-    if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
-        log(tr("ERROR: De resultaatroute 'tabel' werkt niet voor modale "
-               "analyses. Kies 'liml' (pagina Algemeen).",
-               "ERROR: The result route 'tabel' does not work for modal "
-               "analyses. Choose 'liml' (General page)."))
-        return None
     vib = model_data.get("vibro")
     if not vib:
         log(tr("ERROR: Vibro-akoestiek: het model heeft geen fluidum. Geef "

@@ -2637,12 +2637,6 @@ def build_thermal(work_dir, model_data, msh_path, resu_name, analysis):
     """
     import bridge_to_aster as bta
     log("--- Generating Aster Files (thermisch) ---")
-    if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
-        log(tr("ERROR: Thermische analyses werken alleen met result_route "
-               "'liml' (resultaten in Mecway's eigen formaat).",
-               "ERROR: Thermal analyses only work with result_route "
-               "'liml' (results in Mecway's own format)."))
-        return None
     th = model_data.get("thermal_data")
     if th is None:
         log(tr("ERROR: Geen thermische gegevens gelezen; is het Mecway-"

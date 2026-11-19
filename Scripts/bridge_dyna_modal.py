@@ -159,12 +159,6 @@ def _check_model(model_data, analysis):
                "ERROR: Thermal strain (Thermal stress) is not translated in "
                "the mode superposition analysis. Use dyna_impl_3d."))
         ok = False
-    if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
-        log(tr("ERROR: De resultaatroute 'tabel' werkt niet voor de respons "
-               "op modale basis. Kies 'liml' (pagina Algemeen).",
-               "ERROR: The result route 'tabel' does not work for the mode "
-               "superposition analysis. Choose 'liml' (General page)."))
-        ok = False
     if model_data.get("analysis_type") == "D30" and not model_data.get(
             "mode_superposition"):
         log(tr("WARNING: Het Mecway-model rekent Dynamic Response zonder Mode "

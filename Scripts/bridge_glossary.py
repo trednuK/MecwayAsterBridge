@@ -850,18 +850,14 @@ GLOSSARY = OrderedDict([
                             u"Summary of a Code-Aster run "
                             u"(<model>_<run_id>_aster_summary.txt in the work "
                             u"folder): errors, alarms, steps, timings.")),
-    ("liml", ("file", u"Resultaatroute: Code-Aster schrijft Mecway's eigen "
-              u"resultaten; de bridge zet ze in de .liml (alle "
-              u"tijdstappen of modes). Standaard.",
-              u"Result route: Code-Aster writes Mecway's own results; the "
-              u"bridge puts them into the .liml (all time steps or modes). "
-              u"Default.")),
-    ("tabel", ("file", u"Resultaatroute (oud): tabellen in een .resu, alleen "
-               u"knoopwaarden van het laatste tijdstip, in de bestaande "
-               u"Mecway-solution. Alleen statisch en niet-lineair statisch.",
-               u"Result route (old): tables in a .resu, nodal values of the "
-               u"last time only, into the existing Mecway solution. Static "
-               u"and nonlinear static only.")),
+    ("liml", ("file", u"Hoe de resultaten in Mecway komen: Code-Aster "
+              u"schrijft Mecway's eigen resultaten; de bridge zet ze in de "
+              u".liml (alle tijdstappen of modes). Resultaten... haalt ze er "
+              u"weer uit en laadt ze later opnieuw.",
+              u"How the results get into Mecway: Code-Aster writes Mecway's "
+              u"own results; the bridge puts them into the .liml (all time "
+              u"steps or modes). Results... takes them out again and loads "
+              u"them later.")),
     (".liml", ("file", u"Mecway-modelbestand (XML), ook met de resultaten.",
                u"Mecway model file (XML), also with the results.")),
     (".comm", ("file", u"Code-Aster-invoer (Python): wat er berekend wordt.",
@@ -1183,12 +1179,6 @@ SETTING_HELP = {
                            u"the bridge then compares the results (CSV in "
                            u"the work folder). Off by default: Mecway's solve can "
                            u"take long."),
-    "result_route": (u"Hoe de resultaten in Mecway komen; 'tabel' alleen "
-                     u"bij statisch en niet-lineair statisch. Standaard liml "
-                     u"(alle tijdstappen of modes, klein bestand).",
-                     u"How the results get into Mecway; 'tabel' only for "
-                     u"static and nonlinear static. Default liml (all time "
-                     u"steps or modes, small file)."),
     "aster_summary": (u"Na elke run (ook een mislukte of gestopte) schrijft "
                       u"de bridge een samenvatting van de Code-Aster-uitvoer "
                       u"naar <model>_<run_id>_aster_summary.txt in de "

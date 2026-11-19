@@ -101,23 +101,20 @@ _ALARM_HINTS = {
         u"duplicate cells (same nodes). Normal in vibroacoustics for a shell "
         u"on an air or fluid face (shell and coupling face are separate "
         u"cells); otherwise: check the mesh for duplicate elements."),
-    # POST_RELEVE_T of SIGM_NOEU (mixed models) or EFGE_NOEU (beam_forces
-    # in result route 'tabel') without REPERE: Code-Aster reads them in the
-    # local system of the elements (bridge_to_aster._build_postreleve_block;
-    # seen in Mecway 35 GUI tests, 17 Nov 2026, beam forces equal to Mecway).
+    # POST_RELEVE_T of a field of beam or shell elements without REPERE:
+    # Code-Aster reads it in the local system of the elements. The bridge
+    # itself writes no POST_RELEVE_T (since V2026.15); this comes from the
+    # user's own #ASTER-POST lines (seen with the former table route in
+    # Mecway 35 GUI tests, 17 Nov 2026).
     "POSTRELE_70": (
-        u"route tabel: de snedekrachten van balken worden in het lokale "
-        u"assenstelsel van de balk gelezen, zoals bedoeld; in een gemengd "
-        u"model blijven de spanningen van de volume-elementen globaal. "
-        u"Onschuldig. Waar de waarden in een knoop verspringen (een hoek, een "
-        u"aansluiting, een puntlast of steunpunt op de balk) is de "
-        u"knoopwaarde een gemiddelde (niet gemeten): gebruik daar route liml.",
-        u"route tabel: the section forces of beams are read in the local "
-        u"system of the beam, as intended; in a mixed model the stresses of "
-        u"the solid elements stay global. Harmless. Where the values jump at "
-        u"a node (a corner, a junction, a point load or support on the beam) "
-        u"the node value is an average (not measured): use route liml "
-        u"there."),
+        u"je eigen POST_RELEVE_T (#ASTER-POST) leest een veld van balk- of "
+        u"schaalelementen in het lokale assenstelsel van die elementen; geef "
+        u"REPERE op als je globale waarden wilt. De resultaten van de bridge "
+        u"in Mecway raakt dit niet.",
+        u"your own POST_RELEVE_T (#ASTER-POST) reads a field of beam or "
+        u"shell elements in the local system of those elements; give REPERE "
+        u"if you want global values. The bridge's results in Mecway are not "
+        u"affected."),
     # Nodes projected onto distant cells (PROJ_CHAMP, LIAISON_MAIL); the
     # alarm fires beyond 1/10 of the cell size (text of 17.4), so also for a
     # correct shell/solid tie at half the shell thickness. A real gap of a
@@ -1442,8 +1439,8 @@ def run_AsterSolver(export_path, work_dir, resu_name, mw, wait=None):
     export_path : str  - Path to the study.export file written by
                          bridge_to_aster.py.
     work_dir    : str  - Work folder (cwd for the subprocess).
-    resu_name   : str  - File name of the .resu file (unique per run
-                         through the timestamp; only used for the log).
+    resu_name   : str  - Not used (the .resu of the result route 'tabel',
+                         removed in V2026.15); kept for the callers.
     mw          : obj  - Mecway API object for mw.message() ("confirm").
     wait        : function(AsterJob) -> bool, or None - waits until the job
                   has ended ("auto"); default the status window
@@ -1466,13 +1463,6 @@ def run_AsterSolver(export_path, work_dir, resu_name, mw, wait=None):
                "ERROR: Code-Aster launcher not found: {0} (setting on the "
                "General page).").format(exe))
         return False
-
-    # The .resu file is NOT created beforehand: if it is missing after the
-    # run, AsterToMecway_results() reports that Code-Aster wrote nothing.
-    # Only the table route writes a .resu (bridge_to_aster.
-    # _export_result_lines); the liml route a result fragment.
-    if CONFIG_BRIDGE.get("result_route", "liml") == "tabel":
-        log("INFO: Expected result file: {0}".format(resu_name))
 
     try:
         console_path = os.path.join(work_dir, run_name(CONSOLE_SUFFIX))

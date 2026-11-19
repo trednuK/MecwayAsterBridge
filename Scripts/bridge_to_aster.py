@@ -27,8 +27,9 @@
 #   {solveur_ref}          "    SOLVEUR=_F(METHODE=.., ..),\n    INFO=2,\n"
 #                          (_build_lin_solveur_ref, setting lin_solver)
 #   {calc_champ_block}     CALC_CHAMP (depends on element type)
-#   {postreleve_block}     POST_RELEVE_T tables
-#   {impr_table_block}     IMPR_TABLE calls
+#   {postreleve_block}     a comment line (the tables of the removed route
+#                          'tabel')
+#   {impr_table_block}     the result export (aster_results_export)
 #   {impr_resu_block}      IMPR_RESU MED (only with "med_export")
 #
 # Compatible with IronPython 2.7.9.
@@ -601,19 +602,6 @@ def _resolve_line_quad(model_data):
         log("INFO: LINE_QUAD ({0}): linear cells become quadratic; "
             "results in Mecway on the corner nodes.".format(
                 "all cells" if tout else ", ".join(shell_lq)))
-        if CONFIG_BRIDGE.get("result_route", "liml") == "tabel":
-            # The "liml" route distributes the reactions of the mid-side
-            # nodes over the corner nodes (aster_results_export.
-            # _reaction_lumping); the tables (GROUP_NO='all_nodes') only
-            # contain corner nodes.
-            log(tr("WARNING: LINE_QUAD met result_route 'tabel': de reacties "
-                   "van de nieuwe middenknopen ontbreken in Mecway (som van "
-                   "de reacties klopt niet). Kies 'liml' bij Resultaten naar "
-                   "Mecway.",
-                   "WARNING: LINE_QUAD with result_route 'tabel': the "
-                   "reactions of the new midside nodes are missing in "
-                   "Mecway (the sum of the reactions is wrong). Choose "
-                   "'liml' under Results to Mecway."))
 
 
 def _line_quad_block(model_data):
@@ -767,20 +755,6 @@ def _build_defigroup_block(model_data):
         crea_entries.append("        _F(NOM='{0}', NOEUD={1}),".format(
             name, _fmt_seq(["'N{0}'".format(n) for n in nids],
                            indent="            ")))
-    # Node groups for result tables with GROUP_MA (see _postreleve).
-    # Here, before the solve: DEFI_GROUP reuse=mesh after MECA_STATIQUE
-    # gave in Code-Aster 17.4 (Windows) "Windows fatal exception: access
-    # violation" (seen in Mecway, model with 6 beam groups). Only for the
-    # 'tabel' route: with 'liml' there are no tables (_results_route).
-    if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
-        for table in _result_tables(model_data):
-            if table[5]:
-                for name, group in zip(
-                        _table_node_groups(table[0], table[5]), table[5]):
-                    crea_entries.append(
-                        "        _F(NOM='{0}', GROUP_MA='{1}'),".format(
-                            name, group))
-
     # model_data["group_ma_unions"] = {name: [groups]}: merged contact
     # faces (bridge_mesh._merge_contact_zones); here one group
     # (DEFI_GROUP CREA_GROUP_MA UNION, catalogue defi_group.py v17.4.0).
@@ -1310,15 +1284,6 @@ _BEAM_MODELISATIONS = ("POU_D_E", "POU_D_T", _GD_BEAM, _WARP_BEAM)
 # (TSEC=0) Code-Aster gives alarm ELEMENTS4_4 and no values.
 _SIPM_SECTIONS = ("RECTANGLE", "CERCLE")
 
-# POST_RELEVE_T reads INTITULE into a character(len=16) (rvtecn.F90 and
-# others, v17.4.0); longer names are truncated.
-ASTER_INTITULE_MAX = 16
-
-
-def _intitule(name):
-    """INTITULE as Code-Aster writes it in the table (max. 16 characters)."""
-    return name[:ASTER_INTITULE_MAX]
-
 
 def _fmt_groups(groups):
     """('A', 'B',) - tuple notation, also valid for a single group."""
@@ -1439,10 +1404,7 @@ def _shell_forces_warning(axis=False):
     """WARNING (once per run) that the result field shell_forces is on in a
     model with shells: what it adds, its effect and how to switch it off.
     Effect measured on flat static plates with 3500 and 12000 quad4 and
-    2000 quad8 elements (docs/Handleiding.md sec. 4.1). Only route 'liml' (route 'tabel'
-    reports the field as not available, _build_postreleve_block)."""
-    if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
-        return
+    2000 quad8 elements (docs/Handleiding.md sec. 4.1)."""
     run = run_name("")          # <model>_<run_id>, outside a run "study"
     if run in _SHELL_FORCES_WARNED:
         return
@@ -1828,7 +1790,7 @@ def _warping_reaction_block(model_data, excit, cara, analysis):
     keeps the other fields: EFGE_ELNO of STAT_NON_LINE is constant per
     element under a distributed load (975 N against 1000 N at a clamp).
     The field goes into `res` as in bridge_xfem.result_block, so that the
-    export, the table route and print_static_check read the right one.
+    export and print_static_check read the right one.
     """
     return (
         "# POU_D_TG: reactions from one elastic step of STAT_NON_LINE\n"
@@ -1875,7 +1837,7 @@ def _build_calc_champ_block(model_data, with_plastic=False, reactions=True,
         'SUP', 'MOY' and 'INF') -> SIEQ_ELNO -> SIEQ_NOEU. Same order
         as test case ssls131a (DKT). COQUE_NCOU is 1 by default (catalogue
         AFFE_CARA_ELEM). In Mecway: vonmisesu1 / vonmisesm / vonmisesb
-        (see STRUCT_FIELD_SPECS in bridge_from_aster.py). Only the von
+        (aster_results_export FIELD_TABLE). Only the von
         Mises stress goes to Mecway: the tensor components of shells
         are in Code-Aster's local shell coordinate system.
 
@@ -1899,12 +1861,12 @@ def _build_calc_champ_block(model_data, with_plastic=False, reactions=True,
             "",
         ]
 
-    # result_route "liml": also stresses per element node (Mecway's
+    # Also stresses per element node (Mecway's
     # contour "per element"). aster_results_export writes SIGM_ELNO and
     # SIEQ_ELNO of volume elements as elementnodevariable. Request
     # SIGM_ELNO ONCE over volume + shells, otherwise POST_CHAMP EXTR_COQUE
     # fails later (CALCULEL2_15; see the header of aster_results_export).
-    elno = bool(g3d) and CONFIG_BRIDGE.get("result_route", "liml") == "liml"
+    elno = bool(g3d)
     if elno:
         out += [
             "# Stresses per element node for Mecway (result_route 'liml').",
@@ -2269,162 +2231,6 @@ def _warn_overlapping_faces(model_data, merged):
                        kw, ", ".join(sorted(clash))))
 
 
-def _table_node_groups(concept, group_ma):
-    """
-    Node groups for a table with GROUP_MA: one per mailles group,
-    e.g. ['tab_sipm_n1', 'tab_sipm_n2']. One group per _F, because
-    CREA_GROUP_NO with GROUP_MA=(several groups) gave in Code-Aster 17.4
-    <EXCEPTION> JEVEUX_10 ("Le nom demande existe deja dans la base
-    &&SSCGNO.LITMP2"), seen in Mecway with 6 beam groups.
-    """
-    return ["{0}_n{1}".format(concept, i + 1) for i in range(len(group_ma))]
-
-
-def _postreleve(concept, intitule, resultat, nom_cham, cmp_line,
-                result_selector, group_ma=None):
-    """One POST_RELEVE_T call (OPERATION='EXTRACTION') as lines."""
-    lines = [
-        "{0} = POST_RELEVE_T(".format(concept),
-        "    ACTION=_F(",
-        "        INTITULE='{0}',".format(_intitule(intitule)),
-        "        OPERATION='EXTRACTION',",
-        "        RESULTAT={0},".format(resultat),
-        "        NOM_CHAM='{0}',".format(nom_cham),
-        "        {0},".format(cmp_line),
-        "        {0},".format(result_selector),
-    ]
-    if group_ma:
-        # With GROUP_MA every node from GROUP_NO must be attached to a
-        # maille of that group. With 'all_nodes' Code-Aster 17.4 gave
-        # <EXCEPTION> POSTRELE_40 ("Le noeud numero 1 n'est pas connecte a
-        # la maille ..."). _build_defigroup_block creates the node group.
-        lines += [
-            "        GROUP_NO={0},".format(_fmt_groups(
-                _table_node_groups(concept, group_ma))),
-            "        GROUP_MA={0},".format(_fmt_groups(group_ma)),
-        ]
-    else:
-        lines.append("        GROUP_NO='all_nodes',")
-    lines += ["    ),", ")", ""]
-    return lines
-
-
-def _result_tables(model_data, with_plastic=False, with_velocity=False):
-    """
-    List of (concept, intitule, result, nom_cham, cmp_line, group_ma)
-    for all POST_RELEVE_T tables. Shared by _build_postreleve_block
-    and _build_impr_table_block so that both always match.
-
-    The INTITULE must match a key in RESULT_FIELD_SPECS
-    or STRUCT_FIELD_SPECS in bridge_from_aster.py.
-
-    Of the extra fields (_optional_fields) only the total strain of
-    volume elements and the section forces of beams (nodal values, chosen
-    in the active analysis); the rest only goes via route 'liml'.
-    """
-    g3d, gsh, gbm = _result_groups(model_data)
-    analysis = _active_analysis()
-    chosen = _optional_fields(model_data, analysis.get("fields", []),
-                              quiet=True)
-    tables = [("tab_depl", "displacements", "res", "DEPL",
-               "TOUT_CMP='OUI'", None)]
-    if with_velocity:
-        # DYNA_NON_LINE archives VITE and ACCE next to DEPL (U4.53.01).
-        tables.append(("tab_vite", "velocities", "res", "VITE",
-                       "NOM_CMP=('DX', 'DY', 'DZ')", None))
-    if g3d:
-        tables += [
-            ("tab_sigm", "stresses", "res", "SIGM_NOEU",
-             "TOUT_CMP='OUI'", None),
-            ("tab_vmis", "vonmises", "res", "SIEQ_NOEU",
-             "NOM_CMP=('VMIS', )", None),
-        ]
-    if gsh:
-        tables += [
-            ("tab_vmss", "vmis_shell_sup", "res_sup", "SIEQ_NOEU",
-             "NOM_CMP=('VMIS', )", None),
-            ("tab_vmsm", "vmis_shell_moy", "res_moy", "SIEQ_NOEU",
-             "NOM_CMP=('VMIS', )", None),
-            ("tab_vmsi", "vmis_shell_inf", "res_inf", "SIEQ_NOEU",
-             "NOM_CMP=('VMIS', )", None),
-        ]
-    if gbm:
-        tables.append(("tab_sipm", "beam_sixx", "res", "SIPM_ELNO",
-                       "TOUT_CMP='OUI'", gbm))
-    tables.append(("tab_reac", "reactions", "res", "REAC_NODA",
-                   "TOUT_CMP='OUI'", None))
-    if "strain" in chosen and g3d:
-        # Same field as _optional_field_blocks; Green-Lagrange under its
-        # own INTITULE (STRUCT_FIELD_SPECS strain_gl).
-        if _strain_kind(analysis) == "EPSG":
-            tables.append(("tab_epsg", "strain_gl", "res", "EPSG_NOEU",
-                           "TOUT_CMP='OUI'", None))
-        else:
-            tables.append(("tab_epsi", "strain", "res", "EPSI_NOEU",
-                           "TOUT_CMP='OUI'", None))
-    if "beam_forces" in chosen:
-        # POU_D_T_GD: the section forces are in SIEF_NOEU (same components
-        # N .. MFZ, _optional_field_blocks); one beam formulation per model
-        # (elem_beam), so one table.
-        mods = model_data.get("elset_modelisations", {})
-        beams = _beam_groups(model_data)
-        rest = [g for g in beams if mods.get(g) != _GD_BEAM]
-        if rest:
-            tables.append(("tab_efge", "beam_forces", "res", "EFGE_NOEU",
-                           "TOUT_CMP='OUI'", rest))
-        elif beams:
-            tables.append(("tab_efge", "beam_forces", "res", "SIEF_NOEU",
-                           "TOUT_CMP='OUI'", beams))
-    if with_plastic and g3d:
-        tables.append(("tab_epsp", "plastic_strain", "res", "EPSP_NOEU",
-                       "TOUT_CMP='OUI'", None))
-        # No VARI_NOEU with kinematic hardening (see
-        # _build_calc_champ_block).
-        if not any((p.get("plastic_bilinear") or {}).get("kinematic")
-                   for p in model_data["materials"].values()):
-            tables.append(("tab_vari", "plastic_strain_eq", "res",
-                           "VARI_NOEU", "NOM_CMP=('V1', )", None))
-    return tables
-
-
-def _build_postreleve_block(model_data, result_selector="NUME_ORDRE=1",
-                            with_plastic=False, with_velocity=False):
-    """
-    Generate POST_RELEVE_T calls (see _result_tables).
-
-    Parameters
-    ----------
-    result_selector : str
-        Code-Aster selector for the step to extract, e.g.
-        "NUME_ORDRE=1" for MECA_STATIQUE or "INST=3.0" for the last
-        time of a STAT_NON_LINE. POST_CHAMP keeps the numbering
-        (test case ssls131a uses NUME_ORDRE=1 on the POST_CHAMP result).
-    with_plastic : bool
-        Add tab_epsp (plastic strain tensor) and tab_vari (V1 =
-        equivalent plastic strain) (only with 3D elsets).
-
-    Alarm POSTRELE_70 with 'stresses' in a model with beams/shells:
-        op0051.F90 (v17.4.0) gives this alarm for SIGM_NOEU as soon as the
-        model contains structural elements and REPERE is not 'LOCAL'. The
-        values are taken from the field unchanged; SIGM_NOEU exists here
-        only on 3D elements and is in the global coordinate system there.
-        REPERE='LOCAL' is deliberately NOT used: for a node list that is
-        the tangent/normal plane of the path (U4.81.21 par. 5.2.4).
-        The same alarm comes for tab_efge (EFGE_NOEU, beam_forces): seen in
-        the .mess (17 Nov 2026), the section forces are read in the local
-        system of the beam, as intended; the check in op0051.F90 for
-        EFGE_NOEU NOT verified.
-    """
-    tables = _result_tables(model_data, with_plastic, with_velocity)
-    lines = []
-    # _build_defigroup_block() creates the node groups for tables with
-    # GROUP_MA, before the solve.
-    for concept, intitule, resultat, nom_cham, cmp_line, group_ma in tables:
-        lines += _postreleve(concept, intitule, resultat, nom_cham,
-                             cmp_line, result_selector, group_ma)
-    return "\n".join(lines) + "\n"
-
-
 def results_file(work_dir):
     """
     Path of the result file of the current run (result_route "liml"):
@@ -2506,10 +2312,11 @@ def _static_check_block(model_data):
 def _results_route(work_dir, model_data, postreleve_block, impr_table_block,
                    precision, static=None, fields=None, extra=""):
     """
-    result_route "liml": no POST_RELEVE_T tables, but
-    aster_results_export.py (runs in the Code-Aster job, numpy) writes
-    Mecway's own <results> to results_file(); MecwayAsterBridgeMain
-    pastes it into the .liml and opens it. "tabel": unchanged.
+    The result export: aster_results_export.py (runs in the Code-Aster
+    job, numpy) writes Mecway's own <results> to results_file();
+    MecwayAsterBridgeMain pastes it into the .liml and opens it. The
+    blocks passed in are not used (the result tables of the removed route
+    'tabel'); the signature stays for the callers (bridge_thermal).
     static: True/False passes export_results(static=...) on (e.g.
     steady-state thermal: EVOL_THER, which _is_static does not recognise);
     None = automatic. fields: list of groups for export_results(fields=...);
@@ -2520,14 +2327,6 @@ def _results_route(work_dir, model_data, postreleve_block, impr_table_block,
     analysis = _active_analysis()
     chosen = (_optional_fields(model_data, analysis.get("fields", []),
                                quiet=True) if fields is None else [])
-    if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
-        only_liml = [f for f in chosen if f not in ("strain", "beam_forces")]
-        if "contact" in chosen:
-            only_liml.append("contactstate")
-        if only_liml:
-            log("INFO: Result fields only via route 'liml' (not in the "
-                "tables): {0}.".format(", ".join(only_liml)))
-        return postreleve_block, impr_table_block
     scripts = os.path.dirname(os.path.abspath(__file__))
     fragment = results_file(work_dir)
     extra = _derived_args(model_data, chosen) + formulas_arg(model_data) + \
@@ -2557,22 +2356,6 @@ def _results_route(work_dir, model_data, postreleve_block, impr_table_block,
         fields="" if fields is None else ", fields={0!r}".format(
             [str(f) for f in fields]), extra=extra)
     return "#-- tables not needed (result_route='liml') --" + chr(10), block
-
-
-def _build_impr_table_block(model_data, with_plastic=False,
-                            with_velocity=False):
-    """
-    IMPR_TABLE for exactly the tables from _build_postreleve_block()
-    to UNITE=8 (.resu file).
-    """
-    lines = []
-    for table in _result_tables(model_data, with_plastic, with_velocity):
-        lines += [
-            "IMPR_TABLE(TABLE={0}, UNITE=8, FORMAT='TABLEAU',".format(
-                table[0]),
-            "           SEPARATEUR=' ', COMMENTAIRE='#')",
-        ]
-    return "\n".join(lines) + "\n"
 
 
 def _build_impr_resu_block(model_data, with_plastic=False, fields=None):
@@ -2617,13 +2400,12 @@ def _build_impr_resu_block(model_data, with_plastic=False, fields=None):
 
 def _export_result_lines(work_dir, resu_name):
     """
-    Output files in study.export: the .resu (UNITE 8) only for the
-    table route, study.rmed (UNITE 80) only with "med_export". This way no
-    empty or superfluous files are left behind in the work folder.
+    Output files in study.export: study.rmed (UNITE 80) only with
+    "med_export". This way no empty or superfluous files are left behind
+    in the work folder. resu_name is not used (the .resu of the removed
+    route 'tabel'); the signature stays for the callers.
     """
     lines = []
-    if CONFIG_BRIDGE.get("result_route", "liml") == "tabel":
-        lines.append("F resu {0} R 8".format(os.path.join(work_dir, resu_name)))
     if CONFIG_BRIDGE.get("med_export", False):
         lines.append("F rmed {0} R 80".format(
             os.path.join(work_dir, run_name(".rmed"))))
@@ -2651,8 +2433,7 @@ def _build_impr_resu_cham(model_data, with_plastic=False, fields=None):
                        for p in model_data["materials"].values()):
                 champs.append("VARI_NOEU")
     if fields is not None:
-        if gsh or (g3d and CONFIG_BRIDGE.get("result_route",
-                                             "liml") == "liml"):
+        if gsh or g3d:
             champs.append("SIGM_ELNO")
         if gbm:
             champs.append("SIPM_ELNO")
@@ -4915,7 +4696,7 @@ def _build_lin_static(work_dir, model_data, msh_path, resu_name, analysis):
     work_dir   : str  - Work folder for all generated files.
     model_data : dict - Output of extract_aster_data_from_liml().
     msh_path   : str  - Path to the mesh (ASTER format, bridge_mesh.py).
-    resu_name  : str  - File name for the .resu result file.
+    resu_name  : str  - Not used (the .resu of the removed route 'tabel').
     analysis   : dict - Active analysis config (from CONFIG_BRIDGE["analyses"]).
 
     Returns
@@ -5027,7 +4808,7 @@ def _build_lin_static(work_dir, model_data, msh_path, resu_name, analysis):
         return None
 
     # --------------------------------------------------
-    # BLOCK G: CALC_CHAMP, POST_RELEVE_T, IMPR_TABLE
+    # BLOCK G: CALC_CHAMP and the result export
     # (depends on element type)
     # --------------------------------------------------
     # Error estimator (setting error_estimator): CALC_ERREUR in a result
@@ -5046,13 +4827,6 @@ def _build_lin_static(work_dir, model_data, msh_path, resu_name, analysis):
         err_groups = []
     err_block = (_error_estimator_block(model_data, charges, err_groups)
                  if err_groups else "")
-    if err_block and CONFIG_BRIDGE.get("result_route", "liml") != "liml":
-        log(tr("INFO: Foutschatter: het veld gaat alleen via result_route "
-               "'liml' naar Mecway; met 'tabel' alleen de globale fout in "
-               "de log.",
-               "INFO: Error estimator: the field only goes to Mecway with "
-               "result_route 'liml'; with 'tabel' only the global error in "
-               "the log."))
     # Fatigue (#ASTER-WOHLER + #ASTER-BLOK/-SIGNAAL, bridge_fatigue):
     # after CALC_CHAMP, the fields damage/life go along in the export
     fatigue = bridge_fatigue.fatigue_block(model_data, analysis, work_dir)
@@ -5083,11 +4857,8 @@ def _build_lin_static(work_dir, model_data, msh_path, resu_name, analysis):
                                 analysis) if tg_reac else "") + err_block +
                             _static_check_block(model_data) +
                             _custom_code(model_data, 'post') + fatigue[0])
-    postreleve_block  = _build_postreleve_block(model_data)
-    impr_table_block  = _build_impr_table_block(model_data)
     postreleve_block, impr_table_block = _results_route(
-        work_dir, model_data, postreleve_block, impr_table_block, "double",
-        extra=fatigue[1])
+        work_dir, model_data, "", "", "double", extra=fatigue[1])
     # Fracture mechanics (SCHEUR_ selections): after the result export, so
     # that an error there does not hold back the results in Mecway
     # (bridge_fracture)
@@ -5709,7 +5480,7 @@ def _build_listinst_block(load_funcs, analysis, model_data=None):
     -------
     (block_str, t_end)
         block_str : DEFI_LIST_REEL call
-        t_end     : float  last time point; needed for POST_RELEVE_T INST=...
+        t_end     : float  last time point
     """
     auto = _auto_listinst_block(load_funcs, analysis, model_data)
     if auto:
@@ -7914,11 +7685,8 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
         <timesteps>).
 
     Results:
-      - route 'liml' (default): aster_results_export writes all
-        archived times (static: every calculation step; dynamic: the
-        output times);
-      - route 'tabel': static only the last time reached
-        (INST=t_res), dynamic all archived ones (TOUT_ORDRE).
+      aster_results_export writes all archived times (static: every
+      calculation step; dynamic: the output times).
 
     DEFORMATION is a choice per analysis (CONFIG "deformation"); translated
     per elset by _deformation_for.
@@ -8047,15 +7815,11 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
         _note_linear_beams(model_data, analysis)
 
     # --------------------------------------------------
-    # BLOCK H: CALC_CHAMP, POST_RELEVE_T, IMPR_TABLE
+    # BLOCK H: CALC_CHAMP and the result export
     # Only add plastic strain if at least 1 material has a
     # plastic curve.
     # --------------------------------------------------
-    # Tables (route 'tabel'): dynamic all archived times (output
-    # times); static the last time reached (t_res, after the
-    # solve; without convergence earlier than t_end). Route 'liml': all
-    # archived times (aster_results_export).
-    result_selector  = ("TOUT_ORDRE='OUI'" if dynamic else "INST=t_res")
+    # The result export (aster_results_export) takes all archived times.
     # Fatigue (#ASTER-WOHLER, bridge_fatigue): the time steps of the run
     # are the signal per node
     fatigue = bridge_fatigue.fatigue_block(model_data, analysis, work_dir)
@@ -8067,15 +7831,10 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
         strain_kind=_strain_kind(analysis)) +
         ("" if dynamic else _static_check_block(model_data)) +
         _custom_code(model_data, 'post') + fatigue[0])
-    postreleve_block = _build_postreleve_block(
-        model_data, result_selector=result_selector,
-        with_plastic=with_plastic, with_velocity=dynamic)
-    impr_table_block = _build_impr_table_block(
-        model_data, with_plastic=with_plastic, with_velocity=dynamic)
     # Static double (like Mecway's own static results), dynamic
     # single (like Mecway's OpenRadioss results).
     postreleve_block, impr_table_block = _results_route(
-        work_dir, model_data, postreleve_block, impr_table_block,
+        work_dir, model_data, "", "",
         "single" if dynamic else "double", extra=fatigue[1])
 
     # --------------------------------------------------
@@ -9148,12 +8907,6 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
     what = "MODE_FLAMB" if buckling else "DYNAMIQUE"
     log("--- Generating Aster Files (CALC_MODES {0}) ---".format(what))
     comm_path = os.path.join(work_dir, run_name(".comm"))
-    if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
-        log(tr("ERROR: De resultaatroute 'tabel' werkt niet voor modale "
-               "en knikanalyses. Kies 'liml' (pagina Algemeen).",
-               "ERROR: The result route 'tabel' does not work for modal "
-               "and buckling analyses. Choose 'liml' (General page)."))
-        return None
     if not _check_linear(model_data, tr("een modale of knikanalyse",
                                         "a modal or buckling analysis")):
         return None
