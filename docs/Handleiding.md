@@ -813,6 +813,24 @@ pad ingekort, §1), `<run-id>` de datum en tijd van de start, bijv.
 `ProfielBuigen_20261006_101500.mess`. Zo staan ze bij elkaar en overschrijft een
 volgende run niets. In meldingen staat de echte naam. De werkmap is de map uit het veld *Werkmap*, of met *Werkmap naast het model* de submap `<model>_aster` naast het open model (§3).
 
+![De bestanden van één run, van het model tot de resultaten in Mecway](img/run_files_flow.svg)
+
+1. Het model in Mecway, `<model>.liml`.
+2. De kopie van het model die de run leest, `<model>_<run-id>_model.liml` (Mecway 36 of
+   later, §2 stap 4); verwijderd na een run zonder fouten waarvan de resultaten zijn
+   geladen. Met eerdere Mecway-versies slaat de bridge de `.liml` op en leest die.
+3. De bridge.
+4. De mesh `<model>_<run-id>.mail` en de Code-Aster-invoer `.comm` en `.export`.
+5. Code-Aster, in een eigen venster.
+6. `<model>_<run-id>.mess`, `_console.txt` en de samenvatting `_aster_summary.txt`
+   (§5.2; niet met de instelling uit).
+7. `<model>_<run-id>_results.xml`: de resultaten in Mecway's eigen formaat.
+8. Alleen als je ze kiest: `.rmed` en `.pvd`/`.vtu` voor ParaView en AsterStudy (§5.1).
+9. De bridge zet de resultaten in de `.liml` en opent het model opnieuw.
+10. De vorige versie van de `.liml`: `<model>.liml.bak`.
+11. Later, met "Resultaten...": de resultaten uit de `.liml` halen of opnieuw laden uit
+    `_results.xml` (§5.1).
+
 | Bestand | Inhoud |
 |---|---|
 | `<model>_<run-id>_bridge_log.txt` | log van de bridge (INFO/WARNING/ERROR per stap); `bridge_log.txt`: alleen meldingen buiten een run (bijv. *Resultaten...*) |

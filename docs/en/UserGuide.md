@@ -811,6 +811,24 @@ if the path is too long, §1), `<run-id>` the date and time of the start, e.g.
 `ProfielBuigen_20261006_101500.mess`. So they can be found together and a next run
 overwrites nothing. Messages show the real name. The working directory is the folder from the "Work folder" field, or with "Work folder next to the model" the subfolder `<model>_aster` next to the open model (§3).
 
+![The files of one run, from the model to the results in Mecway](../img/run_files_flow.svg)
+
+1. The model in Mecway, `<model>.liml`.
+2. The copy of the model that the run reads, `<model>_<run-id>_model.liml` (Mecway 36 or
+   later, §2 step 4); removed after a run without errors whose results were loaded. With
+   earlier Mecway versions the bridge saves the `.liml` and reads that.
+3. The bridge.
+4. The mesh `<model>_<run-id>.mail` and the Code-Aster input `.comm` and `.export`.
+5. Code-Aster, in its own window.
+6. `<model>_<run-id>.mess`, `_console.txt` and the summary `_aster_summary.txt` (§5.2;
+   not with the setting off).
+7. `<model>_<run-id>_results.xml`: the results in Mecway's format.
+8. Only when chosen: `.rmed` and `.pvd`/`.vtu` for ParaView and AsterStudy (§5.1).
+9. The bridge puts the results into the `.liml` and reopens the model.
+10. The previous version of the `.liml`: `<model>.liml.bak`.
+11. Later, with "Results...": take the results out of the `.liml` or load them again
+    from `_results.xml` (§5.1).
+
 | File | Contents |
 |---|---|
 | `<model>_<run-id>_bridge_log.txt` | log of the bridge (INFO/WARNING/ERROR per step); `bridge_log.txt`: only messages outside a run (e.g. Results...) |
