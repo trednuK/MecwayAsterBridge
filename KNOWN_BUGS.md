@@ -938,12 +938,19 @@ Code-Aster value per node) and logs the largest difference per variable.
    two pairs that tie each other, and symmetry/frictionless relations in an oblique plane,
    with a normal displacement or on curved faces; with NPREC = -1 the WARNING says that
    MUMPS does not check for a singular matrix (`FACTOR_57` or an unreliable result).
-   Only linear and nonlinear static and modal measured; dynamics, buckling and the other
-   analyses NOT verified, nor XFEM (a slave node taken out of an axis-aligned
-   `LIAISON_OBLIQUE` group there also loses the `DDL_IMPO` that XFEM writes for it on its
-   XFEM DOFs) and HOMARD refinement (new slave nodes are not in the `BROV` group of
-   `SANS_GROUP_NO`). Not looked at: node-surface couplings and constraint equations
-   on slave nodes. Thermal tie (`TEMP_IMPO` with
+   Measured (Code-Aster 17.4, 19 Nov 2026): linear and nonlinear static, modal, implicit
+   dynamics (LS-07w symmetry with a slow ramp equal to Mecway's static result, LS-07x the
+   `LIAISON_DDL` route equal to LS-07i; before the fix `MECANONLINE9_4`), buckling (LS-07y,
+   factors equal to the model without the double condition; before `FACTOR_11`) and XFEM
+   (LS-07z: the slave nodes also lose the `DDL_IMPO` on their XFEM DOFs, which changes
+   nothing: equal to the model without the double condition and to the one with the
+   `DDL_IMPO` on the slave instead of the master nodes; before `FACTOR_11`). The shell
+   routes (LS-07r `LIAISON_DDL`, LS-07a `LIAISON_MAIL` COQUE) in dynamics not: they do not converge without the
+   double condition either (KNOWN_BUGS 156). HOMARD (`adapt_homard`) refuses bonded contact
+   before the run (`bridge_homard.check_scope`), so stale `BROV` groups cannot occur; the
+   Mecway refine loop (`adapt_refine`) rebuilds the groups every loop (code reading, NOT
+   run). Explicit dynamics, harmonic and the other analyses NOT verified. Not looked at:
+   node-surface couplings and constraint equations on slave nodes. Thermal tie (`TEMP_IMPO` with
    `LIAISON_MAIL` on TEMP, `bridge_thermal`, measured 19 Nov 2026): the same constant
    value on a slave node and on all its weighted master nodes gave `FACTOR_11`, Mecway
    solves it; resolved: such slave nodes leave the thermal tie and keep their TEMP_IMPO
@@ -995,6 +1002,28 @@ Code-Aster value per node) and logs the largest difference per variable.
    in the GUI checks). Workaround: close them with their close button. Status: open, low
    priority (possible fix: an option to close the window of the previous run at the next
    *Start*).
+
+156\. **DKT shells in implicit dynamics: implausible response, bonded shell ties do not
+   converge** (confirmed, Code-Aster 17.4, 19 Nov 2026, `dyna_impl_3d`, HHT, `PETIT` and
+   `GROT_GDEP`; cause NOT investigated). The LS-07b strip (one mesh, quad4 DKT, density
+   7850 kg/m³) under a step load of 1 N (−Z) at the tip moves up to +10 mm (+Z) instead of
+   oscillating around the static 0.94 mm downward (first bending mode ~42 Hz; Code-Aster
+   converges, no ALARM). The bonded strips LS-07a (`LIAISON_MAIL` COQUE) and LS-07f
+   (`LIAISON_DDL`, NPREC = -1) stop with `MECANONLINE9_7` (Newton residual stuck at
+   ~1e-3, also with NEWMARK), also without any double condition; in Nonlinear Static
+   LS-07f converges (0.94220 mm). The quad8 rib of LS-07i (COQUE_3D) gives a plausible
+   response (LS-07x). Status: open; check the DKT mass and load in `DYNA_NON_LINE` first.
+
+157\. **XFEM: a crack front that reaches a free face stops with `CALCUL_20`** (confirmed,
+   Code-Aster 17.4, 19 Nov 2026; `bridge_mesh.write_mesh` section 2b). The error
+   estimator's boundary elements on free faces (`BRERRVRIJ`, `error_estimator` on by
+   default) are in the model also with `#ASTER-XFEM`, although the estimator is then not
+   run (`bridge_to_aster`, INFO). A face element there that the crack enriches
+   (`MECA_XT_FACE4`) has no material: `CALCUL_20` in the first `MECA_STATIQUE`. Seen with a
+   surface crack whose front ends on the free face x = b (LS-07z geometry, also in one
+   mesh without bonded contact); BR-07..14 have no free face at the crack. Workaround:
+   `error_estimator` off. Smallest fix: no `BRERRVRIJ` when `bridge_xfem.is_requested`
+   (the `error_estimator_requested` test in section 2b). Status: open.
 
 ## Open questions (Mecway behaviour not checked)
 

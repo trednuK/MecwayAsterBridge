@@ -164,7 +164,7 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
 
 Toegevoegd na deze regressie en apart gedraaid (19 nov 2026, nog niet in een volledige
 regressie): LS-07n (2 OK), LS-07o (1 OK), LS-07p (1 OK), LS-07q (1 OK), LS-07r (1 OK), LS-07s
-(1 OK), LS-07t (1 OK), LS-07u (1 OK), LS-07v (3 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
+(1 OK), LS-07t (1 OK), LS-07u (1 OK), LS-07v (3 OK), LS-07w (3 OK), LS-07x (3 OK), LS-07y (3 OK), LS-07z (3 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
 149), NL-03i (1 OK), NL-03j (5 OK), NL-03k (3 OK), NL-03l (1 OK, 1 BEKEND: KNOWN_BUGS 149), NL-03m (3 OK), NL-03n (2 OK), NL-03o (5 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK).
 
 **Bekende beperkingen** (status BEKEND):
@@ -488,7 +488,41 @@ opeenvolgende meshes.
   weggelaten; (s) 1,1342e-5 m, 3 rijen weggelaten (INFO); beide gelijk aan het model zonder
   de oplegging. (v) de drie frequenties gelijk aan de referentie; zonder de reparatie gaf
   CALC_MODES dezelfde frequenties, maar met de ALARMen `ALGELINE3_79` (singuliere matrix)
-  en `ALGELINE5_23` (telling van Sturm). Andere analyses (dynamica, knik) NIET nagelopen.
+  en `ALGELINE5_23` (telling van Sturm). Dynamica, knik en XFEM: LS-07w–z.
+
+### LS-07w–z Dubbele voorwaarden in dynamica, knik en XFEM (KNOWN_BUGS 147)
+
+- **Doel**: dezelfde oplossing als LS-07p–v in de andere analyses: de slave-knopen gaan
+  uit de relatie of de koppelrijen vallen weg. Voor de reparatie `MECANONLINE9_4` (w, x,
+  nul-pivot, geen stap) en `FACTOR_11` (y, z).
+- **Model**: (w) LS-07p als *Nonlinear Dynamic* (HHT, `deformation` PETIT, dichtheid
+  7850 kg/m³), kracht in 1 ms van 0 naar 4000 N (~57 perioden van de eerste axiale mode,
+  56,7 kHz), daarna constant tot 1,5 ms. (x) LS-07s als *Nonlinear Dynamic* met een
+  staplast (0–10 ms, stap 0,1 ms). (y) Knik: kolom uit twee verlijmde hex20-blokken van
+  20 × 20 × 100 mm (onder 2 × 2 × 5, boven 3 × 3 × 5 met eigen knopen, naad op z = 0),
+  *Symmetry* x = 0 op beide (de helft van een kolom van 40 × 20 mm), *Fixed* aan de voet,
+  4000 N op de kop. (z) XFEM: de plaat van BR-07 (hex8, h = a/20) in twee lagen, verlijmd
+  op z = a/2 (bovenlaag = slave, eigen knopen), *Symmetry* x = 0 op beide lagen, een
+  oppervlaktescheur van de bovenkant z = a tot z = a/2 + h/2 (vlak y = 0, front langs x
+  van het symmetrievlak tot x = b), zodat de knopen van de naad verrijkt zijn;
+  `error_estimator` uit (KNOWN_BUGS 157).
+- **Referentie**: (w) Mecway 36 met CCX (statisch, LS-07p) 0,9540648 µm aan het eind van
+  de helling en op 1,5 ms; op 0,5 ms hetzelfde model met *Displacement* 0 zonder de
+  gekoppelde slave-knopen (Code-Aster 17.4): 0,4770163 µm. (x) LS-07i even dynamisch
+  gerekend (op 1, 2 en 8 ms). (y) hetzelfde model met *Displacement* X = 0 zonder de
+  slave-knopen: 43,446 en 368,36; Euler π²EI/(4L²)/P = 43,18 (volle doorsnede, 8000 N).
+  (z) hetzelfde model met *Displacement* X = 0 zonder de slave-knopen: K_I (`CALC_G_XFEM`)
+  31,789 MPa√m op het symmetrievlak en 32,060 MPa√m in het midden; dezelfde plaat in één
+  mesh 32,081 MPa√m.
+- **Resultaat**: (w) 0,954064 µm (0,00%) en 0,954081 µm (+0,002%), op 0,5 ms gelijk aan de
+  referentie; (x) gelijk aan LS-07i in alle cijfers; (y) gelijk aan de referentie, +0,6%
+  t.o.v. Euler (één mesh 43,454); (z) gelijk aan de referentie, −0,07% t.o.v. één mesh
+  (op het symmetrievlak +0,27%, `POST_K1_K2_K3` −3%: de verlijming van de lagen, niet de
+  dubbele voorwaarde). Bij XFEM verliezen de slave-knopen ook de `DDL_IMPO` op hun
+  XFEM-vrijheidsgraden; dat verandert niets: met de oplegging op de slave- in plaats van
+  de masterknopen komt hetzelfde uit. De schaalroutes (LS-07r `LIAISON_DDL`, LS-07a `LIAISON_MAIL` COQUE)
+  rekenen in dynamica ook zonder dubbele voorwaarde niet (KNOWN_BUGS 156). HOMARD
+  (`adapt_homard`) weigert verlijmd contact voor de run.
 
 ### LS-08 Node temperature (thermische spanning per knoop)
 

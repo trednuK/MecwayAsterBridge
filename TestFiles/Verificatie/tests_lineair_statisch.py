@@ -1300,6 +1300,220 @@ TESTS += [
 
 
 # ------------------------------------------------------------------
+# LS-07w..z KNOWN_BUGS 147 in dynamics, buckling and XFEM
+# ------------------------------------------------------------------
+# (w) LS-07p as Nonlinear Dynamic (D31, HHT, PETIT, density 7850 kg/m³):
+# the force ramps from 0 to 4000 N in 1 ms (~57 periods of the first
+# axial mode, 56.7 kHz) and stays constant to 1.5 ms, so the end equals
+# the static result (Mecway 36 with CCX, LS-07p); mid-ramp against the same
+# model with Displacement 0 on the plane nodes without the tied slave nodes
+# (Code-Aster 17.4, 19 Nov 2026). (x) LS-07s with a step load (0 .. 10 ms,
+# step 0.1 ms) against LS-07i run the same way (identical to all digits).
+# (y) Buckling: a column of two bonded hex20 blocks (lower 2 x 2 x 5,
+# upper 3 x 3 x 5 with own nodes, 20 x 20 x 100 mm each, tie at z = 0),
+# Symmetry x = 0 on both blocks (half of a 40 x 20 mm column), Fixed at
+# the foot, 4000 N on the top: factors against the same model with
+# Displacement X = 0 on the plane nodes without the tied slave nodes; one
+# mesh 43.454 (+0.02 %), Euler cantilever pi^2 E I / (4 L^2) / P = 43.18.
+# (z) XFEM: the BR-07 plate (hex8, h = a/20) in two layers bonded at
+# z = a/2 (upper layer = slave, own nodes), Symmetry x = 0 on both layers,
+# a surface crack from the top z = a down to z = a/2 + h/2 (plane y = 0,
+# front along x from the symmetry plane to x = b, so the seam nodes are
+# enriched); error_estimator off (KNOWN_BUGS 157). The slave nodes leave
+# the DDL_IMPO that XFEM writes for the axis-aligned symmetry (also on
+# their XFEM DOFs); reference: the same model with Displacement X = 0
+# without the slave nodes, and with it on the slave nodes but not on the
+# master nodes (both identical). Before the fix: MECANONLINE9_4 (w, x),
+# FACTOR_11 (y, z).
+F_LS07W_MID = 4.770163e-7
+LS07X_REF = (8.506621833519257e-06, 1.9280314388327368e-05,
+             1.832585413857097e-05)
+LS07X_T = (0.001, 0.002, 0.008)
+LS07Y_REF = (43.445866015669, 368.360078301665)
+LS07Z_K0, LS07Z_KMID = 31788844.31, 32059842.78
+LS07Z_ONE = 32080675.49           # the same plate in one mesh
+TR7W = 1.0e-3
+
+
+def _dynamic(build, t_end, dt, ramp=None):
+    """S30 model of build() as D31 with density; ramp: (old, new) text of
+    the force item."""
+    def b():
+        m = build()
+        m.analysis = "D31"
+        m.timesteps = {"timeperiod": "%r s" % t_end,
+                       "automatictimestepping": "false",
+                       "outputtimes": "regular", "timepointsstart": "0 s",
+                       "timepointsincrement": "%r s" % dt}
+        m.mats = [s if "density" in s else
+                  s.replace("\n  </mat>", "\n    %s\n  </mat>" % DENS7)
+                  for s in m.mats]
+        if ramp:
+            m.items = [i.replace(*ramp) if "<force" in i else i
+                       for i in m.items]
+        return m
+    return b
+
+
+def build_ls07y(kind):
+    """kind 'sym' (Symmetry on both blocks) or 'ref' (Displacement X = 0
+    without the tied slave nodes)."""
+    def build():
+        m = Model("B30", solver="ccx", attrs={"maxmode": 3, "shift": 1})
+        _steel(m)
+        m.elset("Onderblok", "Staal")
+        lo = hexmesh(m, "Onderblok", 2, 2, 5, box(0, 0.02, 0, 0.02, -0.1, 0),
+                     order=2)
+        m._index = {}
+        m.elset("Bovenblok", "Staal")
+        up = hexmesh(m, "Bovenblok", 3, 3, 5, box(0, 0.02, 0, 0.02, 0, 0.1),
+                     order=2)
+        m.face_selection("Voet", lo["faces"]["w0"])
+        m.add('<fixed selection="Voet" />')
+        if kind == "ref":
+            m.node_selection("SymX", sorted(lo["nodes"]["u0"] | (
+                up["nodes"]["u0"] - up["nodes"]["w0"])))
+            m.add('<displacement selection="SymX"><value>0 mm</value>'
+                  '<x>1</x><y>0</y><z>0</z></displacement>')
+        else:
+            m.face_selection("SymX", lo["faces"]["u0"] + up["faces"]["u0"])
+            m.add('<symmetry selection="SymX"><x>1</x><y>0</y><z>0</z>'
+                  '</symmetry>')
+        m.face_selection("Lijm_A", lo["faces"]["w1"])
+        m.face_selection("Lijm_B", up["faces"]["w0"])
+        m.add(BOND.format("Lijm_A", "Lijm_B"))
+        m.face_selection("Bovenkant", up["faces"]["w1"])
+        m.add('<force selection="Bovenkant"><x>0 N</x><y>0 N</y>'
+              '<z>-4000 N</z></force>')
+        return m
+    return build
+
+
+def build_ls07z():
+    """BR-07 plate in two bonded layers with a surface crack (XFEM)."""
+    import tests_breukmechanica as BR
+    import tests_breukmechanica_xfem as BX
+    a, h = BR.A, BR.A / 20.0
+    xs, ys = BX._xgrid(h, h / 2.0), BX._ygrid(h, False)
+    layers = (("Onder", [a / 2 * k / 5.0 for k in range(6)]),
+              ("Boven", [a / 2 + h * k for k in (0, 1, 2, 3, 4, 6, 8, 10)]))
+    m = Model("S30")
+    m.mat("Staal", STEEL)
+    blocks = []
+    for name, zs in layers:
+        m.elset(name, "Staal")
+        m._index = {}
+        blocks.append(hexmesh(m, name, len(xs) - 1, len(ys) - 1, len(zs) - 1,
+                              BR._grid(xs, ys, zs)))
+    lo, up = blocks
+    m.face_selection("BovenY", lo["faces"]["v1"] + up["faces"]["v1"])
+    m.face_selection("OnderY", lo["faces"]["v0"] + up["faces"]["v0"])
+    m.face_selection("Z0", lo["faces"]["w0"])
+    m.face_selection("SymX", lo["faces"]["u0"] + up["faces"]["u0"])
+    for sel, sy in (("BovenY", BR.SIGMA), ("OnderY", -BR.SIGMA)):
+        m.add('<traction selection="%s"><x>0 Pa</x><y>%r Pa</y><z>0 Pa</z>'
+              '</traction>' % (sel, sy))
+    m.add('<symmetry selection="Z0"><x>0</x><y>0</y><z>1</z></symmetry>')
+    m.add('<symmetry selection="SymX"><x>1</x><y>0</y><z>0</z></symmetry>')
+    m.face_selection("Lijm_A", lo["faces"]["w1"])
+    m.face_selection("Lijm_B", up["faces"]["w0"])
+    m.add(BOND.format("Lijm_A", "Lijm_B"))
+    anchor = min((abs(p[1]), i + 1) for i, p in enumerate(m.nodes)
+                 if abs(p[0] - BR.B_HALF) < 1e-9 and abs(p[2]) < 1e-9)[1]
+    m.node_selection("Anker", [anchor])
+    m.add('<displacement selection="Anker"><value>0 m</value><x>0</x>'
+          '<y>1</y><z>0</z></displacement>')
+    m.add(BX._xfem_line("vorm=HALFVLAK, front=(0, 0, %r), normaal=(0, 1, 0), "
+                        "richting=(0, 0, -1)" % (a / 2 + h / 2)))
+    return m
+
+
+def _k1(where):
+    def value(r):
+        import tests_breukmechanica_xfem as BX
+        if where == "mid":
+            return BX._mid("K1")(r)
+        return BX._with(r, "K1")[0]["K1"]
+    return value
+
+
+def _top_at(t):
+    return lambda r: -r.mean("displz", "Top", time=t)
+
+
+TESTS += [
+    Case("LS-07w", GROUP, "LS-07p in Nonlinear Dynamic, langzaam "
+         "opgebrachte kracht (KNOWN_BUGS 147)", "dyna_impl_3d",
+         _dynamic(build_ls07n_rel("sym"), 1.5 * TR7W, 2e-5, (
+             "<z>-4000 N</z>", '<z time="0 s">0 N</z><z time="%r s">-4000 N'
+             '</z>' % TR7W)),
+         [Check("indrukking bovenkant eind helling t.o.v. Mecway statisch",
+                _top_at(TR7W), ref=MW_LS07P, tol=0.005, unit="m",
+                source="Mecway 36 (CCX), headless (LS-07p)",
+                in_series=False),
+          Check("indrukking bovenkant t = 1,5 ms t.o.v. Mecway statisch",
+                _top_at(1.5 * TR7W), ref=MW_LS07P, tol=0.005, unit="m",
+                source="Mecway 36 (CCX), headless (LS-07p)",
+                in_series=False),
+          Check("indrukking bovenkant t = 0,5 ms t.o.v. model zonder "
+                "dubbele voorwaarde", _top_at(0.5 * TR7W), ref=F_LS07W_MID,
+                tol=0.001, unit="m", source="Code-Aster 17.4 op hetzelfde "
+                "model met Displacement 0 zonder de slave-knopen",
+                in_series=False)],
+         settings={"deformation": "PETIT"}, timeout=900,
+         note="Zonder de oplossing: MECANONLINE9_4 (nul-pivot), geen stap."),
+    Case("LS-07x", GROUP, "LS-07s in Nonlinear Dynamic, staplast "
+         "(LIAISON_DDL-route, KNOWN_BUGS 147)", "dyna_impl_3d",
+         _dynamic(build_ls07s, 0.01, 1e-4),
+         [Check("zijdelingse verplaatsing ribtop t = %g s t.o.v. LS-07i"
+                % t, lambda r, t=t: _mean_t(r, "disply", "Ribtop_knopen", t),
+                ref=v, tol=0.001, unit="m", source="Code-Aster 17.4 op "
+                "LS-07i (zelfde model zonder de extra oplegging), even "
+                "dynamisch gerekend", in_series=False)
+          for t, v in zip(LS07X_T, LS07X_REF)],
+         settings={"deformation": "PETIT"}, timeout=900,
+         note="De drie rijen van de voetknoop vallen weg (zonder: "
+              "MECANONLINE9_4)."),
+    Case("LS-07y", GROUP, "Kolom uit twee verlijmde blokken met Symmetry op "
+         "beide, knik (KNOWN_BUGS 147)", "buckling_3d", build_ls07y("sym"),
+         [Check("kniklastfactor %d t.o.v. model zonder dubbele voorwaarde"
+                % (k + 1), lambda r, k=k: r.mode(k + 1), ref=LS07Y_REF[k],
+                tol=0.001, unit="-", source="Code-Aster 17.4 op hetzelfde "
+                "model met Displacement X = 0 zonder de slave-knopen",
+                in_series=False) for k in range(2)] +
+         [Check("kniklastfactor 1, Euler", lambda r: r.mode(1),
+                ref=math.pi ** 2 * E * (0.04 * 0.02 ** 3 / 12) /
+                (4 * 0.2 ** 2) / 8000.0, tol=0.01, unit="-",
+                source="pi^2 E I / (4 L^2) / P (ingeklemde kolom, volle "
+                       "doorsnede 40 x 20 mm, 8000 N)", in_series=False)],
+         note="Zonder de oplossing: FACTOR_11."),
+    Case("LS-07z", GROUP, "XFEM-oppervlaktescheur in twee verlijmde lagen "
+         "met Symmetry op beide (KNOWN_BUGS 147)", "lin_static_3d",
+         build_ls07z,
+         [Check("K_I CALC_G_XFEM op het symmetrievlak t.o.v. model zonder "
+                "dubbele voorwaarde", _k1("s0"), ref=LS07Z_K0, tol=0.001,
+                unit="Pa.m^0.5", source="Code-Aster 17.4 op hetzelfde "
+                "model met Displacement X = 0 zonder de slave-knopen",
+                in_series=False),
+          Check("K_I CALC_G_XFEM midden t.o.v. model zonder dubbele "
+                "voorwaarde", _k1("mid"), ref=LS07Z_KMID, tol=0.001,
+                unit="Pa.m^0.5", source="idem", in_series=False),
+          Check("K_I CALC_G_XFEM midden t.o.v. één mesh", _k1("mid"),
+                ref=LS07Z_ONE, tol=0.005, unit="Pa.m^0.5",
+                source="Code-Aster 17.4, dezelfde plaat zonder verlijming "
+                       "(gedeelde knopen)", in_series=False)],
+         settings={"error_estimator": False},
+         note="De slave-knopen op x = 0 gaan uit de DDL_IMPO (ook hun "
+              "XFEM-vrijheidsgraden); zonder de oplossing FACTOR_11. "
+              "error_estimator uit: KNOWN_BUGS 157."),
+]
+
+
+def _mean_t(r, var, sel, t):
+    return r.mean(var, sel, time=t)
+
+
+# ------------------------------------------------------------------
 # LS-08 Node temperature (Mecway temperature3) voor thermische spanning
 # ------------------------------------------------------------------
 # Mecway Node temperature (manual v34 par. 9.24): een temperatuur per
