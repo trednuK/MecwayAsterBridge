@@ -152,7 +152,10 @@ class Model(object):
         d = os.path.dirname(path)
         if d and not os.path.isdir(d):
             os.makedirs(d)
-        io.open(path, "w", encoding="utf-8", newline="\n").write(self.xml())
+        # closed right away: IronPython does not close an unreferenced file
+        # at once, and a reader then saw an empty model
+        with io.open(path, "w", encoding="utf-8", newline="\n") as f:
+            f.write(self.xml())
         return path
 
 

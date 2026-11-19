@@ -109,10 +109,8 @@ def run(lines, analysis="lin_static_3d", mecway="S30", quad8=False,
     tmp = tempfile.mkdtemp()
     try:
         bridge_utils.CONFIG_BRIDGE["work_dir"] = tmp
-        # Model.write leaves its file open (IronPython reads it empty)
-        path = os.path.join(tmp, "model.liml")
-        with io.open(path, "w", encoding="utf-8", newline="\n") as f:
-            f.write(model(lines, mecway, quad8).xml())
+        path = model(lines, mecway, quad8).write(
+            os.path.join(tmp, "model.liml"))
         md = bridge_from_liml.extract_aster_data_from_liml(path)
         comm = None
         if md is not None and generate:
