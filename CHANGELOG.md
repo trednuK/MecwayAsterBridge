@@ -19,8 +19,10 @@
   With Mecway's new `mw.liml_text()` the bridge reads a copy of the open model
   (`<model>_<run-id>_model.liml` in the work folder, which the Code-Aster job reads too, e.g.
   for fatigue) and saves the `.liml` only right before the results go into it, so a run that
-  ends without results (an error, Stop) leaves the file as it was. A model that was never
-  saved is still saved first. A read-only model or a folder that is gone still stops the run
+  ends without results (an error, Stop) leaves the file as it was, unless *Summary also as
+  Saved monitor in the .liml* (`save_monitor_liml`) is on: then the model is saved (with the
+  run's monitor text when it has no results yet). A model that was never saved is still
+  saved first. A read-only model or a folder that is gone still stops the run
   before Code-Aster. The copy is removed after a run without errors whose results were
   loaded, and stays otherwise (the `.comm` reads it when run again by hand). Unsaved changes
   stay unsaved during the run: save the model yourself before a long run. *Show section* no
@@ -80,6 +82,13 @@
   same (it already stuck almost rigidly), but convergence is much better: NL-03h 10 steps
   instead of 754, and Tutorials/AssemblyWithContact *Friction* and *Quadratic_ramp* now
   complete (they stopped). Your own `#ASTER-ZONE COEF_PENA_FROT=...` still wins.
+- **Nonlinear dynamics (D31) with a *Time step size*: the bridge now uses it** (bug fix,
+  changes results). Before, a D31 model in the form Mecway writes for CCX (`stepsize`) got only
+  the points of its load tables as time steps (a 200 µs pulse: 4 steps instead of 100); now
+  the solver step and the output step are Mecway's step, as for D30 (verification NL-03j,
+  equal to Mecway 36 with CCX). With *Time point increment* nothing changes. Explicit dynamics
+  writes its output per step too, and a run with element failure restarts per step (more
+  restarts than before).
 - **Thermal bonded contact with the same temperature on both sides of the bond** no longer
   stops with `FACTOR_11`: slave nodes whose temperature is imposed with the same value as
   their master nodes leave the thermal tie (KNOWN_BUGS 147, verification TH-04e/f/g); another

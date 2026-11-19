@@ -6608,6 +6608,13 @@ def _merge_times(times, t_end, prefer=()):
     return out
 
 
+# Mecway analysis types whose <timesteps stepsize> is the calculation step
+# and (x keepeverynthtimestep) the output step (_output_times,
+# _mecway_dyna_step). D31 before V2026.15: stepsize ignored, only the
+# load-table points were steps (a pulse of 200 us: 4 steps instead of 100).
+_STEPSIZE_TYPES = ("D30", "D31")
+
+
 def _output_times(model_data, analysis):
     """Output times from <timesteps> (regular: start, start+inc, ...,
     period), or [default_time_end] without time steps. Rounded
@@ -6616,9 +6623,14 @@ def _output_times(model_data, analysis):
     t_end = ts.get("period") or analysis.get("default_time_end", 1.0)
     inc = ts.get("increment")
     if not inc and bridge_plane.equivalent_3d(
-            model_data.get("analysis_type")) == "D30" and ts.get("stepsize"):
+            model_data.get("analysis_type")) in _STEPSIZE_TYPES and \
+            ts.get("stepsize"):
         # Dynamic Response (D30): Mecway writes every n-th calculation step
-        # (stepsize x keepeverynthtimestep, bridge_from_liml).
+        # (stepsize x keepeverynthtimestep, bridge_from_liml). D31 with CCX
+        # (<timesteps timeperiod stepsize>, the form Mecway writes): Mecway
+        # 36 + CCX wrote a solution every stepsize (headless, 19 Nov 2026:
+        # 1 s / 0.1 s -> 10 steps, 200 us / 2 us -> 100); keepevery-
+        # nthtimestep and automatictimestepping with D31 NOT verified.
         inc = ts["stepsize"] * ts.get("keep_every", 1)
     inc = inc or t_end
     start = ts.get("start") or 0.0
@@ -7033,13 +7045,15 @@ def _explicit_kinematics(model_data, intervals, schema):
 
 
 def _mecway_dyna_step(model_data):
-    """Mecway's calculation step of a Dynamic Response (D30, D20, DA0:
-    <timesteps stepsize> [keepeverynthtimestep]) in s, or None (other
-    analyses, or output times given as timepointsincrement)."""
+    """Mecway's calculation step of a Dynamic Response (D30, D20, DA0) or
+    a nonlinear dynamic D31 (<timesteps stepsize> [keepeverynthtimestep])
+    in s, or None (other analyses, or output times given as
+    timepointsincrement, which wins as before)."""
     ts = model_data.get("timesteps") or {}
     if ts.get("increment") or not ts.get("stepsize"):
         return None
-    if bridge_plane.equivalent_3d(model_data.get("analysis_type")) != "D30":
+    if bridge_plane.equivalent_3d(
+            model_data.get("analysis_type")) not in _STEPSIZE_TYPES:
         return None
     return ts["stepsize"]
 

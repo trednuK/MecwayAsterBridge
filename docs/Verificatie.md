@@ -164,7 +164,7 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
 
 Toegevoegd na deze regressie en apart gedraaid (19 nov 2026, nog niet in een volledige
 regressie): LS-07n (2 OK), LS-07o (1 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
-149), NL-03i (1 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK).
+149), NL-03i (1 OK), NL-03j (5 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK).
 
 **Bekende beperkingen** (status BEKEND):
 - KNOWN_BUGS 149: Mecway's tangentiële stijfheid kt wordt niet gemodelleerd, Code-Aster
@@ -2155,6 +2155,11 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
   heeft geen elastische tangentiële veer, de bridge plakt star met `COEF_PENA_FROT` =
   1/(1e-8 × de diagonaal van de contactvlakken) = 3,5e9 1/m; Mecway voegt de slip τ/kt
   toe). 10 stappen; met Mecway's kt als `COEF_PENA_FROT` (voor V2026.15) 754.
+- **NL-03j** (niet-lineaire dynamica D31 met *Time step size*): de patchtest van NL-03d als
+  D31-model met de dichtheid van staal, `<timesteps timeperiod="1 s" stepsize="0.1 s">` (de
+  vorm die Mecway voor CCX schrijft), langzaam belast, `PENALISATION`: bovenkant 1,9524 µm,
+  penetratie 1,000 µm en 10 uitvoerstappen, gelijk aan Mecway 36 met CCX (D31, headless).
+  Voor V2026.15 negeerde de bridge de stapgrootte van een D31-model (één stap op t = 1 s).
 - **NL-03i** (wrijving, aantal stappen): NL-03h met stap 0,02 s (25 schuifstappen in
   plaats van 5). Gepenaliseerde wrijving slipt per stap (τ/(μp))/`COEF_PENA_FROT`
   (KNOWN_BUGS 149), hier samen ongeveer 1,5 nm. u = 1,8656 µm tegen 1,8638 µm van NL-03h

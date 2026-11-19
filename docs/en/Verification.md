@@ -160,7 +160,7 @@ No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Offi
 
 Added since this regression and run on their own (19 Nov 2026, not yet in a full
 regression): LS-07n (2 OK), LS-07o (1 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
-149), NL-03i (1 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK).
+149), NL-03i (1 OK), NL-03j (5 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK).
 
 **Known limitations** (status BEKEND):
 - KNOWN_BUGS 149: Mecway's tangential stiffness kt is not modelled, Code-Aster sticks
@@ -2138,6 +2138,11 @@ samples) plus the kinks of the load tables (NL-20).
   has no elastic tangential spring, the bridge sticks rigidly with `COEF_PENA_FROT` =
   1/(1e-8 × the contact face diagonal) = 3.5e9 1/m; Mecway adds the slip τ/kt). 10 steps;
   with Mecway's kt as `COEF_PENA_FROT` (before V2026.15) 754.
+- **NL-03j** (nonlinear dynamics D31 with *Time step size*): the patch test of NL-03d as a
+  D31 model with steel's density, `<timesteps timeperiod="1 s" stepsize="0.1 s">` (the form
+  Mecway writes for CCX), loaded slowly, `PENALISATION`: top 1.9524 µm, penetration
+  1.000 µm and 10 output steps, equal to Mecway 36 with CCX (D31, headless). Before
+  V2026.15 the bridge ignored the step size of a D31 model (one step at t = 1 s).
 - **NL-03i** (friction, step count): NL-03h with step 0.02 s (25 shear steps instead of 5).
   Penalised friction slips (τ/(μp))/`COEF_PENA_FROT` per step (KNOWN_BUGS 149), here about
   1.5 nm in all. u = 1.8656 µm against 1.8638 µm of NL-03h with Lagrange friction
