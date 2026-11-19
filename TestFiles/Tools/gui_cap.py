@@ -18,6 +18,8 @@
 #           CAP_RESULTS=1 (only the Results window, example runs)
 #           CAP_SCROLL_PAGE=<n> (with CAP_SCROLL: the page that is scrolled
 #           to the bottom, default 0)
+#           CAP_SCROLL_Y=<px> (with CAP_SCROLL: scroll to this position
+#           instead of the bottom)
 #           CAP_SCALE=<f> (e.g. 1.25: all fonts of the windows f times
 #           larger, like Windows display scale 125 % in Mecway, where the
 #           fonts grow but fixed pixel sizes do not)
@@ -482,7 +484,8 @@ def worker():
                 def scr():
                     for c in host.Controls:
                         if c.Visible:
-                            c.AutoScrollPosition = Point(0, 2000)
+                            c.AutoScrollPosition = Point(
+                                0, int(_env("CAP_SCROLL_Y") or 2000))
                 f.Invoke(MethodInvoker(scr))
                 Thread.Sleep(400)
                 snap("%02d_%s_scroll" % (i, tag))

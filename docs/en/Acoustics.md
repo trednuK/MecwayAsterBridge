@@ -38,7 +38,8 @@ structures: [`Modal_and_buckling.md`](Modal_and_buckling.md).
    beams are not possible (Code-Aster has no acoustic element for them; ERROR, §4). An
    opening into a large space (like the organ pipe of Mecway's tutorial 17.13) is
    meshed together with a part of that space.
-2. **Analysis type.** Choose *Acoustic Resonance 3D* and set *Number of modes*.
+2. **Analysis type.** In *Analysis settings* choose *Acoustic Resonance 3D* and set
+   *Number of modes*.
    For a cross-section: *Acoustic Resonance 2D* (A20, §3.5).
 3. **Material.** *Isotropic* with *Speed of sound* (e.g. 340 m/s for air at 15 °C,
    ~1480 m/s for water). A density is not needed: the modes do not depend on it.
@@ -62,8 +63,8 @@ structures: [`Modal_and_buckling.md`](Modal_and_buckling.md).
 
 ### 1.2 In the bridge's main window
 
-1. **Active analysis:** `auto` chooses `acoustic_modes_3d` for A30 and A20; or choose
-   it yourself.
+1. **Active analysis** (page *General*): `auto` chooses `acoustic_modes_3d` for A30 and
+   A20; or choose it yourself.
 2. Page **Acoustics (cavity modes)** (change only when needed):
 
 | Setting (label) | Default | When to change |
@@ -396,7 +397,7 @@ The prefixes apply to the name of the selection in Mecway; case does not matter
    **and a density** (e.g. 1.2 kg/m³ for air, 1000 kg/m³ for water): a velocity
    source gives p = ρ·c·v, so without a density the bridge stops (§5.7).
 2. **Source.** Select the faces of the source (e.g. the cone of a loudspeaker, an
-   inlet) as a *Face selection* and name it `SOURCE_Speaker`. The normal velocity is
+   inlet) as a face *Named selection* `SOURCE_Speaker`. The normal velocity is
    then the setting *Velocity SOURCE_ faces* (default 1 mm/s), directed **into the
    fluid** (a pushing piston), phase 0. A different velocity or phase per source: put
    the line `** ASTER-BRON Speaker = 2 mm/s, 90` in a free text field in Mecway (e.g.
@@ -815,8 +816,8 @@ The prefixes apply to the name in Mecway; upper/lower case does not matter.
 5. **Mesh density:** the fluid as in §5.1 (≥ 10 linear or ≥ 5 quadratic elements per
    wavelength at the highest frequency; the bridge warns), the structure fine enough for
    the bending waves at the highest frequency.
-6. **Analysis:** choose `vibroacoustic_harm_3d` in the main window (`auto` computes the
-   modes, §6).
+6. **Analysis:** choose `vibroacoustic_harm_3d` as *Active analysis* (start screen, page
+   *General*; `auto` computes the modes, §6).
 
 ### 7.2 In the bridge's main window
 

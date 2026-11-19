@@ -101,9 +101,10 @@ something when the model has `CRACK_` selections.
 
 R_INF and R_SUP are the inner and outer radius of the ring around the front over
 which `CALC_G` integrates (theta method). For one model it also works with
-`#ASTER-OPTIE` in Mecway's custom input, e.g. `#ASTER-OPTIE fracture_r_inf = 0.002`
-and `#ASTER-OPTIE fracture_r_sup = 0.004`
-([`ASTER_lines_examples.md`](ASTER_lines_examples.md) example 16).
+`#ASTER-OPTIE` in a free text field such as *CCX* > *custom model definition*, e.g.
+`#ASTER-OPTIE fracture_r_inf = 0.002` and `#ASTER-OPTIE fracture_r_sup = 0.004`
+([`ASTER_lines_examples.md`](ASTER_lines_examples.md) §1 for the field and its prefix,
+example 16).
 
 The figure below is a section perpendicular to the front. The crack is drawn open for
 clarity; in the mesh the two lips lie at the same place (§1.2).

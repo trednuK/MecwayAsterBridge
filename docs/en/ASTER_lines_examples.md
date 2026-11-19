@@ -30,6 +30,14 @@ the line starts with that solver's comment character:
 | OpenRadioss > Custom engine input (`radiossengineinput`) | `#ASTER` |
 | Mystran > Custom bulk data (`nastranbulkdata`) | `$ASTER` |
 
+![Mecway 36: the outline tree with CCX > custom model definition and the field with two lines](../img/mecway_custom_model_definition.png)
+
+1. Outline tree: *CCX* > *custom model definition* (there when CCX is the solver in
+   *Analysis settings*); double-click it to open the field.
+2. Each line starts with the prefix of that field, here `**` (CCX comment), followed by
+   `ASTER-...`.
+3. One line per keyword; several lines in one field.
+
 - The bridge reads all five fields, whichever solver is selected. In practice: statics in
   a Mystran analysis (`$ASTER`), nonlinear/contact/dynamics in an OpenRadioss or CCX
   analysis.

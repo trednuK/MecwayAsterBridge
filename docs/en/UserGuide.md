@@ -239,7 +239,8 @@ Mecway's linear *Dynamic Response* (D30): with the option *Mode superposition*,
 `NEWMARK` and "COMPORTEMENT DEFORMATION" to `PETIT` for the same scheme as Mecway
 (verification MD-07: equal to Mecway); with other values the bridge gives a
 WARNING. The steady-state response to a sinusoidal load per frequency (amplitude,
-phase) has no Mecway analysis type: choose "Harmonic response" (`harmonic_3d`) yourself for a *Frequency* or *Dynamic Response* model
+phase) has no Mecway analysis type: choose "Harmonic response" (`harmonic_3d`) yourself
+as "Active analysis" for a *Frequency* or *Dynamic Response* model
 ([`Mode_superposition.md`](Mode_superposition.md) §7).
 
 **Page "Elements"** (all mechanical analyses)
@@ -488,7 +489,7 @@ plate (linear static, the default fields with and without `shell_forces`):
 
 The whole run (7 to 10 s, mostly starting Code-Aster) did not differ measurably;
 opening a larger `.liml` in Mecway takes longer (not measured). Not needed? Untick
-`shell_forces` on the page of the analysis, *Result fields to Mecway*.
+`shell_forces` on the page of the analysis, heading *Results*, *Result fields to Mecway*.
 
 For modal and buckling the bridge returns only the shapes (`displacements`), as
 Mecway does; for modal, `stresses`, `vonmises`, `strain`, `beam_forces`,

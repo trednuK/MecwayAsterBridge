@@ -37,7 +37,8 @@ constructies: [`Modaal_en_knik.md`](Modaal_en_knik.md).
    vlakke elementen tri3, tri6, quad4, quad8 in het XY-vlak, §3.5). Piramides, schalen en balken kunnen niet (Code-Aster heeft er geen akoestisch
    element voor; ERROR, §4). Een opening naar een grote ruimte (zoals de orgelpijp van
    Mecway's tutorial 17.13) mesh je mee als een stuk van die ruimte.
-2. **Analysetype.** Kies *Acoustic Resonance 3D* en zet *Number of modes*.
+2. **Analysetype.** Kies in *Analysis settings* *Acoustic Resonance 3D* en zet
+   *Number of modes*.
    Voor een doorsnede: *Acoustic Resonance 2D* (A20, §3.5).
 3. **Materiaal.** *Isotropic* met *Speed of sound* (bijv. 340 m/s voor lucht van
    15 °C, ~1480 m/s voor water). Een dichtheid is niet nodig: de modes hangen er niet
@@ -62,8 +63,8 @@ constructies: [`Modaal_en_knik.md`](Modaal_en_knik.md).
 
 ### 1.2 In het hoofdvenster van de bridge
 
-1. **Actieve analyse:** `auto` kiest bij A30 en A20 `acoustic_modes_3d`; of kies hem
-   zelf.
+1. **Actieve analyse** (pagina *Algemeen*): `auto` kiest bij A30 en A20
+   `acoustic_modes_3d`; of kies hem zelf.
 2. Pagina **Akoestiek (holtemodes)** (alleen aanpassen als dat nodig is):
 
 | Instelling (label) | Standaard | Wanneer aanpassen |
@@ -397,7 +398,7 @@ uit (`Bron_luidspreker` werkt ook).
    sound* **en een dichtheid** (bijv. 1.2 kg/m³ voor lucht, 1000 kg/m³ voor water):
    een snelheidsbron geeft p = ρ·c·v, dus zonder dichtheid stopt de bridge (§5.7).
 2. **Bron.** Selecteer de vlakken van de bron (bijv. de conus van een luidspreker, een
-   inlaat) als *Face selection* en noem die `BRON_Luidspreker`. De normaalsnelheid is
+   inlaat) als *Named selection* (vlakken) `BRON_Luidspreker`. De normaalsnelheid is
    dan de instelling *Snelheid BRON_-vlakken* (standaard 1 mm/s), gericht **de fluid
    in** (een zuiger die duwt), fase 0. Een andere snelheid of fase per bron: zet in
    Mecway in een vrij tekstveld (bijv. *CCX > Custom model definition*) de regel
@@ -820,8 +821,8 @@ De voorvoegsels gelden voor de naam in Mecway; hoofdletters maken niet uit.
 5. **Mesh-fijnheid:** het fluïdum zoals §5.1 (≥ 10 lineaire of ≥ 5 kwadratische
    elementen per golflengte bij de hoogste frequentie; de bridge waarschuwt), de
    constructie fijn genoeg voor de buiggolven bij de hoogste frequentie.
-6. **Analyse:** kies in het hoofdvenster `vibroacoustic_harm_3d` (`auto` rekent de
-   modes, §6).
+6. **Analyse:** kies `vibroacoustic_harm_3d` als *Actieve analyse* (startscherm, pagina
+   *Algemeen*; `auto` rekent de modes, §6).
 
 ### 7.2 In het hoofdvenster van de bridge
 

@@ -23,7 +23,7 @@ There are three ways; the first one that exists counts:
 
 1. **An `#ASTER-BEZWIJKEN` line** in Mecway's custom model definition (with solver CCX:
    *Analysis* > *CCX* > *Custom model definition*; the bridge also reads the
-   OpenRadioss and Mystran fields, see [`ASTER_lines_examples.md`](ASTER_lines_examples.md)):
+   OpenRadioss and Mystran fields, see [`ASTER_lines_examples.md`](ASTER_lines_examples.md) §1):
 
    ```
    ** ASTER-BEZWIJKEN Kerfstaal = 0.05
@@ -33,7 +33,8 @@ There are three ways; the first one that exists counts:
    without their own line. `#ASTER-FAILURE` works as well.
 2. **OpenRadioss `PLAS_TAB`**: the value `Eps_p_max` from the material card.
 3. **The setting** "Failure limit all plastic mat. (0 = off)" on the *Nonlinear static*, *Dynamic (implicit)* or
-   *Dynamic (explicit)* page: applies to every plastic material without its own limit.
+   *Dynamic (explicit)* page of the start screen, heading *Failure*: applies to every
+   plastic material without its own limit.
 
 Conditions:
 - the material is plastic: isotropic (hardening curve, bilinear isotropic,
@@ -69,6 +70,8 @@ Anything that does not meet these conditions does not fail. The bridge then writ
 WARNING to the log and reports it at the end of the run.
 
 ## 2. Settings ("Nonlinear static", "Dynamic (implicit)" and "Dynamic (explicit)" pages)
+
+On each of these pages of the start screen the settings are under the heading *Failure*.
 
 | Setting | Default | Meaning |
 |---|---|---|

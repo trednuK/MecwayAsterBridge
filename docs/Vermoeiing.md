@@ -45,7 +45,10 @@ Algemene werking van de bridge: [`Handleiding.md`](Handleiding.md).
 
 ### 1.2 De Wöhler-curve: `#ASTER-WOHLER`
 
-Eén regel per materiaal (`*` = alle materialen zonder eigen regel):
+Eén regel per materiaal (`*` = alle materialen zonder eigen regel), getypt in een vrij
+tekstveld zoals *CCX* > *custom model definition* (voorvoegsel per veld:
+[`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md) §1); de regels
+`#ASTER-BLOK`, `#ASTER-SIGNAAL` en `#ASTER-VERMOEIING` hieronder gaan op dezelfde plek:
 
 ```
 #ASTER-WOHLER Staal: S = [160, 200, 280, 400] MPa, N = [2e6, 1e6, 1e5, 1e4]

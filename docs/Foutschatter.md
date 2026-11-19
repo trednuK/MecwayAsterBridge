@@ -39,9 +39,9 @@ tussen buurelementen en ten opzichte van de last op de rand). Alleen
 |---|---|---|---|
 | Foutschatter (CALC_ERREUR, alleen volumes) | `error_estimator` | aan | uit als elke seconde telt of de extra velden in de `.liml` (vier variabelen) te groot worden; de schatting kost alleen elementberekeningen, geen extra oplossing van het stelsel |
 
-Voor één model kan het ook met een `#ASTER-OPTIE`-regel in Mecway's custom input
-(`#ASTER-OPTIE error_estimator = nee`, zie
-[`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md)).
+Voor één model kan het ook met een `#ASTER-OPTIE`-regel in een vrij tekstveld zoals
+*CCX* > *custom model definition* (`#ASTER-OPTIE error_estimator = nee`; waar en met welk
+voorvoegsel: [`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md) §1).
 
 **Waarom standaard aan:** de schatting gebruikt de al berekende verplaatsingen
 (alleen elementberekeningen, geen tweede oplossing van Ku = F) en geeft altijd een
@@ -309,7 +309,8 @@ Code: `Scripts/bridge_adapt.py`, de lus in `MecwayAsterBridgeMain.main()`
    `<model>_<run_id>_voor_verfijning.liml` in de werkmap; Mecway's verfijning is via
    de API niet ongedaan te maken. Het model zelf is na de lus verfijnd en opgeslagen.
 
-Voor één model kan het ook met `#ASTER-OPTIE`-regels, bijv.
+Voor één model kan het ook met `#ASTER-OPTIE`-regels (waar je ze typt:
+[`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md) §1), bijv.
 `#ASTER-OPTIE adapt_refine = ja` en `#ASTER-OPTIE adapt_target_error = 1.5`.
 
 ### 6.2 Instellingen
@@ -322,7 +323,7 @@ Voor één model kan het ook met `#ASTER-OPTIE`-regels, bijv.
 | Keuze van de elementen | `adapt_select` | `dorfler` | `fraction` of `factor` als je een vaste hoeveelheid per lus wilt |
 | Keuzewaarde | `adapt_fraction` | 0,5 | dorfler: kleiner (0,3) = minder elementen per lus en meer lussen; fraction: bijv. 0,1 (10% van de elementen); factor: bijv. 2 (fout > 2 x het gemiddelde) |
 | Ook de buren verfijnen (dunne elementen) | `adapt_neighbours` | uit | aan bij dunne elementen (dikte veel kleiner dan de breedte), zie §6.5 |
-| Max. aantal elementen na verfijnen | `adapt_max_elements` | 200000 | naar het geheugen van de computer; zet ook de geheugenlimiet van de run (`memory_limit`) hoog genoeg |
+| Max. aantal elementen na verfijnen | `adapt_max_elements` | 200000 | naar het geheugen van de computer; zet ook de geheugenlimiet van de run (`memory_limit`, kop *Code-Aster-run*) hoog genoeg |
 
 **Keuze `dorfler`** (Dörfler 1996, *bulk criterion*): de elementen met de grootste
 fout η_e, net zoveel tot ze samen de fractie 0,5 van Σ η_e² dragen. Zo verfijnt elke
@@ -390,7 +391,7 @@ plaat met gat (`tests_adaptief.py`, buiten de regressie):
 | tet10 (Kuhn-splitsing van hetzelfde mesh, dik en dun) | na de eerste lus stijgt de globale fout (5,8 → 6,7%): de lus stopt; doorrekenen gaf na 5 lussen Kt −5,4% bij 16 307 elementen |
 
 Daarom: gebruik **hex20** met elementen die niet veel dunner dan breed zijn; zet bij
-een dunwandig model *Ook de buren verfijnen* aan. De bridge meldt hex-elementen met een
+een dunwandig model *Ook de buren verfijnen* aan (pagina *Statisch*, kop *Adaptieve verfijning*; §6.2). De bridge meldt hex-elementen met een
 geschaalde Jacobiaan < 0,1 (WARNING) en stopt de lus als de globale fout niet meer
 daalt. Bij een tet-mesh: verfijn liever met Mecway's automesh (*Point/Surface
 refinement*) op de plek waar `errorestimate` groot is.
@@ -413,7 +414,7 @@ Deze grenzen staan ook in `KNOWN_BUGS.md` (punt 65).
 |---|---|---|
 | Adaptieve verfijning: doel bereikt | globale fout <= doel | klaar |
 | Adaptieve verfijning: maximaal aantal lussen bereikt | doel nog niet gehaald | meer lussen (`adapt_max_loops`) of een lager doel accepteren |
-| WARNING: Adaptieve verfijning gestopt: de globale fout daalt niet meer | singulariteit, een last die de schatter niet kent (§2.3), of slechte overgangselementen (§6.5) | bekijk `errorestimate` in Mecway; rond de hoek af, gebruik hex20, of zet *Ook de buren verfijnen* aan |
+| WARNING: Adaptieve verfijning gestopt: de globale fout daalt niet meer | singulariteit, een last die de schatter niet kent (§2.3), of slechte overgangselementen (§6.5) | bekijk `errorestimate` in Mecway; rond de hoek af, gebruik hex20, of zet *Ook de buren verfijnen* aan (pagina *Statisch*, kop *Adaptieve verfijning*; §6.2) |
 | WARNING: ... element(en) met een slechte vorm | platte hex-elementen na verfijnen | zie §6.5; begin opnieuw met het oorspronkelijke model (`_voor_verfijning.liml`) |
 | ERROR: ... de knoopselectie(s) ... liggen op ribben die verfijnd worden | voorwaarde/last op een knoopselectie | leg ze op een vlakselectie |
 | Adaptieve verfijning gestopt: ... zou het model ongeveer ... elementen hebben | grens `adapt_max_elements` | hogere grens (en `memory_limit`), of een ruimer doel |
@@ -466,8 +467,9 @@ statisch houdt de Mecway-route van §6. Code: `Scripts/bridge_homard.py` (bridge
 
 Op de pagina *Niet-lineair statisch* staan dezelfde vier instellingen.
 
-Voor één model kan het ook met `#ASTER-OPTIE`, bijv. `#ASTER-OPTIE adapt_homard = ja` en
-`#ASTER-OPTIE adapt_homard_target = 0.3`.
+Voor één model kan het ook met `#ASTER-OPTIE` (waar je het typt:
+[`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md) §1), bijv.
+`#ASTER-OPTIE adapt_homard = ja` en `#ASTER-OPTIE adapt_homard_target = 0.3`.
 
 ### 7.2 Instellingen
 

@@ -373,8 +373,9 @@ plaat 40 × 15 × 5 mm (symmetrievlak y = 0) met een rups van 30 mm op het boven
 4. **Thermal stress** met als *Reference temperature* de begintemperatuur (WARNING als
    die verschilt: dan is er op t = 0 al thermische rek).
    Mecway toont Thermal stress, Fixed support en Displacement mogelijk alleen bij een
-   mechanisch analysetype: zet de analyse dan eerst op *Static 3D*, voeg ze toe, en zet
-   de analyse daarna terug op *Thermal transient* (Mecway bewaart ze; headless
+   mechanisch analysetype: zet het analysetype in Mecway's *Analysis settings* dan eerst
+   op *Static 3D*, voeg ze toe, en zet de analyse daarna terug op *Thermal transient*
+   (Mecway bewaart ze; headless
    nagelopen met Mecway 33 op WE-08: de voorwaarden blijven in de opgeslagen `.liml`
    staan en Mecway rekent het thermische deel zonder melding). Dat de GUI ze zo
    toont, is NIET in de Mecway-GUI nagelopen.
@@ -560,7 +561,7 @@ patroon.
 | `ERROR: ...: ET >= E bij ... K` | tangentmodulus te groot bij een hoge temperatuur (E klein) | `H` gebruiken, of ET kleiner |
 | `ERROR: ...: H/ET zonder SY` | versteviging zonder vloeigrens | `SY` geven |
 | `WARNING: #ASTER-MATERIAAL werkt alleen ...; hier genegeerd` | de regel staat in een mechanisch model of een thermisch model zonder Thermal stress | Thermal stress toevoegen (T31), of de regel weghalen |
-| `BRIDGE_ONVOLLEDIG <t>` / `MECANONLINE` in de `.mess` | de mechanische stap convergeert niet, ook na knippen | `TC_CUT` zetten, E en SY boven 1200 °C niet extreem klein, `convergence_resi_rela` 1e-5, kleinere *Time step* |
+| `BRIDGE_ONVOLLEDIG <t>` / `MECANONLINE` in de `.mess` | de mechanische stap convergeert niet, ook na knippen | `TC_CUT` zetten in de regel `#ASTER-MATERIAAL` (§9.2), E en SY boven 1200 °C niet extreem klein, `convergence_resi_rela` 1e-5 (pagina *Thermisch*, kop *Oplosser*, §9.3), kleinere *Time step* |
 | `WARNING: Thermomechanisch: de tijdstappen ... lopen niet gelijk` | (zou niet moeten voorkomen) | melden; de temperatuur in Mecway kan bij een andere stap horen |
 
 ## 10. Metallurgie: fasen, hardheid en de invloed op de restspanning
@@ -979,7 +980,7 @@ Een doorsnede langs het pad; de bron beweegt naar rechts.
 | `ERROR: ... geen element van het toevoegmateriaal wordt geboren` | de bron komt niet langs het toevoegmateriaal, of start na het einde van de analyse | baan/`t0` controleren (coördinaten in m) |
 | `WARNING: ... n element(en) van het toevoegmateriaal worden nooit geboren` | toevoegmateriaal verder dan de voorloop voorbij het einde van de baan, of de bron of de analyse stopt eerder | bewust (de rups is langer dan de las)? Anders `lengte`, `t1` of *Time period* aanpassen |
 | `WARNING: ... voorloop zonder geboorte=...; genegeerd` | `voorloop` zonder `geboorte` | `geboorte=` toevoegen of `voorloop` weghalen |
-| `BRIDGE_ONVOLLEDIG` in de `.mess` met geboorte | de mechanische stap na een geboorte convergeert niet | `TC_CUT` zetten, kleinere *Time step*, E/SY boven 1200 °C niet extreem klein (§9.8) |
+| `BRIDGE_ONVOLLEDIG` in de `.mess` met geboorte | de mechanische stap na een geboorte convergeert niet | `TC_CUT` zetten in de regel `#ASTER-MATERIAAL` (§9.2), kleinere *Time step*, E/SY boven 1200 °C niet extreem klein (§9.8) |
 
 ## 12. Verificatie
 

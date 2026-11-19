@@ -28,12 +28,13 @@ niet (§6).
    V: met maar één van beide, of met V evenwijdig aan U, rekent Mecway het model niet en
    geeft de bridge een ERROR; een hoek zonder vectoren heeft geen effect. De oriëntatie mag
    een formule van het elementmidden (x, y, z) zijn.
-3. Kies *Static 3D*, *Frequency*, *Buckling*, *Nonlinear static 3D* of *Dynamic response 3D*
-   (impliciet) en start de bridge zoals gewoonlijk. Mecway zelf staat de matrixtypen alleen in
-   Static 3D toe (handleiding §8.5) en rekent de niet-lineaire en dynamische typen met CCX. Bij
-   grote verplaatsingen gebruiken de volume-elementen `GREEN_LAGRANGE` (Saint Venant-Kirchhoff,
-   orthotroop); Rayleigh-demping gaat als `AMOR_ALPHA`/`AMOR_BETA` in `ELAS_ORTH` (niet apart
-   geverifieerd).
+3. Kies in Mecway's *Analysis settings* *Static 3D*, *Frequency*, *Buckling*, *Nonlinear
+   static 3D* of *Dynamic response 3D* (impliciet) en start de bridge zoals gewoonlijk (met
+   *Actieve analyse* = `auto`, startscherm, pagina *Algemeen*, volgt hij Mecway). Mecway
+   zelf staat de matrixtypen alleen in Static 3D toe (handleiding §8.5) en rekent de
+   niet-lineaire en dynamische typen met CCX. Bij grote verplaatsingen gebruiken de
+   volume-elementen `GREEN_LAGRANGE` (Saint Venant-Kirchhoff, orthotroop); Rayleigh-demping
+   gaat als `AMOR_ALPHA`/`AMOR_BETA` in `ELAS_ORTH` (niet apart geverifieerd).
 
 ![Materiaalassen U, V, W uit de elementoriëntatie](img/orthotropic_axes.svg)
 

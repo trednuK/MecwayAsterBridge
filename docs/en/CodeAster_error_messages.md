@@ -23,7 +23,8 @@ bridge.
 - **model**: the cause lies in the Mecway model; adjust the model;
 - **limitation**: Code-Aster cannot do it; there is a workaround or nothing can be done;
 - **harmless**: expected alarm; the results are correct;
-- **own input**: the cause lies in your own `#ASTER` lines or an edited `.comm`;
+- **own input**: the cause lies in your own `#ASTER` lines (where to type them:
+  [`ASTER_lines_examples.md`](ASTER_lines_examples.md) §1) or an edited `.comm`;
 - **cause not determined**: seen, but not investigated.
 
 Bugs in the bridge itself are listed in `KNOWN_BUGS.md`; only the reference is
@@ -401,8 +402,8 @@ that file, not in the model.
 - **Seen**: derived from the code (`bridge_to_aster`, docstring of the follower
   pressure; test run).
 - **Solution**: in the bridge: follower pressure only on solid faces and `COQUE_3D`; on
-  DKT/DST the pressure stays fixed (WARNING). Choose *Linear shells* = `COQUE_3D` for
-  follower pressure on shells.
+  DKT/DST the pressure stays fixed (WARNING). Choose *Linear shells* = `COQUE_3D` (start
+  screen, page *Elements*) for follower pressure on shells.
 - **Status**: fixed in the bridge (as a message).
 
 ### `CALCUL_20` – material missing
@@ -911,7 +912,8 @@ Step-by-step plan and settings:
   (06-10-2026). Also with a tension-only cable (test B17, cause not determined).
   7 verification NK-04 (plastic column with imperfection, stop at 0.49 Pcr,
   expected).
-- **Solution** (page of the analysis, or per model with `#ASTER-OPTIE`):
+- **Solution** (start screen, page of the analysis, e.g. *Nonlinear static*, heading
+  *Steps and convergence*, or per model with `#ASTER-OPTIE`):
   1. *Convergence criterion* = MAXI (`convergence_criterion`; limit *Convergence
      RESI_GLOB_MAXI [N]*, default 1e-3 N). The bridge then writes
      `CONVERGENCE=_F(RESI_GLOB_MAXI=...)` (checked in the `.comm`). The effect was
@@ -930,7 +932,7 @@ Step-by-step plan and settings:
   4. increase *Substeps per time interval* / *Solver steps per Mecway time step* and
      *Max. Newton iterations*, and switch on the nonlinearities one at a time
      ([Settings §4.2](Settings_contact_and_nonlinear.md#42-step-by-step-plan)); with
-     contact *Contact method* = `auto` or PENALISATION;
+     contact *Contact method* (heading *Contact*) = `auto` or PENALISATION;
   5. not via the bridge;
   6. check the skipped loads in `<model>_<run-id>_bridge_log.txt`;
   7. not an error: the load at the last time is the load capacity. Continuing past
@@ -949,9 +951,10 @@ Step-by-step plan and settings:
   does not count as failed: `MECANONLINE` errors above that line do not go into the error
   message, but stay in the `.mess`. The same holds for `MECANONLINE9_7` at a limit point
   while the guard is on.
-- **Cause**: the step guard `gd_step_limit` of `POU_D_T_GD` beams, on a displacement
-  that does not get smaller by dividing the step: a load present from the start, or a
-  real snap-through.
+- **Cause**: the step guard `gd_step_limit` of `POU_D_T_GD` beams (*Step guard of
+  POU_D_T_GD beams*, page *Nonlinear static*, heading *Nonlinear buckling*), on a
+  displacement that does not get smaller by dividing the step: a load present from the
+  start, or a real snap-through.
 - **Seen**: verification NK-07, NK-08 (constant load, end at t = 0) and NK-09
   (snap-through of a shallow arch; `MECANONLINE9_7` there).
 - **Solution**: none needed. After it only the jump check is active: watch for *Jump in
@@ -965,7 +968,8 @@ Step-by-step plan and settings:
   mean time per iteration or step and the remaining time; `SUPERVIS_63`: "ARRET PAR
   MANQUE DE TEMPS CPU, les commandes suivantes sont ignorées, on passe directement dans
   FIN" when a command starts after the limit.
-- **Cause**: the run takes longer than `time_limit` (*Time limit run_aster*). That is
+- **Cause**: the run takes longer than `time_limit` (*Time limit run_aster*, page of
+  the analysis, heading *Code-Aster run*). That is
   wall-clock time from the start of the job; Code-Aster keeps 10 % of it to close and
   passes the rest to the commands ("Réserve CPU prévue" at the top of the `.mess`).
 - **What the bridge does**: in `STAT_NON_LINE`/`DYNA_NON_LINE` the job catches the error
@@ -1109,7 +1113,7 @@ Step-by-step plan and settings:
 With *COMPORTEMENT DEFORMATION* for large displacements the bridge chooses the form per
 element type (`COMPOR5_22`, `COMPOR1_44/47/99`); beams `POU_D_E`/`POU_D_T`, imposed
 rotations (`DDL_IMPO` DR*) and rigid couplings stay small rotations (KNOWN_BUGS 11);
-beams with large rotations: `elem_beam` = `POU_D_T_GD` ([Settings §2.9](Settings_contact_and_nonlinear.md#29-beams-with-large-rotations-elem_beam--pou_d_t_gd)). The bridge warns for an
+beams with large rotations: `elem_beam` = `POU_D_T_GD` (page *Elements*; [Settings §2.9](Settings_contact_and_nonlinear.md#29-beams-with-large-rotations-elem_beam--pou_d_t_gd)). The bridge warns for an
 imposed rotation above ~6° (`_warn_large_rotations`). Rotating a rigid part through a
 large angle works robustly with an imposed displacement as a `FORMULE` (example 9 of
 [`ASTER_lines_examples.md`](ASTER_lines_examples.md), recomputed on 06-10-2026).
@@ -1413,7 +1417,8 @@ Memory or time limit messages did not occur during testing. The limits are in th
   example 1 runs through (*Modal* f1 = f2 = 841.8 Hz with the test model of that time;
   with model A from `TestFiles/Voorbeelden/` 2855.4 Hz).
 - **Solution**: support the model better (connections from `#ASTER` code via
-  `#ASTER-EXCIT`), or choose a negative *Search frequency [Hz]* (e.g. -10 × the expected
+  `#ASTER-EXCIT`), or choose a negative *Search frequency [Hz]* (page *Modal*, heading
+  *Modes*; e.g. -10 × the expected
   first frequency); the rigid modes then appear with ~0 Hz. Checked on 06-10-2026
   (loose beam): with -1000 Hz six modes of ~1e-3 Hz and then 841.8 Hz. That only helps
   if the loose part has mass (density or point mass): the same model without density

@@ -303,8 +303,8 @@ eindtoestand, maar wel voor veel frequenties tegelijk.
 
 ### 7.2 In het hoofdvenster van de bridge
 
-1. **Actieve analyse:** kies *Harmonische respons* (`harmonic_3d`) zelf; `auto` kiest
-   bij V30 de modale en bij D30 de transiënte analyse.
+1. **Actieve analyse** (pagina *Algemeen*): kies *Harmonische respons* (`harmonic_3d`)
+   zelf; `auto` kiest bij V30 de modale en bij D30 de transiënte analyse.
 2. Pagina **Harmonische respons**:
 
 | Instelling (label) | Standaard | Wanneer aanpassen |

@@ -283,6 +283,11 @@ ANALYSIS_SPECS = [
     ("line_search", ("Lijnzoeken RECH_LINEAIRE (auto = kabels)",
                      "Line search RECH_LINEAIRE (auto = cables)"), "choice",
      ("auto", "on", "off")),
+    # Mecway's Automatic time stepping: with the steps (heading Steps and
+    # convergence), not under Contact
+    ("auto_time_stepping", ("Mecway's Automatic time stepping volgen",
+                            "Follow Mecway's Automatic time stepping"),
+     "bool", None),
     ("contact_algo", ("Contactmethode (auto / STANDARD / PENALISATION)",
                       "Contact method (auto / STANDARD / PENALISATION)"),
      "choice", ("auto", "STANDARD", "PENALISATION")),
@@ -290,9 +295,6 @@ ANALYSIS_SPECS = [
     ("contact_smoothing", ("Normalen gladstrijken (LISSAGE, gebogen vlakken)",
                            "Smooth normals (LISSAGE, curved faces)"), "bool",
      None),
-    ("auto_time_stepping", ("Mecway's Automatic time stepping volgen",
-                            "Follow Mecway's Automatic time stepping"),
-     "bool", None),
     ("contact_pene_maxi", ("Penetratiegrens penalty (x kortste rand, 0 = uit)",
                            "Penalty penetration limit (x shortest edge, "
                            "0 = off)"), "float_range", (0.0, 1.0)),

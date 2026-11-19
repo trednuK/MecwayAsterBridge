@@ -22,7 +22,8 @@ de Git-geschiedenis van de bridge.
 - **model**: de oorzaak zit in het Mecway-model; pas het model aan;
 - **beperking**: Code-Aster kan het niet; er is een omweg of niets aan te doen;
 - **onschuldig**: verwacht alarm; de resultaten kloppen;
-- **eigen invoer**: de oorzaak zit in eigen `#ASTER`-regels of een aangepaste `.comm`;
+- **eigen invoer**: de oorzaak zit in eigen `#ASTER`-regels (waar je ze typt:
+  [`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md) §1) of een aangepaste `.comm`;
 - **oorzaak niet vastgesteld**: gezien, maar niet uitgezocht.
 
 Fouten in de bridge zelf staan in `KNOWN_BUGS.md`; hier staat alleen de verwijzing.
@@ -405,7 +406,7 @@ in dat bestand, niet op het model.
   druk; testrun).
 - **Oplossing**: in de bridge: meebewegende druk alleen op volumevlakken en
   `COQUE_3D`; op DKT/DST blijft de druk vast (WARNING). Kies *Lineaire schalen* =
-  `COQUE_3D` voor meebewegende druk op schalen.
+  `COQUE_3D` (startscherm, pagina *Elementen*) voor meebewegende druk op schalen.
 - **Status**: opgelost in de bridge (als melding).
 
 ### `CALCUL_20` – materiaal ontbreekt
@@ -929,7 +930,8 @@ Stappenplan en instellingen:
   onderdrukte last (06-10-2026). Ook bij een tension-only kabel (test B17, oorzaak niet
   vastgesteld). 7 verificatie NK-04 (plastische kolom met imperfectie, stop op
   0,49 Pcr, verwacht).
-- **Oplossing** (pagina van de analyse, of per model met `#ASTER-OPTIE`):
+- **Oplossing** (startscherm, pagina van de analyse, bijv. *Niet-lineair statisch*, kop
+  *Stappen en convergentie*, of per model met `#ASTER-OPTIE`):
   1. *Convergentiecriterium* = MAXI (`convergence_criterion`; grens
      *Convergentie RESI_GLOB_MAXI [N]*, standaard 1e-3 N). De bridge schrijft dan
      `CONVERGENCE=_F(RESI_GLOB_MAXI=...)` (nagelopen in de `.comm`). Het effect is met de
@@ -948,7 +950,7 @@ Stappenplan en instellingen:
   4. *Substappen per tijdsinterval* / *Rekenstappen per Mecway-tijdstap* en
      *Max. Newton-iteraties* verhogen, en de niet-lineariteiten één voor één aanzetten
      ([Instellingen §4.2](Instellingen_contact_en_nietlineair.md#42-stappenplan)); bij
-     contact *Contactmethode* = `auto` of PENALISATION;
+     contact *Contactmethode* (kop *Contact*) = `auto` of PENALISATION;
   5. niet via de bridge;
   6. controleer in `<model>_<run-id>_bridge_log.txt` de overgeslagen belastingen;
   7. geen fout: de last op het laatste tijdstip is de draagkracht. Verder rekenen
@@ -967,7 +969,8 @@ Stappenplan en instellingen:
   geldt niet als mislukt: `MECANONLINE`-fouten boven die regel komen niet in de
   foutmelding, maar blijven in de `.mess` staan. Hetzelfde geldt voor `MECANONLINE9_7`
   bij een grenspunt terwijl de bewaking aan staat.
-- **Oorzaak**: de stapbewaking `gd_step_limit` van balken `POU_D_T_GD`, op een
+- **Oorzaak**: de stapbewaking `gd_step_limit` van balken `POU_D_T_GD` (*Stapbewaking
+  balken POU_D_T_GD*, pagina *Niet-lineair statisch*, kop *Niet-lineaire knik*), op een
   verplaatsing die niet kleiner wordt door de stap te delen: een last die er vanaf het
   begin staat, of een echte doorslag.
 - **Gezien**: verificatie NK-07, NK-08 (constante last, einde op t = 0) en NK-09
@@ -984,7 +987,8 @@ Stappenplan en instellingen:
   de gemiddelde tijd per iteratie of stap en de resterende tijd; `SUPERVIS_63`: "ARRET
   PAR MANQUE DE TEMPS CPU, les commandes suivantes sont ignorées, on passe directement
   dans FIN" als een commando na de limiet begint.
-- **Oorzaak**: de run duurt langer dan `time_limit` (*Tijdslimiet run_aster*). Dat is
+- **Oorzaak**: de run duurt langer dan `time_limit` (*Tijdslimiet run_aster*, pagina
+  van de analyse, kop *Code-Aster-run*). Dat is
   kloktijd vanaf de start van de job; Code-Aster houdt daarvan 10 % achter om af te
   sluiten en geeft de rest aan de commando's ("Réserve CPU prévue" bovenaan de `.mess`).
 - **Wat de bridge doet**: in `STAT_NON_LINE`/`DYNA_NON_LINE` vangt de job de fout op en
@@ -1130,7 +1134,7 @@ Stappenplan en instellingen:
 Met *COMPORTEMENT DEFORMATION* voor grote verplaatsingen kiest de bridge per
 elementtype de vorm (`COMPOR5_22`, `COMPOR1_44/47/99`); balken `POU_D_E`/`POU_D_T`,
 opgelegde rotaties (`DDL_IMPO` DR*) en starre koppelingen blijven kleine rotaties
-(KNOWN_BUGS 11); balken met grote rotaties: `elem_beam` = `POU_D_T_GD` ([Instellingen §2.9](Instellingen_contact_en_nietlineair.md#29-balken-met-grote-rotaties-elem_beam--pou_d_t_gd)). De bridge
+(KNOWN_BUGS 11); balken met grote rotaties: `elem_beam` = `POU_D_T_GD` (pagina *Elementen*; [Instellingen §2.9](Instellingen_contact_en_nietlineair.md#29-balken-met-grote-rotaties-elem_beam--pou_d_t_gd)). De bridge
 waarschuwt bij een opgelegde rotatie boven ~6° (`_warn_large_rotations`). Een star deel
 over een grote hoek draaien gaat robuust met een opgelegde verplaatsing als `FORMULE`
 (voorbeeld 9 van [`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md),
@@ -1443,7 +1447,8 @@ in de `.export` (*Tijdslimiet run_aster [s]*, *Geheugenlimiet run_aster [MB]*).
   voorbeeld 1 door (*Modaal* f1 = f2 = 841,8 Hz met het toenmalige testmodel; met model
   A uit `TestFiles/Voorbeelden/` 2855,4 Hz).
 - **Oplossing**: leg het model beter vast (verbindingen uit `#ASTER`-code via
-  `#ASTER-EXCIT`), of kies *Zoekfrequentie [Hz]* negatief (bijv. -10 × de verwachte
+  `#ASTER-EXCIT`), of kies *Zoekfrequentie [Hz]* negatief (pagina *Modaal*, kop
+  *Modes*; bijv. -10 × de verwachte
   eerste frequentie); de starre modes komen dan met ~0 Hz mee. Nagelopen op
   06-10-2026 (losse balk): met -1000 Hz zes modes van ~1e-3 Hz en daarna 841,8 Hz.
   Dat helpt alleen als het losse deel massa heeft (dichtheid of puntmassa): zelfde

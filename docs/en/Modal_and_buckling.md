@@ -505,8 +505,8 @@ own solver and CCX ([`Verification.md`](Verification.md) §7, BU-30 … BU-36):
   gives too high factors: C column 100 × 50 × 6 mm 616 against 393 (hex20). The bridge
   gives a WARNING for buckling with these profiles, and for a *General section* whose
   `#ASTER-SECTIE` line (MecwaySectionProps) gives an eccentric shear centre (`EY`/`EZ`). Then choose `elem_beam` = `POU_D_TG`
-  (§3.5.1; the same column 385.0) or check with `COQUE_3D` shells or volume elements
-  (KNOWN_BUGS 115).
+  (start screen, page *Elements*, *Beams (line2/line3)*; §3.5.1; the same column 385.0)
+  or check with `COQUE_3D` shells or volume elements (KNOWN_BUGS 115).
 - **Shell models of profiles**: the geometric stiffness of DKT/DST only has the
   deflection out of the plane of each plate (R3.07.03 §4.6). A plate that moves in its
   own plane in the buckling mode (the stem of a T in lateral-torsional buckling) gets
@@ -515,8 +515,8 @@ own solver and CCX ([`Verification.md`](Verification.md) §7, BU-30 … BU-36):
   mesh 27.26 and 20.34 (reversed moments). This probably holds for nonlinear buckling
   (`CRIT_STAB`, §5) and the buckling shape of an imperfection with DKT too (NOT
   verified). The bridge gives a WARNING for buckling with DKT shells; choose *Linear
-  shells* (`elem_shell`) = `COQUE_3D`. A plate that buckles out of its plane (BU-34) is
-  right with DKT (KNOWN_BUGS 132).
+  shells (tri3/quad4)* (`elem_shell`, start screen, page *Elements*) = `COQUE_3D`. A plate
+  that buckles out of its plane (BU-34) is right with DKT (KNOWN_BUGS 132).
 - **Negative factors**: the bridge also gives the factors for the reversed load (for the
   L frame −53.0). Mecway gives only positive factors and with its default *shift* 1
   sometimes skips a factor below 1 (ssll105: 0.4226 only with shift 0.3).
@@ -625,8 +625,8 @@ U4.42.01 §9.4.3, test case ssll103a). Mecway has no choice for this element.
 | alarm `ALGELINE2_74` | one of the `VERI_MODE` checks failed | see the alarms before it and the table in the `.mess` |
 | `<EXCEPTION> <FACTOR_57>` in the static step; the bridge reports the estimated error | error < 1e-3: poorly conditioned (slender volume model in bending), no mechanism; larger: a mechanism | small error: *Solver accuracy (RESI_RELA)* to the value from the message; otherwise check the supports ([Error messages](CodeAster_error_messages.md), `FACTOR_57`) |
 | WARNING: Negative buckling factor(s) | buckling under the reversed load (e.g. tension instead of compression) | check the load direction; only positive factors belong to the applied direction |
-| WARNING: Buckling with T, C or L profiles or a general section with an eccentric shear centre | flexural-torsional buckling is missing in the beam elements (shear centre, warping) | choose `elem_beam` = `POU_D_TG` (§3.5.1) or check with `COQUE_3D` shells or volume elements (KNOWN_BUGS 115, 132) |
-| WARNING: Buckling with DKT shells | DKT/DST have no geometric stiffness for a plate that moves in its own plane (§3.5) | for a profile made of plates: choose `elem_shell` = `COQUE_3D`; a plate that buckles out of its plane is right (KNOWN_BUGS 132) |
+| WARNING: Buckling with T, C or L profiles or a general section with an eccentric shear centre | flexural-torsional buckling is missing in the beam elements (shear centre, warping) | choose `elem_beam` = `POU_D_TG` (page *Elements*, §3.5.1) or check with `COQUE_3D` shells or volume elements (KNOWN_BUGS 115, 132) |
+| WARNING: Buckling with DKT shells | DKT/DST have no geometric stiffness for a plate that moves in its own plane (§3.5) | for a profile made of plates: choose `elem_shell` = `COQUE_3D` (page *Elements*); a plate that buckles out of its plane is right (KNOWN_BUGS 132) |
 | WARNING: Beam elset ... (POU_D_TG): no warping constant and no shear centre known | *General section* without an `#ASTER-SECTIE` line | create the section with MecwaySectionProps (line with `JG`, `EY`, `EZ`), or choose an I, T, C or L profile (§3.5.1) |
 | WARNING: Beam elset ... (POU_D_TG): #ASTER-SECTIE has no JG | old line without a warping constant | create the line again with MecwaySectionProps |
 | WARNING: elem_beam = POU_D_TG (warping) does not work in explicit dynamics | no mass for the warping `GRX` (§3.5.1) | normal; the beams compute as `POU_D_T` there |

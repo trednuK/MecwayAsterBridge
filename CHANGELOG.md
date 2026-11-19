@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Start screen: *Follow Mecway's Automatic time stepping* under *Steps and convergence*.**
+  On the page *Nonlinear static* the field stood under the heading *Contact*; it now sits
+  with the step settings, where the documentation lists it. Docs: where each setting is
+  (page, heading, field) and screenshots of Mecway's *Analysis settings* and of the CCX
+  *custom model definition* field.
 - **Nonlinear static without *Quasi-static*: load tables up to t = 1 s, like Mecway
   (results change).** Without `<timesteps>` Mecway computes one step and takes every table
   (force, imposed displacement, temperature) at t = 1 s, also when the table runs further

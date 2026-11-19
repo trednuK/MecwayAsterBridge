@@ -23,7 +23,7 @@ bestaat telt:
 
 1. **`#ASTER-BEZWIJKEN`-regel** in Mecway's custom model definition (bij solver CCX:
    *Analysis* > *CCX* > *Custom model definition*; de bridge leest ook de velden van
-   OpenRadioss en Mystran, zie [`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md)):
+   OpenRadioss en Mystran, zie [`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md) §1):
 
    ```
    ** ASTER-BEZWIJKEN Kerfstaal = 0.05
@@ -33,8 +33,8 @@ bestaat telt:
    materialen zonder eigen regel. `#ASTER-FAILURE` werkt ook.
 2. **OpenRadioss `PLAS_TAB`**: de waarde `Eps_p_max` uit de materiaalkaart.
 3. **Instelling** *Bezwijkgrens alle plastische mat. (0 = uit)* op de pagina
-   *Niet-lineair statisch*, *Dynamisch (impliciet)* of *Dynamisch (expliciet)*: geldt
-   voor elk plastisch materiaal zonder eigen grens.
+   *Niet-lineair statisch*, *Dynamisch (impliciet)* of *Dynamisch (expliciet)* van het
+   startscherm, kop *Bezwijken*: geldt voor elk plastisch materiaal zonder eigen grens.
 
 Voorwaarden:
 - het materiaal is plastisch: isotroop (hardingscurve, bilineair isotroop,
@@ -71,6 +71,8 @@ Wat niet aan de voorwaarden voldoet, bezwijkt niet. De bridge zet dan een WARNIN
 de log en meldt het aan het eind van de run.
 
 ## 2. Instellingen (pagina's Niet-lineair statisch, Dynamisch (impliciet) en Dynamisch (expliciet))
+
+Op elk van deze pagina's van het startscherm staan de instellingen onder de kop *Bezwijken*.
 
 | Instelling | Standaard | Betekenis |
 |---|---|---|

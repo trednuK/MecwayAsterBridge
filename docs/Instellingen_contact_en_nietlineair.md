@@ -62,7 +62,7 @@ Wat de niet-lineaire analyses ondersteunen:
 |---|---|---|
 | Code-Aster-run | `time_limit`, `memory_limit` | alle |
 | Oplosser | `solver_nprec`; `lin_solver`, `lin_solver_resi` | alle; `lin_solver` alleen statisch, `lin_solver_resi` statisch en de statische stap van modaal, knik en de imperfectie |
-| Stappen en convergentie | `substeps_per_interval` (statisch), `newton_max_iter`, `newton_reac_iter`, `default_time_end`, `convergence_criterion`, `convergence_resi_rela`, `convergence_resi_maxi`, `line_search`, `auto_time_stepping` (statisch) | niet-lineair statisch, dynamisch impliciet; `default_time_end` ook expliciet |
+| Stappen en convergentie | `substeps_per_interval` (statisch), `newton_max_iter`, `newton_reac_iter`, `default_time_end`, `convergence_criterion`, `convergence_resi_rela`, `convergence_resi_maxi`, `line_search`, `auto_time_stepping` (statisch) | niet-lineair statisch, dynamisch impliciet (daar, zonder `substeps_per_interval`, staan de velden onder de kop *Oplosser*); `default_time_end` ook expliciet |
 | Contact | `contact_algo`, `contact_smoothing`, `contact_pene_maxi` | niet-lineair statisch, dynamisch impliciet (`contact_algo` ook expliciet) |
 | Materiaal en kinematica | `plastic_strain_definition`, `deformation` | niet-lineair statisch, dynamisch |
 | Tijdschema | `schema`, `hht_alpha`, `substeps_per_output` (impliciet), `explicit_dt_factor` (expliciet) | dynamisch |
@@ -71,6 +71,18 @@ Wat de niet-lineaire analyses ondersteunen:
 | Niet-lineaire knik | `crit_stab`, `gd_step_limit`, `imperfection_amplitude`, `imperfection_mode`, `imperfection_unit` | niet-lineair statisch ([Modaal_en_knik.md](Modaal_en_knik.md) §5) |
 
 - **Per model**: `#ASTER-OPTIE sleutel = waarde` (§3.9).
+
+![Startscherm, pagina Niet-lineair statisch: de koppen Stappen en convergentie en Contact](img/nonlin_static_steps_nl.png)
+
+1. De pagina *Niet-lineair statisch* in de navigatielijst (de andere analyses hebben een
+   eigen pagina; op *Dynamisch (impliciet)* en *Thermisch* staan de convergentievelden
+   onder de kop *Oplosser*).
+2. Kop *Stappen en convergentie*.
+3. *Substappen per tijdsinterval* (`substeps_per_interval`).
+4. *Convergentiecriterium* (`convergence_criterion`), met `convergence_resi_rela` en
+   `convergence_resi_maxi` eronder.
+5. *Mecway's Automatic time stepping volgen* (`auto_time_stepping`).
+6. Kop *Contact*, *Contactmethode* (`contact_algo`).
 
 ---
 
@@ -96,13 +108,31 @@ Code-Aster-standaard als je het sleutelwoord weglaat (catalogus 17.4).
 het laatst bereikte tijdstip (de bridge zet geen `ARCHIVAGE`). Behalve bij CCX-*time
 points* zonder *Automatic time stepping*: Mecway bewaart dan alleen de eindtoestand, en de
 bridge stuurt alleen de eerste stap en de eindtoestand op de periode (elke stap als de run
-eerder stopt, bij bezwijken of bij vermoeiing; NL-75e..g). Om het hele lastpad te zien:
-vink in Mecway's *Analysis settings* (*Nonlinear Static*, *Quasi-static* aangevinkt)
-*Automatic time stepping* aan naast de *time points*, en laat de bridge-instelling
-*Mecway's Automatic time stepping volgen* (`auto_time_stepping`, startscherm, pagina
-*Niet-lineair statisch*) aan (standaard): de resultaten komen dan op de *time points*
-(uit: vaste stappen, elke stap gaat naar Mecway). Met de interne solver vraagt Mecway in
-plaats daarvan een *Time step size*; dan gaat elke stap mee. De rekenstappen zijn die van Mecway (*Time step size*,
+eerder stopt, bij bezwijken of bij vermoeiing; NL-75e..g). Om het hele lastpad te zien,
+doe in Mecway's *Analysis settings* (figuur hieronder) een van beide:
+
+- vink *Automatic time stepping* aan (punt 6): de resultaten komen op de *Regular time
+  points* (punt 7), zolang de bridge-instelling *Mecway's Automatic time stepping volgen*
+  (`auto_time_stepping`, startscherm, pagina *Niet-lineair statisch*, kop *Stappen en
+  convergentie*) aan staat (standaard; uit: vaste stappen, elke stap gaat naar Mecway);
+- of geef een *Time step* > 0 (punt 5; *Time step size* in oudere Mecway-versies): Mecway
+  schrijft die als stapgrootte, en elke stap gaat naar Mecway.
+
+![Mecway 36, Analysis settings van een niet-lineair statische analyse met CCX-time points](img/mecway_analysis_settings_l30.png)
+
+1. *Solver*: de solver die Mecway zou gebruiken (hier CCX); de bridge rekent altijd met
+   Code-Aster.
+2. Het analysetype, hier *Nonlinear Static 3D*.
+3. *Quasi-static*: aan geeft `<timesteps>`; uit: één stap tot t = 1 s (Mecway's staptijd,
+   zie boven).
+4. *Time period*: de eindtijd.
+5. *Time step*: > 0 geeft Mecway's stappen (`stepsize`), elk naar Mecway; 0 met punt 6
+   uit: alleen de eindtoestand.
+6. *Automatic time stepping*: aan: resultaten op de time points van punt 7.
+7. *Generate solution at* > *Regular time points* (*Start*, *Increment*): de time points;
+   alleen beschikbaar met punt 6 aan.
+
+De rekenstappen zijn die van Mecway (*Time step size*,
 `<timesteps stepsize>`: dt, 2 dt, ... tot de periode), plus de knikken van de
 lasttabellen die ertussen vallen; zo staan in Mecway dezelfde tijdstippen als bij
 Mecway's eigen solver. Lasttijden na de periode vallen weg. Staat Mecway's *Automatic time stepping* aan (`automatictimestepping="true"`, met de
@@ -397,11 +427,12 @@ waarden bij kleine rek, G = 2(C10 + C01), E = 2G(1 + ν) met ν uit K en G. Meld
 | hex8 met *Hex8* = `3D_SI` | WARNING: die elset krijgt `3D` (Code-Aster kent geen `GREEN_LAGRANGE` op lineaire elementen met onderintegratie, `ELEMENTSSI_1`) |
 | CCX > *custom element type* (bijv. C3D8R) | WARNING: alleen CalculiX, niet vertaald (zie hieronder) |
 
-**Kies *Hex8* = `LINE_QUAD` voor rubber op hex8.** Bijna onsamendrukbaar materiaal op een
-volledig geïntegreerde lineaire hex8 of tet4 'lockt' volumetrisch: het element kan niet
-vervormen bij gelijk volume en is veel te stijf, ook zonder buiging. Gemeten aan een
-verlijmde rubbercilinder (GitHub-issue #5: kwartmodel R 16 × H 18 mm, 684 hex8, Neo Hooke
-C10 = 0,348 MPa, D1 = 0,005 mm²/N, dus K/G = 575, 3 mm ingedrukt):
+**Kies *Hex8* = `LINE_QUAD` voor rubber op hex8** (startscherm, pagina *Elementen*, kop
+*Elementformulering*, *Hex8-volume-elementen*, `elem_hex8`). Bijna onsamendrukbaar
+materiaal op een volledig geïntegreerde lineaire hex8 of tet4 'lockt' volumetrisch: het
+element kan niet vervormen bij gelijk volume en is veel te stijf, ook zonder buiging.
+Gemeten aan een verlijmde rubbercilinder (GitHub-issue #5: kwartmodel R 16 × H 18 mm,
+684 hex8, Neo Hooke C10 = 0,348 MPa, D1 = 0,005 mm²/N, dus K/G = 575, 3 mm ingedrukt):
 
 | Element | Kracht bij 3 mm | t.o.v. referentie |
 |---|---|---|
@@ -939,8 +970,9 @@ penetratie actief. Tolerantie: 1e-6 × de kleinste ribbe (U2.04.04 §4.4.1).
   CalculiX-invoer; de bridge meldt ze en gebruikt ze alleen om te zien of `ADJUST` uit
   staat (dan sluit hij de spleet ook niet).
   Met de instelling *Verlijmd contact: spleet sluiten zoals CCX* (`bonded_close_gap`,
-  pagina Algemeen, standaard uit) schuift de bridge de gekoppelde slave-knopen in het mesh
-  voor Code-Aster op de master (de `.liml` blijft gelijk), zoals CCX doet: alleen volume op
+  startscherm, pagina *Algemeen*, kop *Resultaten en weergave*, standaard uit) schuift de
+  bridge de gekoppelde slave-knopen in het mesh voor Code-Aster op de master (de `.liml`
+  blijft gelijk), zoals CCX doet: alleen volume op
   volume, met een vlak mastervlak en een verschuiving tot 0,1 × de kortste afstand tot
   een andere knoop van een element bij de knoop of de kortste rand van zijn slave-vlak (een
   regel van de bridge, niet van CCX), in
@@ -1223,8 +1255,9 @@ door wrijvingscontact met plaat A en door het moercontact) en het bovenste deel 
 (moercontact en de voorspankracht). Met een zwakke elastic support op beide (1e8 Pa/m op de
 bovenkant van plaat B, 1e9 Pa/m op het moervlak) zijn de pivots nul op DX/DY/DZ weg. Het
 wrijvingscontact (coëfficiënt 0,5) zelf convergeert in Code-Aster dan nog niet: met
-*Contactmethode* = PENALISATION een pivot nul op de wrijvingsvrijheidsgraden (`LAGS_F`) van
-knopen van plaat B zonder contactdruk, met `CONTACT_INIT='NON'`, `ALGO_FROT` standaard of
+*Contactmethode* (`contact_algo`, kop *Contact*) = PENALISATION een pivot nul op de
+wrijvingsvrijheidsgraden (`LAGS_F`) van knopen van plaat B zonder contactdruk, met
+`CONTACT_INIT='NON'`, `ALGO_FROT` standaard of
 gepenaliseerd, `ALGO_RESO_FROT='POINT_FIXE'`, `INTEGRATION='GAUSS'`, een kleinere
 wrijvingspenalty, een oplopende voorspanning of `solver_nprec` −1 geen convergentie in de
 eerste stap (KNOWN_BUGS 43). Zonder wrijving (coëfficiënt 0) en met de twee zwakke steunen
@@ -1295,7 +1328,8 @@ fysische oorzaak, geen numerieke.
    (U2.04.04 §4.1).
 6. **Contactmethode.** Bij lijncontact, contact dat verloren gaat of
    `MECANONLINE9_4` met `LAGS_C`: `contact_algo` = `auto` (standaard bij niet-lineair
-   statisch en impliciete dynamica) of `PENALISATION` (§3.1, NL-03b).
+   statisch en impliciete dynamica) of `PENALISATION` (pagina van de analyse, kop
+   *Contact*; §3.1, NL-03b).
 7. **Kleinere stappen.** Verklein Mecway's *Time step size* (statisch; zonder
    stapgrootte `substeps_per_interval` verhogen) of verhoog `substeps_per_output`
    (impliciet; of verklein Mecway's *Time step size*). Code-Aster knipt een mislukte stap al zelf
