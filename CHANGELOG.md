@@ -195,7 +195,7 @@ and no value moved more than 1e-6 relative against V2026.14.
   bonded contact before the run; explicit dynamics, harmonic and the other analyses NOT verified
   (side findings: KNOWN_BUGS 156, now fixed, and 157).
 - **Behaviour change: contact method `auto` is the new default in Nonlinear Static**
-  (`contact_algo`, page Contact). Every unilateral contact with Mecway's *normal stiffness*
+  (`contact_algo`, page *Nonlinear static*, heading *Contact*). Every unilateral contact with Mecway's *normal stiffness*
   in a 3D Nonlinear Static analysis is now computed with penalty (`PENALISATION`), as Mecway
   does; before it was Lagrange (`STANDARD`) unless you chose otherwise. 2D models keep
   `STANDARD` (not measured with penalty; implicit dynamics and explicit dynamics: see below). Your own `ALGO_CONT`, `COEF_PENA_*` or
@@ -205,7 +205,7 @@ and no value moved more than 1e-6 relative against V2026.14.
   between beams runs where `STANDARD` stopped. Results of contact models change by the
   penetration p/kn. If you keep your own `Scripts/bridge_utils.py` from an older version
   (saved start-screen settings), it still says `STANDARD`: choose `auto` once on the page
-  Contact. Hard contact without penetration: choose `STANDARD`.
+  *Nonlinear static* (heading *Contact*). Hard contact without penetration: choose `STANDARD`.
 - **Option: close bonded gaps like CCX** (*Bonded contact: close gaps like CCX*, page
   General, off by default). On: the tied slave nodes of a solid-on-solid bonded contact are
   moved onto the master in the mesh for Code-Aster, as CCX does; the `.liml` stays as it is.
