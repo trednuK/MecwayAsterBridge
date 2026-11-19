@@ -55,7 +55,8 @@ from collections import OrderedDict
 from bridge_bcs import _value_at
 from bridge_results_liml import RESULTS_SUFFIX
 from bridge_utils import (log, tr, CONFIG_BRIDGE, get_active_analysis,
-                          run_name, template_path, parse_yes_no)
+                          run_name, template_path, parse_yes_no,
+                          mumps_keywords, mumps_memory_note, mumps_solveur)
 
 
 # ==========================================
@@ -113,7 +114,7 @@ def bonded_nprec(model_data, analysis, lin=False):
     return analysis
 
 
-def _build_solveur_ref(analysis):
+def _build_solveur_ref(analysis, low_rank=True):
     """
     SOLVEUR line for MECA_STATIQUE / STAT_NON_LINE.
 
@@ -124,9 +125,13 @@ def _build_solveur_ref(analysis):
     for MECA_STATIQUE (the residual of the solution is checked
     afterwards), -1 (no check) for STAT_NON_LINE, where Newton's own
     convergence criteria take over (catalogue c_solveur.py v17.4).
+    mumps_memory appends its keywords (bridge_utils.mumps_keywords);
+    low_rank=False for explicit dynamics, where no Newton residual would
+    catch an inexact low-rank factor.
     """
     nprec = analysis.get("solver_nprec", 8)
-    return "    SOLVEUR=_F(METHODE='MUMPS', NPREC={0}),\n".format(int(nprec))
+    return "    SOLVEUR=_F(METHODE='MUMPS', NPREC={0}{1}),\n".format(
+        int(nprec), mumps_keywords(analysis, low_rank))
 
 
 def _resi_rela(analysis):
@@ -156,8 +161,9 @@ def _static_step_solveur(analysis):
     gives an error of order 10 (NPREC -1: 13 and 64 measured);
     bridge_run_aster._resi_advice turns FACTOR_57 into advice.
     """
-    return "SOLVEUR=_F(METHODE='MUMPS', NPREC={0}, RESI_RELA={1}),".format(
-        int(analysis.get("solver_nprec", 8)), _resi_rela(analysis))
+    return "SOLVEUR=_F(METHODE='MUMPS', NPREC={0}, RESI_RELA={1}{2}),".format(
+        int(analysis.get("solver_nprec", 8)), _resi_rela(analysis),
+        mumps_keywords(analysis))
 
 
 # Linear solvers for MECA_STATIQUE (setting "lin_solver").
@@ -216,9 +222,10 @@ def _build_lin_solveur_ref(analysis, refine=False):
                    "WARNING: Unknown linear solver '{0}' (lin_solver); "
                    "MUMPS used.").format(solver))
         line = ("    SOLVEUR=_F(METHODE='MUMPS', NPREC={0}, "
-                "RESI_RELA={1}{2}),\n".format(
+                "RESI_RELA={1}{2}{3}),\n".format(
                     int(analysis.get("solver_nprec", 8)), resi,
-                    ", POSTTRAITEMENTS='FORCE'" if refine else ""))
+                    ", POSTTRAITEMENTS='FORCE'" if refine else "",
+                    mumps_keywords(analysis)))
     return line + "    INFO=2,\n"
 
 
@@ -7725,7 +7732,7 @@ def _imperfection_blocks(model_data, analysis, plan, charges, excit_clause,
         "    CALC_CHAR_CRIT=_F(NMAX_CHAR_CRIT={k}),\n"
         "    NORM_MODE=_F(NORME='TRAN'),\n"
         "    VERI_MODE=_F(STOP_ERREUR='NON'),\n"
-        "    SOLVEUR=_F(METHODE='MUMPS', NPREC={nprec}),\n"
+        "    SOLVEUR=_F(METHODE='MUMPS', NPREC={nprec}{mumps}),\n"
         ")\n"
         "imp_phi = CREA_CHAMP(OPERATION='EXTR', TYPE_CHAM='NOEU_DEPL_R',\n"
         "                     RESULTAT=imp_modes, NOM_CHAM='DEPL', "
@@ -7743,6 +7750,7 @@ def _imperfection_blocks(model_data, analysis, plan, charges, excit_clause,
         "mesh = MODI_MAILLAGE(reuse=mesh, MAILLAGE=mesh,\n"
         "                     DEFORME=_F(OPTION='TRAN', DEPL=imp_def))\n"
     ).format(k=k, t_end=float(t_end), cara=cara_ref, nprec=nprec,
+             mumps=mumps_keywords(analysis, low_rank=False),
              charge=charge_ref, amp=float(amp), aux=aux, model=model_ref,
              imp_step=_stress_step("imp_stat", model_data, excit, cara_ref,
                                    analysis, model=model_ref,
@@ -8095,7 +8103,8 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
         extra        = _indent(extra),
         conv         = _convergence_args(analysis),
         reac         = reac_iter,
-        solveur      = _indent(_build_solveur_ref(analysis)),
+        solveur      = _indent(_build_solveur_ref(analysis,
+                                                  low_rank=not explicit)),
     )
     plan = bridge_failure.failure_plan(
         model_data, analysis,
@@ -8166,7 +8175,8 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
                 "args": (_indent(cara_elem_ref) + _indent(excit_clause) +
                          "\n" + _indent(contact_ref) +
                          _indent(comportement_block) + _indent(loop_extra) +
-                         _indent(_build_solveur_ref(analysis)) +
+                         _indent(_build_solveur_ref(
+                             analysis, low_rank=not explicit)) +
                          "        CONVERGENCE=_F({0}),\n".format(
                              _convergence_args(analysis))),
                 "newton": "REAC_ITER={0}".format(reac_iter),
@@ -8780,8 +8790,9 @@ def _calc_modes_block(model_data, analysis, buckling, cara_ref, free=False,
     lines += ["    NORM_MODE=_F(NORME='{0}'),".format(aster_norm),
               "    VERI_MODE=_F(SEUIL={0}, STOP_ERREUR='NON'),".format(
                   "%.10g" % float(analysis.get("modal_tolerance", 1.0e-6))),
-              "    SOLVEUR=_F(METHODE='MUMPS', NPREC={0}),".format(
-                  int(analysis.get("solver_nprec", 8))),
+              "    SOLVEUR=_F(METHODE='MUMPS', NPREC={0}{1}),".format(
+                  int(analysis.get("solver_nprec", 8)),
+                  mumps_keywords(analysis, low_rank=False)),
               ")"]
     log("INFO: CALC_MODES {0}: {1} modes, normalisation {2}.".format(
         "MODE_FLAMB" if buckling else "DYNAMIQUE", n, norm))
@@ -9259,7 +9270,10 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
             "rigidite = COMB_MATR_ASSE(COMB_R=(\n"
             "    _F(MATR_ASSE=rigi_ela, COEF_R=1.0),\n"
             "    _F(MATR_ASSE=rigi_gd, COEF_R=1.0),\n"
-            "))\n" + _DEAD_CHECK_BLOCK)
+            "))\n" + _DEAD_CHECK_BLOCK.replace(
+                "SOLVEUR=_F(METHODE='MUMPS')",
+                "SOLVEUR=_F(METHODE='MUMPS'{0})".format(
+                    mumps_keywords(analysis, low_rank=False))))
     if prestress:
         terms = ["rigi_ela", "rigi_geo"] + (["rigi_rot"] if rotation else [])
         assemblage_block += (
@@ -9447,6 +9461,7 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
     # #ASTER-OPTIE: settings for this model (only in memory)
     analysis = bridge_custom.apply_options(
         analysis, model_data.get("aster_custom", {}).get("options", {}))
+    mumps_memory_note(analysis, CONFIG_BRIDGE.get("active_analysis"))
 
     solver_cmd = analysis.get("solver_command")
     builder    = SOLVER_BUILDERS_ASTER.get(solver_cmd)

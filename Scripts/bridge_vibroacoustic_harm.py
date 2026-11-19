@@ -65,7 +65,7 @@ import bridge_dyna_modal as bdm
 import bridge_harmonic as bh
 import bridge_acoustic as bac
 import bridge_vibroacoustic as bva
-from bridge_utils import log, tr, CONFIG_BRIDGE, run_name
+from bridge_utils import log, tr, CONFIG_BRIDGE, run_name, mumps_keywords
 
 ANALYSIS = "vibroacoustic_harm_3d"
 MIC_SUFFIX = bac.MIC_SUFFIX            # <run>_microfoons.csv (like S3a)
@@ -771,7 +771,7 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
         "    LIST_FREQ=bridge_lf,\n"
         "    NOM_CHAM=('DEPL',),\n"
         "    EXCIT=(\n{excit}\n    ),\n"
-        "    SOLVEUR=_F(METHODE='MUMPS', NPREC={nprec}),\n"
+        "    SOLVEUR=_F(METHODE='MUMPS', NPREC={nprec}{mumps}),\n"
         ")\n").format(
             ", ".join(_r(f) for f in freqs), len(freqs), _r(freqs[0]),
             _r(freqs[-1]), cara=cara_ref,
@@ -782,7 +782,8 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
             flui="    AMOR_FLUI='NON',\n" if damp_terms and impe_terms
             else "",
             excit="\n".join(excit),
-            nprec=int(analysis.get("solver_nprec", 8)))
+            nprec=int(analysis.get("solver_nprec", 8)),
+            mumps=mumps_keywords(analysis, low_rank=False))
 
     if stresses:
         calc_champ_block = (

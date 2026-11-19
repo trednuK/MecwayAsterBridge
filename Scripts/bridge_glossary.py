@@ -704,6 +704,20 @@ GLOSSARY = OrderedDict([
                u"(factorisatie van de matrix; robuust, standaard).",
                u"Direct linear solver of Code-Aster (factorization of the "
                u"matrix; robust, default).")),
+    ("low_rank", ("solver", u"MUMPS met blok-lage-rang-compressie "
+                  u"(ACCELERATION='LR+', LOW_RANK_SEUIL=1e-9): kleinere "
+                  u"factorisatie, sneller en minder schijfruimte bij grote "
+                  u"modellen.",
+                  u"MUMPS with block low-rank compression "
+                  u"(ACCELERATION='LR+', LOW_RANK_SEUIL=1e-9): smaller "
+                  u"factorization, faster and less disk space for large "
+                  u"models.")),
+    ("out_of_core", ("solver", u"MUMPS zet de factorisatie op schijf "
+                     u"(GESTION_MEMOIRE='OUT_OF_CORE'): minder geheugen, "
+                     u"trager, veel schijfruimte.",
+                     u"MUMPS puts the factorization on disk "
+                     u"(GESTION_MEMOIRE='OUT_OF_CORE'): less memory, slower, "
+                     u"a lot of disk space.")),
     ("GCPC", ("solver", u"Iteratieve lineaire oplosser (geconjugeerde "
               u"gradient met onvolledige factorisatie LDLT_INC); minder "
               u"geheugen, het convergentiescherm toont het residu per "
@@ -1431,12 +1445,16 @@ SETTING_HELP = {
                    u"(static), 900 (modal, buckling, "
                    u"acoustics, vibroacoustic modes), 7200 (dynamic), "
                    u"otherwise 1800."),
-    "memory_limit": (u"Maximaal geheugen voor Code-Aster in MB; te weinig: de "
-                     u"run stopt (.mess, convergentiescherm). Standaard "
-                     u"4096 (niet-lineair, dynamisch, thermisch), anders "
-                     u"2048.",
-                     u"Maximum memory for Code-Aster in MB; too little: the "
-                     u"run stops (.mess, convergence window). Default 4096 "
+    "memory_limit": (u"Maximaal geheugen voor Code-Aster in MB; te weinig: "
+                     u"MUMPS zet de factorisatie op schijf (trager, veel "
+                     u"schijfruimte) of de run stopt (.mess, "
+                     u"convergentiescherm). Niet meer dan het vrije RAM. "
+                     u"Standaard 4096 (niet-lineair, dynamisch, thermisch), "
+                     u"anders 2048.",
+                     u"Maximum memory for Code-Aster in MB; too little: "
+                     u"MUMPS puts the factorization on disk (slower, a lot "
+                     u"of disk space) or the run stops (.mess, convergence "
+                     u"window). Not more than the free RAM. Default 4096 "
                      u"(nonlinear, dynamic, thermal), otherwise 2048."),
     "solver_nprec": (u"MUMPS-controle op een singuliere matrix: aantal "
                      u"cijfers dat verloren mag gaan (8 = Code-Aster-"
@@ -1444,6 +1462,28 @@ SETTING_HELP = {
                      u"MUMPS check for a singular matrix: number of digits "
                      u"that may be lost (8 = Code-Aster default, default in "
                      u"all analyses; -1 = off)."),
+    "mumps_memory": (u"Geheugen van MUMPS bij grote modellen. auto "
+                     u"(standaard): Code-Aster kiest; past de factorisatie "
+                     u"niet in memory_limit, dan gaat die naar schijf. "
+                     u"low_rank: gecomprimeerde factorisatie (ACCELERATION "
+                     u"LR+): bij grote modellen sneller en veel minder "
+                     u"schijfruimte, maar meer piekgeheugen; zelfde "
+                     u"resultaat binnen de nauwkeurigheid van de oplosser; "
+                     u"niet bij eigenwaarden, harmonisch en expliciet. "
+                     u"out_of_core: "
+                     u"factorisatie altijd op schijf. Eerst memory_limit "
+                     u"verhogen. Per model: #ASTER-OPTIE mumps_memory = "
+                     u"low_rank.",
+                     u"Memory of MUMPS for large models. auto (default): "
+                     u"Code-Aster decides; if the factorization does not fit "
+                     u"in memory_limit, it goes to disk. low_rank: "
+                     u"compressed factorization (ACCELERATION LR+): for "
+                     u"large models faster and much less disk space, but "
+                     u"more peak memory; same result within the solver "
+                     u"accuracy; not for eigenvalues, harmonic and explicit. "
+                     u"out_of_core: factorization always on disk. Raise "
+                     u"memory_limit first. Per model: #ASTER-OPTIE "
+                     u"mumps_memory = low_rank."),
     "lin_solver": (u"Oplosser voor Ku = F in de statische analyse: MUMPS "
                    u"(direct, standaard) of GCPC (iteratief, met "
                    u"residu-grafiek in het convergentiescherm).",

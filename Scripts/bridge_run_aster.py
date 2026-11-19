@@ -1627,6 +1627,93 @@ def penetration_report(mess_path):
     return [msg]
 
 
+def mumps_memory_report(mess_path, memory_limit=None):
+    """
+    Did MUMPS put its factorization on disk by itself? Only the main
+    MECA_STATIQUE of Static writes the MUMPS statistics (INFO=2,
+    bridge_to_aster._build_lin_solveur_ref); ConvergenceParser keeps per
+    solve the effective out-of-core choice of the last factorization
+    (mumps "ooc", ICNTL(22)) and the in-core estimates (INFOG(17), with
+    low rank INFOG(37)). With GESTION_MEMOIRE='AUTO' Code-Aster 17.4
+    switches without a message when the estimate does not fit in the
+    memory of the job: measured on a hex8 block of 216 849 DOF with
+    memory_limit 2048 MB (estimate 3800 MB, 2.1 GB of factors on disk).
+    Returns a list with at most one message (also a WARNING in the log);
+    empty when nothing went out of core or out_of_core was asked for.
+    """
+    try:
+        text = _read_mess(mess_path)
+    except Exception:
+        return []
+    if u"Out-of-core option" not in text:
+        return []
+    parser = ConvergenceParser()
+    parser.feed(text)
+    parser.close()
+    need = None
+    low_rank = False
+    for lin in parser.data.linear:
+        if lin.mumps.get("ooc") != 1:
+            continue
+        if lin.solver.get("GESTION_MEMOIRE") == "OUT_OF_CORE":
+            continue                        # asked for (mumps_memory)
+        lr = "{0}".format(lin.solver.get("ACCELERATION", "")).startswith("LR")
+        est = lin.mumps.get("mem_est_blr") if lr else None
+        est = est if est is not None else lin.mumps.get("mem_est")
+        low_rank = low_rank or lr
+        if need is None or (est or 0) > need:
+            need = est or 0
+    if need is None:
+        return []
+    if memory_limit is None:
+        # the value the job ran with: P memory_limit of the .export of
+        # the same run (<model>_<run_id>.export next to the .mess)
+        memory_limit = "?"
+        try:
+            f = codecs.open(os.path.splitext(mess_path)[0] + ".export",
+                            "r", "utf-8", "replace")
+            try:
+                for line in f:
+                    if line.startswith(u"P memory_limit "):
+                        memory_limit = line.split()[2]
+            finally:
+                f.close()
+        except (IOError, OSError, IndexError):
+            pass
+    log("INFO: MUMPS factorization out of core; in-core estimate {0} MB "
+        "(memory_limit {1}).".format(need, memory_limit))
+    if low_rank:
+        # No number: the low-rank estimate (INFOG(37)) assumes more
+        # compression than reached; measured 1558 MB estimated, the
+        # in-core attempt within 2048 MB failed (MUMPS INFO(1) = -19) and
+        # Code-Aster factored again out of core.
+        msg = tr(u"MUMPS paste ook met low_rank niet in het geheugen en "
+                 u"zette de factorisatie op schijf (trager). Verhoog "
+                 u"memory_limit (nu {1} MB) als de pc meer vrij geheugen "
+                 u"heeft.",
+                 u"Also with low_rank MUMPS did not fit in memory and put "
+                 u"the factorization on disk (slower). Raise memory_limit "
+                 u"(now {1} MB) if the PC has more free "
+                 u"memory.").format(need, memory_limit)
+    else:
+        msg = tr(u"MUMPS paste niet in het geheugen en zette de "
+                 u"factorisatie op schijf (trager, veel schijfruimte). In "
+                 u"het geheugen is ongeveer {0} MB nodig (memory_limit nu "
+                 u"{1} MB). Verhoog memory_limit als de pc zoveel vrij "
+                 u"geheugen heeft, of kies mumps_memory = low_rank "
+                 u"(gecomprimeerde factorisatie: sneller, veel minder "
+                 u"schijfruimte).",
+                 u"MUMPS did not fit in memory and put the factorization on "
+                 u"disk (slower, a lot of disk space). In memory it needs "
+                 u"about {0} MB (memory_limit now {1} MB). Raise "
+                 u"memory_limit if the PC has that much free memory, or "
+                 u"choose mumps_memory = low_rank (compressed "
+                 u"factorization: faster, much less disk "
+                 u"space).").format(need, memory_limit)
+    log(u"WARNING: " + msg)
+    return [msg]
+
+
 # ==========================================
 # ERRORS IN study.mess
 # ==========================================

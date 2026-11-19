@@ -84,7 +84,7 @@ import re
 from collections import OrderedDict
 
 from bridge_utils import (log, parse_and_convert, CONFIG_BRIDGE, tr,
-                          run_name)
+                          run_name, mumps_keywords)
 import bridge_mesh
 
 
@@ -1969,8 +1969,12 @@ class _Thermal(object):
             "CHAM_MATER=fm_unit)",
             "nu_unit = NUME_DDL(MATR_RIGI=me_unit)",
             "ma_unit = ASSE_MATRICE(MATR_ELEM=me_unit, NUME_DDL=nu_unit)",
+            # mumps_memory: only out_of_core (simple keyword of FACTORISER,
+            # catalogue factoriser.py v17.4); a low-rank unit mass gains
+            # nothing.
             "ma_unit = FACTORISER(reuse=ma_unit, MATR_ASSE=ma_unit, "
-            "METHODE='MUMPS')",
+            "METHODE='MUMPS'{0})".format(
+                mumps_keywords(self.analysis, low_rank=False)),
         ]
         excit = []
         for k, (grp, value) in enumerate(self.node_flows):
@@ -2721,8 +2725,9 @@ def build_thermal(work_dir, model_data, msh_path, resu_name, analysis):
                   "    SCHEMA_TEMPS=_F(SCHEMA='THETA', THETA={0}),".format(
                       _r(analysis.get("theta", 0.57)))]
     solve += ["    INCREMENT=_F(LIST_INST=times),",
-              "    SOLVEUR=_F(METHODE='MUMPS', NPREC={0}),".format(
-                  int(analysis.get("solver_nprec", 8)))]
+              "    SOLVEUR=_F(METHODE='MUMPS', NPREC={0}{1}),".format(
+                  int(analysis.get("solver_nprec", 8)),
+                  mumps_keywords(analysis))]
     if tb.nonlinear:
         solve += ["    NEWTON=_F(REAC_ITER={0}),".format(
                       int(analysis.get("newton_reac_iter", 1))),

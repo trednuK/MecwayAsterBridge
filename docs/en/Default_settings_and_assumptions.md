@@ -84,8 +84,9 @@ Pages *General* and *Elements* of the start screen. They apply to all analyses.
 |---|---|---|---|---|---|
 | `fields` (Result fields) | per analysis, see below | which fields go to Mecway | Choice: what Mecway itself shows | fewer fields = smaller file | - |
 | `time_limit` [s] | 600 (static), 1800 (nonlinear static, thermal), 7200 (dynamic), 900 (modal, buckling) | `P time_limit` in the `.export`; `run_aster` stops afterwards | Choice, NOT measured | long runs; an aborted run gives no complete results | - |
-| `memory_limit` [MB] | 2048 (static, modal, buckling), 4096 (others) | `P memory_limit` in the `.export` | Choice, NOT measured | `.mess` or convergence window shows a memory shortage | - |
+| `memory_limit` [MB] | 2048 (static, modal, buckling), 4096 (others) | `P memory_limit` in the `.export` | Choice, NOT measured | `.mess` or convergence window shows a memory shortage; WARNING after a static run that MUMPS put the factorization on disk | hex8 block of 217 thousand equations: with 2048 on disk (2.1 GB), with 8192 in memory ([Settings](Settings_contact_and_nonlinear.md) §2.6) |
 | `solver_nprec` (MUMPS NPREC) | 8 | `SOLVEUR=_F(METHODE='MUMPS', NPREC=...)`: number of digits that may be lost in the factorisation before the matrix is called singular | 8 = CA (`c_solveur.py`), in all analyses | see §3.2 | R-FREE (§5) |
+| `mumps_memory` (MUMPS memory) | `auto` | `auto`: nothing (Code-Aster decides, `GESTION_MEMOIRE='AUTO'`); `low_rank`: `ACCELERATION='LR+'`, `LOW_RANK_SEUIL=1.0e-9`; `out_of_core`: `GESTION_MEMOIRE='OUT_OF_CORE'` | CA default; without the setting the `.comm` stays the same | large model that does not fit in `memory_limit`: first a higher `memory_limit`, then `low_rank` | hex8 block of 680 thousand equations: `low_rank` 160 s instead of 240 s, 1.5 instead of 10.6 GB on disk, results equal up to 1e-13 ([Settings](Settings_contact_and_nonlinear.md) §2.6) |
 
 Result fields per analysis: static `displacements`, `stresses`, `vonmises`,
 `reactions`, `beam_forces`, `shell_forces`, `safety_factor`; nonlinear static also

@@ -97,7 +97,7 @@ import os
 from collections import OrderedDict
 
 from bridge_utils import (log, parse_and_convert, CONFIG_BRIDGE, tr,
-                          run_name, _normalize_unit_string)
+                          run_name, _normalize_unit_string, mumps_keywords)
 
 
 # Mecway loads that only exist in Acoustic Resonance (manual v33
@@ -614,8 +614,9 @@ def _calc_modes_block(model_data, analysis, shift_free):
                   "    CALC_FREQ=_F(NMAX_FREQ={0}),".format(n)]
     lines += ["    VERI_MODE=_F(SEUIL={0}, STOP_ERREUR='NON'),".format(
                   "%.10g" % float(analysis.get("modal_tolerance", 1.0e-6))),
-              "    SOLVEUR=_F(METHODE='MUMPS', NPREC={0}),".format(
-                  int(analysis.get("solver_nprec", 8))),
+              "    SOLVEUR=_F(METHODE='MUMPS', NPREC={0}{1}),".format(
+                  int(analysis.get("solver_nprec", 8)),
+                  mumps_keywords(analysis, low_rank=False)),
               ")"]
     log("INFO: CALC_MODES acoustic: {0} modes.".format(n))
     return "\n".join(lines) + "\n"
@@ -1691,10 +1692,11 @@ def build_acoustic_harm(work_dir, model_data, msh_path, resu_name, analysis):
         "{1}"
         "    LIST_FREQ=freqs,\n"
         "    EXCIT=(\n{2}    ),\n"
-        "    SOLVEUR=_F(METHODE='MUMPS', NPREC={3}),\n"
+        "    SOLVEUR=_F(METHODE='MUMPS', NPREC={3}{4}),\n"
         ")\n").format(", ".join(_r(f) for f in freqs),
                       "    MATR_AMOR=amor_c,\n" if abso else "",
-                      "".join(excit), int(analysis.get("solver_nprec", 8)))
+                      "".join(excit), int(analysis.get("solver_nprec", 8)),
+                      mumps_keywords(analysis, low_rank=False))
 
     export_block = (bta._custom_code(model_data, "post") +
                     _harm_export_block(work_dir, model_data, inp["mics"]))

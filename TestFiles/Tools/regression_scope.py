@@ -13,16 +13,24 @@ what happens after the run (bridge_from_aster, bridge_results_liml, the aster_*
 job scripts), so the fastest case of every group is run as well.
 
     python TestFiles/Tools/regression_scope.py [--base develop] [--also NK NL-8]
-                                               [--jobs 8]
+                                               [--jobs 8] [--mail]
+                                               [--set key=value ...]
+                                               [--dump DIR]
 
 Prints the ids to pass to run_verificatie.py. Cases that run a solver while
 they are being built cannot be compared (NOT_COMPARED): they are reported and
 go into the list. Nothing in the checkout is written: models and .comm files
 go to a temporary folder (VERIF_WORK if set).
+
+--mail also compares the .mail (sha256) of every case. --set puts a setting
+in the analysis of every case, with both codes (a key the base does not know
+is ignored there); the value is read as JSON, else as text. --dump writes the
+.comm of the new code per case to DIR, to check a setting in all of them.
 """
 import argparse
 import concurrent.futures
 import glob
+import hashlib
 import io
 import json
 import os
@@ -60,6 +68,8 @@ u.CONFIG_BRIDGE["language"] = "en"
 u.CONFIG_BRIDGE["ncpus"] = 1
 u.CONFIG_BRIDGE.update(cfg.get("general", {}))
 u.CONFIG_BRIDGE["analyses"][analysis].update(cfg.get("settings", {}))
+u.CONFIG_BRIDGE["analyses"][analysis].update(
+    json.loads(os.environ.get("REGRESSION_SET") or "{}"))
 u.CONFIG_BRIDGE["active_analysis"] = analysis
 u.set_run_log("verif", model)
 from bridge_from_liml import extract_aster_data_from_liml
@@ -112,26 +122,51 @@ def _spellings(path):
     return (path, path.replace("\\", "/"), back, back.replace("\\", "\\\\"))
 
 
+def _mail_hash(work):
+    """sha256 of the .mail in work, or None."""
+    found = glob.glob(os.path.join(work, "*.mail"))
+    if not found:
+        return None
+    with open(found[0], "rb") as f:
+        return hashlib.sha256(f.read()).hexdigest()
+
+
 def generate(job):
-    """(case id, tag, .comm text with neutral paths, or None)."""
-    scripts, root, tag, cid, liml, analysis, cfg = job
+    """(case id, tag, .comm text with neutral paths or None, .mail sha256
+    or None)."""
+    scripts, root, tag, sets, cid, liml, analysis, cfg = job
     work = os.path.join(root, tag, cid)
     env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1",
-               PYTHONIOENCODING="utf-8")
+               PYTHONIOENCODING="utf-8", REGRESSION_SET=json.dumps(sets))
     try:
         subprocess.run([sys.executable, "-c", _GENERATE, scripts, work, liml,
                         analysis, cfg], env=env, timeout=300,
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except subprocess.TimeoutExpired:
-        return cid, tag, None
+        return cid, tag, None, None
+    mail = _mail_hash(work)
     found = glob.glob(os.path.join(work, "*.comm"))
     if not found:
-        return cid, tag, None
+        return cid, tag, None, mail
     text = io.open(found[0], encoding="utf-8", errors="replace").read()
     for path in (work, scripts):
         for spelled in _spellings(path):
             text = text.replace(spelled, "<PATH>")
-    return cid, tag, text
+    return cid, tag, text, mail
+
+
+def _parse_sets(items):
+    """{key: value} of --set key=value (value as JSON, else text)."""
+    sets = {}
+    for item in items:
+        key, sep, raw = item.partition("=")
+        if not sep or not key.strip():
+            raise SystemExit("--set expects key=value, not %r" % item)
+        try:
+            sets[key.strip()] = json.loads(raw)
+        except ValueError:
+            sets[key.strip()] = raw
+    return sets
 
 
 def fastest_per_group(cases, seconds):
@@ -153,7 +188,14 @@ def main():
     parser.add_argument("--also", nargs="*", default=[],
                         help="ids or prefixes of the topic, always run")
     parser.add_argument("--jobs", type=int, default=8)
+    parser.add_argument("--mail", action="store_true",
+                        help="also compare the .mail of every case")
+    parser.add_argument("--set", nargs="*", default=[], metavar="KEY=VALUE",
+                        help="setting for the analysis of every case")
+    parser.add_argument("--dump", metavar="DIR",
+                        help="write the .comm of the new code per case here")
     args = parser.parse_args()
+    sets = _parse_sets(args.set)
     root = tempfile.mkdtemp(prefix="regression_scope_",
                             dir=os.environ.get("VERIF_WORK") or None)
     try:
@@ -161,15 +203,25 @@ def main():
         os.chdir(VERIF)
         cases = load_cases()
         models = write_models(cases, root)
-        jobs = [(scripts, root, tag) + m for m in models
+        jobs = [(scripts, root, tag, sets) + m for m in models
                 for scripts, tag in ((old, "base"), (SCRIPTS, "new"))]
         texts = {}
+        mails = {}
         with concurrent.futures.ThreadPoolExecutor(args.jobs) as pool:
-            for cid, tag, text in pool.map(generate, jobs):
+            for cid, tag, text, mail in pool.map(generate, jobs):
                 texts.setdefault(cid, {})[tag] = text
+                mails.setdefault(cid, {})[tag] = mail
     finally:
         os.chdir(REPO)
         shutil.rmtree(root, ignore_errors=True)
+    if args.dump:
+        if not os.path.isdir(args.dump):
+            os.makedirs(args.dump)
+        for cid, t in texts.items():
+            if t.get("new") is not None:
+                with io.open(os.path.join(args.dump, cid + ".comm"), "w",
+                             encoding="utf-8") as f:
+                    f.write(t["new"])
     changed = sorted(c for c, t in texts.items()
                      if t.get("base") != t.get("new"))
     neither = sorted(c for c, t in texts.items()
@@ -184,6 +236,16 @@ def main():
     print("cases %d, compared %d, identical .comm %d, different %d" % (
         len(cases), len(texts), len(texts) - len(changed), len(changed)))
     print("different: " + (" ".join(changed) or "-"))
+    if args.mail:
+        mail_changed = sorted(c for c, m in mails.items()
+                              if m.get("base") != m.get("new"))
+        no_mail = sorted(c for c, m in mails.items()
+                         if m.get("base") is None and m.get("new") is None)
+        print("identical .mail %d, different %d: %s" % (
+            len(mails) - len(mail_changed), len(mail_changed),
+            " ".join(mail_changed) or "-"))
+        print("no .mail with either code: " + (" ".join(no_mail) or "-"))
+        changed = sorted(set(changed) | set(mail_changed))
     print("no .comm with either code: " + (" ".join(neither) or "-"))
     print("not compared: " + " ".join(NOT_COMPARED))
     print("fastest per group: " + " ".join(smoke))

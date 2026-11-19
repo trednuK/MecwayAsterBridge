@@ -67,7 +67,7 @@ import os
 import re
 from collections import OrderedDict
 
-from bridge_utils import log, tr, CONFIG_BRIDGE, run_name
+from bridge_utils import log, tr, CONFIG_BRIDGE, run_name, mumps_keywords
 
 TAG = "cyclicsymmetry"
 
@@ -836,8 +836,9 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
     ] + (["    CARA_ELEM=cara,"] if cara_ref else []) + [
         "    VERI_MODE=_F(SEUIL={0}, STOP_ERREUR='NON'),".format(
             "%.10g" % float(analysis.get("modal_tolerance", 1.0e-6))),
-        "    SOLVEUR=_F(METHODE='MUMPS', NPREC={0}),".format(
-            int(analysis.get("solver_nprec", 8))),
+        "    SOLVEUR=_F(METHODE='MUMPS', NPREC={0}{1}),".format(
+            int(analysis.get("solver_nprec", 8)),
+            mumps_keywords(analysis, low_rank=False)),
         ")",
         "lint = DEFI_INTERF_DYNA(",
         "    NUME_DDL=numedd,",

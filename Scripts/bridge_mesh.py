@@ -403,6 +403,12 @@ def _wrap(items, width=79):
     FORMAT='ASTER' reads at most 80 characters per line: a longer HEXA20
     line gave <EXCEPTION> <MODELISA7_66> 'item attendu en debut de ligne'
     (Code-Aster 17.4); an element may continue over several lines."""
+    # Fast path (most elements): when the whole line fits, the loop below
+    # never breaks and gives exactly this one line.
+    if items:
+        line = " " + " ".join(items)
+        if len(line) <= width:
+            return [line]
     lines = []
     cur = ""
     for it in items:
@@ -413,6 +419,45 @@ def _wrap(items, width=79):
     if cur:
         lines.append(cur)
     return lines
+
+
+# Characters held before a write in _MailWriter. One list of every line,
+# joined at the end, kept the text of the mesh three times (list, join, +
+# "\n"): on a generated 804k-node hex8 block that raised the peak working
+# set of IronPython from 6.5 to 7.2 GB. Measured 19 Nov 2026 (run_ipy.ps1).
+_MAIL_CHUNK = 1 << 15
+
+
+class _MailWriter(object):
+    """
+    Lines of the ASTER mesh, written in pieces of about _MAIL_CHUNK
+    characters. The file is the same as f.write("\\n".join(lines) + "\\n"):
+    every piece is its lines joined by "\\n" plus one "\\n", and a piece
+    without lines writes nothing. The handle keeps its own mode, so the
+    newline translation of a text-mode file is the same per character.
+    """
+
+    def __init__(self, handle, chunk=None):
+        self._f = handle
+        self._chunk = _MAIL_CHUNK if chunk is None else chunk
+        self._buf = []
+        self._size = 0
+
+    def append(self, line):
+        self._buf.append(line)
+        self._size += len(line) + 1
+        if self._size >= self._chunk:
+            self.flush()
+
+    def extend(self, lines):
+        for line in lines:
+            self.append(line)
+
+    def flush(self):
+        if self._buf:
+            self._f.write("\n".join(self._buf) + "\n")
+            self._buf = []
+            self._size = 0
 
 
 # ==========================================
@@ -988,23 +1033,38 @@ def _free_faces(model_data, conn):
     corner nodes in a node selection of an imposed displacement
     (_DIRICHLET_BCS). Faces from _FACE_CORNERS (corner nodes; the order
     does not matter for PRES_REP ~0, ORIE_PEAU orients them outwards).
+
+    Speed: a plain dict plus a list of the keys in first-seen order
+    (that order is the order of the result) instead of an OrderedDict,
+    which is pure Python in IronPython 2.7, and the face table looked up
+    once per element type. On a generated 804k-node hex8 block the count
+    took 26 s in IronPython with the OrderedDict (19 Nov 2026).
     """
     shapes = model_data.get("elem_shapes", {})
-    counts = OrderedDict()
+    counts = {}
+    order = []
+    face_tables = {}       # atype -> [corner indices per faceid, sorted]
     for eid in sorted(conn):
         if shapes.get(eid) not in _SOLID_SHAPES:
             continue
         atype, cn = conn[eid]
-        for prefix, table in _FACE_CORNERS.items():
-            if atype.startswith(prefix):
-                for fid in sorted(table):
-                    corners = [cn[i] for i in table[fid]]
-                    key = frozenset(corners)
-                    if key in counts:
-                        counts[key][0] += 1
-                    else:
-                        counts[key] = [1, eid, corners]
-                break
+        faces = face_tables.get(atype)
+        if faces is None:
+            faces = []
+            for prefix, table in _FACE_CORNERS.items():
+                if atype.startswith(prefix):
+                    faces = [table[fid] for fid in sorted(table)]
+                    break
+            face_tables[atype] = faces
+        for idx in faces:
+            corners = [cn[i] for i in idx]
+            key = frozenset(corners)
+            entry = counts.get(key)
+            if entry is None:
+                counts[key] = [1, eid, corners]
+                order.append(key)
+            else:
+                entry[0] += 1
     taken = set()
     for eid, (atype, cn) in conn.items():
         if shapes.get(eid) in _SHELL_SHAPES:
@@ -1030,7 +1090,8 @@ def _free_faces(model_data, conn):
         for i in model_data.get("node_groups", {}).get(sel, []):
             fixed.add(int(str(i).lstrip("N")))
     out = []
-    for key, (n, eid, corners) in counts.items():
+    for key in order:
+        n, eid, corners = counts[key]
         if n != 1 or key in taken or key <= fixed:
             continue
         atype, cn = conn[eid]
@@ -1789,13 +1850,27 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     # --------------------------------------------------
     # 6. Writing
     # --------------------------------------------------
+    # Cell name per Code-Aster cell number (0-based, order in the
+    # file); bridge_failure uses it to map failed cells to
+    # Mecway elements (Code-Aster 17.4 has no getCellName).
+    model_data["cell_names"] = [name for items in by_type.values()
+                                for name, _cn in items]
+    # Written to a temporary file next to it, which replaces the .mail
+    # only when complete: a failure keeps an existing .mail untouched.
+    tmp_path = mail_path + ".tmp"
+    f = None
     try:
-        out = ["TITRE", " Mecway-model via MecwayAsterBridge", "FINSF",
-               "COOR_3D"]
+        f = open(tmp_path, "w")
+        out = _MailWriter(f)
+        out.extend(["TITRE", " Mecway-model via MecwayAsterBridge", "FINSF",
+                    "COOR_3D"])
+        # " N" + str() and map() give the same text as " N{0} {1}".format()
+        # with a generator, faster in IronPython (most of the time of this
+        # step is building the lines, not writing them).
         for nid in nids:
             # 15 significant digits: the line stays under 80 characters.
-            out.append(" N{0} {1}".format(nid, " ".join(
-                _real(c) for c in nodes[nid])))
+            out.append(" N" + str(nid) + " " + " ".join(
+                map(_real, nodes[nid])))
         # Nodes of offset elements (bridge_offset) and then those of
         # flexible joints after the Mecway nodes, numbered ascending (the
         # results are read back by node index: row i < N stays
@@ -1804,18 +1879,12 @@ def write_mesh(mail_path, model_data, face_nodes=None):
         for nid, xyz in ((offset_plan or {}).get("new_nodes", []) +
                          list(joint_nodes.items()) +
                          list(pret_nodes.items())):
-            out.append(" N{0} {1}".format(nid, " ".join(
-                _real(c) for c in xyz)))
+            out.append(" N" + str(nid) + " " + " ".join(map(_real, xyz)))
         out.append("FINSF")
-        # Cell name per Code-Aster cell number (0-based, order in the
-        # file); bridge_failure uses it to map failed cells to
-        # Mecway elements (Code-Aster 17.4 has no getCellName).
-        model_data["cell_names"] = [name for items in by_type.values()
-                                    for name, _cn in items]
         for atype, items in by_type.items():
             out.append(atype)
             for name, cn in items:
-                out.extend(_wrap([name] + ["N{0}".format(n) for n in cn]))
+                out.extend(_wrap([name] + ["N" + str(n) for n in cn]))
             out.append("FINSF")
         for kind, groups in (("GROUP_MA", group_ma), ("GROUP_NO", group_no)):
             for name, members in groups.items():
@@ -1824,14 +1893,22 @@ def write_mesh(mail_path, model_data, face_nodes=None):
                 out.extend(_wrap(members))
                 out.append("FINSF")
         out.append("FIN")
-        f = open(mail_path, "w")
-        try:
-            f.write("\n".join(out) + "\n")
-        finally:
-            f.close()
+        out.flush()
+        f.close()
+        f = None
+        if os.path.exists(mail_path):
+            os.remove(mail_path)
+        os.rename(tmp_path, mail_path)
     except Exception as e:
         log(tr("ERROR: Schrijven van '{0}' mislukt: {1}",
                "ERROR: Writing '{0}' failed: {1}").format(mail_path, str(e)))
+        try:
+            if f is not None:
+                f.close()
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+        except Exception:         # the ERROR above is the message
+            pass
         return False
 
     nonempty = set(group_ma.keys())

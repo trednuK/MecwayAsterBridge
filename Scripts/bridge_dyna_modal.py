@@ -51,7 +51,7 @@ import re
 from collections import OrderedDict
 
 import bridge_to_aster as b2a
-from bridge_utils import log, tr, CONFIG_BRIDGE, run_name
+from bridge_utils import log, tr, CONFIG_BRIDGE, run_name, mumps_solveur
 
 
 # Fields of the physical response (REST_GENE_PHYS NOM_CHAM) per group from
@@ -470,6 +470,7 @@ def build_dyna_modal(work_dir, model_data, msh_path, resu_name, analysis):
         ] + ["        _F(NOM_CAS='c{0}', CHAR_MECA={1}),".format(k + 1, c)
              for k, (c, _f) in enumerate(excitations)] + [
             "    ),",
+        ] + ([mumps_solveur(analysis)] if mumps_solveur(analysis) else []) + [
             ")",
             "",
         ]

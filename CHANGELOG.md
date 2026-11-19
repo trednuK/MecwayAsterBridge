@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- **Very large models: faster preparation and a MUMPS memory setting.** Ideas from the
+  public fork larsmei/MecwayAsterBridge, written anew. The `.mail` is written in pieces
+  instead of as one joined text, and the free faces for the error estimator and the mesh
+  lines are built faster; the file stays byte-identical. On a generated block of 804,000
+  nodes (IronPython 2.7.9) writing the mesh took 26-28 s instead of 48-66 s and the peak
+  memory dropped by about 1 GB. New setting `mumps_memory` (all analyses, default `auto`,
+  which leaves every `.comm` unchanged): `low_rank` (`ACCELERATION='LR+'`,
+  `LOW_RANK_SEUIL=1.0e-9`, not in eigenvalue searches, harmonic solves and explicit
+  dynamics) and `out_of_core` (`GESTION_MEMOIRE='OUT_OF_CORE'`); also per model with
+  `#ASTER-OPTIE mumps_memory = ...`. Measured on 680,000 equations with `memory_limit` 2048:
+  `low_rank` 160 s instead of 240 s and 1.5 instead of 10.6 GB on disk, results equal up to
+  1e-13. After a static run the bridge now warns when MUMPS put its factorization on disk
+  because it did not fit in `memory_limit` (Code-Aster does that without a message).
+  Settings §2.6.
 - **Start screen: *Follow Mecway's Automatic time stepping* under *Steps and convergence*.**
   On the page *Nonlinear static* the field stood under the heading *Contact*; it now sits
   with the step settings, where the documentation lists it. Docs: where each setting is

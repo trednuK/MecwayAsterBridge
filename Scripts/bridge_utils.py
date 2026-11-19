@@ -188,6 +188,12 @@ CONFIG_BRIDGE = {
             # here too; -1 = singularity check off, RESI_RELA then checks
             # the residual).
             "solver_nprec":   8,
+            # MUMPS memory (bridge_utils.mumps_keywords): "auto" writes
+            # nothing (Code-Aster decides, GESTION_MEMOIRE='AUTO'),
+            # "low_rank" block low-rank factors (ACCELERATION='LR+'),
+            # "out_of_core" the factors on disk (GESTION_MEMOIRE=
+            # 'OUT_OF_CORE'). Not for GCPC.
+            "mumps_memory":   "auto",
             # Linear solver (bridge_to_aster._build_lin_solveur_ref):
             # "MUMPS" (direct, default) or "GCPC" (iterative, conjugate
             # gradient with PRE_COND='LDLT_INC'; residual per iteration in the
@@ -311,6 +317,7 @@ CONFIG_BRIDGE = {
             "newton_reac_iter":      1,
             # MUMPS NPREC (see lin_static_3d).
             "solver_nprec":          8,
+            "mumps_memory":          "auto",
             # Element failure (bridge_failure.py): elements with a
             # plastic strain above the limit get E x stiffness_factor and
             # zero stress. Limit per material: #ASTER-BEZWIJKEN, PLAS_TAB
@@ -400,6 +407,7 @@ CONFIG_BRIDGE = {
             "time_limit":            7200,
             "memory_limit":          4096,
             "solver_nprec":          8,
+            "mumps_memory":          "auto",
             # Element failure: see nonlin_static_3d (checked at the
             # output times).
             "element_failure":       True,
@@ -427,6 +435,7 @@ CONFIG_BRIDGE = {
             "time_limit":            7200,
             "memory_limit":          4096,
             "solver_nprec":          8,
+            "mumps_memory":          "auto",
             # Element failure: see nonlin_static_3d (checked at the
             # output times).
             "element_failure":       True,
@@ -457,6 +466,7 @@ CONFIG_BRIDGE = {
             "time_limit":            1800,
             "memory_limit":          4096,
             "solver_nprec":          8,
+            "mumps_memory":          "auto",
             # Adaptive refinement with HOMARD inside the job
             # (bridge_homard.py, aster_adapt.py; docs/Foutschatter.md par. 7):
             # solve -> ZZ indicator -> refine the Doerfler selection (0.5)
@@ -520,6 +530,7 @@ CONFIG_BRIDGE = {
             "memory_limit":   2048,
             # MUMPS NPREC (see lin_static_3d).
             "solver_nprec":   8,
+            "mumps_memory":   "auto",
             # RESI_RELA of the static step for the prestress (see
             # lin_static_3d; bridge_to_aster._static_step_solveur).
             "lin_solver_resi": 1.0e-5,
@@ -551,6 +562,7 @@ CONFIG_BRIDGE = {
             "time_limit":     1800,
             "memory_limit":   2048,
             "solver_nprec":   8,
+            "mumps_memory":   "auto",
         },
         "harmonic_3d": {
             # Harmonic response in the frequency domain (Mecway has
@@ -599,6 +611,7 @@ CONFIG_BRIDGE = {
             "time_limit":     1800,
             "memory_limit":   2048,
             "solver_nprec":   8,
+            "mumps_memory":   "auto",
         },
         "spectrum_3d": {
             # Response spectrum (earthquake, shock): CALC_MODES and
@@ -626,6 +639,7 @@ CONFIG_BRIDGE = {
             "time_limit":     1800,
             "memory_limit":   2048,
             "solver_nprec":   8,
+            "mumps_memory":   "auto",
         },
         "buckling_3d": {
             # Linear buckling (Mecway B30): MECA_STATIQUE with the loads,
@@ -649,6 +663,7 @@ CONFIG_BRIDGE = {
             "time_limit":     900,
             "memory_limit":   2048,
             "solver_nprec":   8,
+            "mumps_memory":   "auto",
             # RESI_RELA of the static step (stress state; see
             # lin_static_3d; bridge_to_aster._static_step_solveur).
             "lin_solver_resi": 1.0e-5,
@@ -672,6 +687,7 @@ CONFIG_BRIDGE = {
             "time_limit":     900,
             "memory_limit":   2048,
             "solver_nprec":   8,
+            "mumps_memory":   "auto",
         },
         "acoustic_harm_3d": {
             # Harmonic pressure field (acoustics) on a Mecway A30 model:
@@ -697,6 +713,7 @@ CONFIG_BRIDGE = {
             "time_limit":     900,
             "memory_limit":   2048,
             "solver_nprec":   8,
+            "mumps_memory":   "auto",
         },
         "vibroacoustic_modes_3d": {
             # Vibro-acoustics: structure + air/liquid coupled
@@ -718,6 +735,7 @@ CONFIG_BRIDGE = {
             "time_limit":     900,
             "memory_limit":   2048,
             "solver_nprec":   8,
+            "mumps_memory":   "auto",
         },
         "vibroacoustic_harm_3d": {
             # Vibro-acoustics harmonic: structure + air/liquid per
@@ -750,6 +768,7 @@ CONFIG_BRIDGE = {
             "time_limit":     1800,
             "memory_limit":   2048,
             "solver_nprec":   8,
+            "mumps_memory":   "auto",
         },
     },
 }
@@ -966,6 +985,118 @@ def get_active_analysis():
                 name, list(CONFIG_BRIDGE["analyses"].keys()))
         )
     return CONFIG_BRIDGE["analyses"][name]
+
+
+# Setting "mumps_memory" (all analyses). Catalogue c_solveur.py v17.4:
+# ACCELERATION (default AUTO, FR for the eigen solvers), LOW_RANK_SEUIL
+# (default 0.0) and GESTION_MEMOIRE (default AUTO) in the MUMPS block of
+# every SOLVEUR; FACTORISER and MACRO_ELAS_MULT have them too
+# (factoriser.py, macro_elas_mult.py), there with IN_CORE as default.
+# Measured with Code-Aster 17.4 (MUMPS 5.6.2), MECA_STATIQUE on hex8
+# blocks, memory_limit 2048 MB, 19 Nov 2026. 680k DOF: auto went out of
+# core by itself (in-core estimate 18.8 GB), job 240 s, 10.6 GB on disk;
+# LR+ (compressed factors kept, ICNTL(35) = 2, 71 % of the entries) also
+# out of core, job 160 s (solve 85 -> 27 s), 1.45 GB on disk, but VmPeak
+# 11.2 instead of 4.9 GB. 217k DOF: about the same time, 0.39 instead of
+# 2.1 GB on disk; LR+ first tried in core on its estimate (1558 MB), failed
+# (MUMPS INFO(1) = -19) and Code-Aster factored again out of core. All
+# results within 1.0e-13 (MUMPS refinement against RESI_RELA).
+# LOW_RANK_SEUIL 1e-9: the largest value of Code-Aster's MUMPS test
+# mumps05a (1e-9, 1e-12, -1e-12 with LR/LR+), and the upper end of what
+# U2.08.03 (v15) calls reasonable for the singularity check and the Sturm
+# count.
+MUMPS_MEMORY = ("auto", "low_rank", "out_of_core")
+_MUMPS_LOW_RANK = ", ACCELERATION='LR+', LOW_RANK_SEUIL=1.0e-9"
+_MUMPS_OUT_OF_CORE = ", GESTION_MEMOIRE='OUT_OF_CORE'"
+
+
+def mumps_memory(analysis):
+    """mumps_memory of the analysis: one of MUMPS_MEMORY; missing or an
+    unknown text is "auto" (mumps_memory_note gives the WARNING)."""
+    mode = "{0}".format((analysis or {}).get("mumps_memory", "auto"))
+    mode = mode.strip().lower()
+    return mode if mode in MUMPS_MEMORY else "auto"
+
+
+def mumps_keywords(analysis, low_rank=True):
+    """
+    Text to append inside SOLVEUR=_F(METHODE='MUMPS', ...) (with the
+    leading comma), or "" for auto, so that the default leaves every
+    .comm unchanged. low_rank=False for a call where a low-rank factor
+    is not checked: the eigen solvers (CALC_MODES, INFO_MODE: Sturm count,
+    no residual check, catalogue default FR), harmonic DYNA_VIBRA
+    (DYNA_LINE_HARM, also FR), explicit DYNA_NON_LINE (no Newton
+    residual) and the thermal unit mass of FACTORISER; there low_rank
+    writes nothing. Also usable for FACTORISER, where the same keywords are
+    simple keywords of the command.
+    """
+    mode = mumps_memory(analysis)
+    if mode == "low_rank":
+        return _MUMPS_LOW_RANK if low_rank else ""
+    if mode == "out_of_core":
+        return _MUMPS_OUT_OF_CORE
+    return ""
+
+
+def mumps_solveur(analysis, indent="    "):
+    """
+    SOLVEUR line for a command that has none in the .comm and then uses
+    MUMPS with Code-Aster's defaults (MACRO_ELAS_MULT, MODE_STATIQUE):
+    "" for auto, else indent + "SOLVEUR=_F(METHODE='MUMPS', ...),".
+    """
+    tail = mumps_keywords(analysis)
+    if not tail:
+        return ""
+    return "{0}SOLVEUR=_F(METHODE='MUMPS'{1}),".format(indent, tail)
+
+
+# Analyses whose harmonic solve has complex matrices: Code-Aster keeps
+# those in core on Windows (Messages/factor.py 86, "Sur WINDOWS, on force
+# 'IN_CORE' avec les matrices complexes").
+_COMPLEX_ANALYSES = ("harmonic_3d", "acoustic_harm_3d",
+                     "vibroacoustic_harm_3d")
+
+
+def mumps_memory_note(analysis, name=None):
+    """
+    Log lines of mumps_memory, once per run (generate_AsterSolver_files):
+    a WARNING for an unknown value, an INFO with the keywords, a WARNING
+    when the setting does not reach the solver (GCPC) or not everywhere
+    (complex matrices on Windows). Returns mumps_memory(analysis).
+    """
+    raw = "{0}".format((analysis or {}).get("mumps_memory", "auto"))
+    mode = mumps_memory(analysis)
+    if raw.strip().lower() != mode:
+        log(tr("WARNING: Onbekende waarde '{0}' voor mumps_memory (auto, "
+               "low_rank, out_of_core); auto gebruikt.",
+               "WARNING: Unknown value '{0}' for mumps_memory (auto, "
+               "low_rank, out_of_core); auto used.").format(raw))
+        return mode
+    if mode == "auto":
+        return mode
+    if mode == "low_rank":
+        log("INFO: mumps_memory low_rank: ACCELERATION='LR+', "
+            "LOW_RANK_SEUIL=1.0e-9 in the static, nonlinear and thermal "
+            "solves; eigenvalue searches, harmonic solves and explicit "
+            "dynamics keep full rank.")
+    else:
+        log("INFO: mumps_memory out_of_core: GESTION_MEMOIRE='OUT_OF_CORE' "
+            "in every MUMPS solve (factors on disk).")
+    solver = "{0}".format((analysis or {}).get("lin_solver", "MUMPS"))
+    if solver.strip().upper() == "GCPC":
+        log(tr("WARNING: mumps_memory {0} geldt alleen voor MUMPS; met "
+               "lin_solver GCPC heeft het geen effect.",
+               "WARNING: mumps_memory {0} only applies to MUMPS; with "
+               "lin_solver GCPC it has no effect.").format(mode))
+    if mode == "out_of_core" and name in _COMPLEX_ANALYSES:
+        log(tr("WARNING: mumps_memory out_of_core: Code-Aster houdt "
+               "complexe matrices op Windows toch in het geheugen "
+               "(IN_CORE); de harmonische oplossing gebruikt dus evenveel "
+               "geheugen.",
+               "WARNING: mumps_memory out_of_core: on Windows Code-Aster "
+               "keeps complex matrices in memory anyway (IN_CORE); the "
+               "harmonic solve uses the same memory.").format())
+    return mode
 
 
 def error_estimator_requested(options=None):
