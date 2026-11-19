@@ -78,6 +78,10 @@
   same (it already stuck almost rigidly), but convergence is much better: NL-03h 10 steps
   instead of 754, and Tutorials/AssemblyWithContact *Friction* and *Quadratic_ramp* now
   complete (they stopped). Your own `#ASTER-ZONE COEF_PENA_FROT=...` still wins.
+- **Thermal bonded contact with the same temperature on both sides of the bond** no longer
+  stops with `FACTOR_11`: slave nodes whose temperature is imposed with the same value as
+  their master nodes leave the thermal tie (KNOWN_BUGS 147, verification TH-04e/f/g); another
+  or a time-dependent value, or a gap, gives a WARNING.
 - **Clearer message when nothing resists yet.** If no step converges while Code-Aster's
   absolute residual stays about 0 (e.g. an imposed displacement before the contact closes,
   as in Mecway's sample PipeClip), the message now says that the relative criterion cannot

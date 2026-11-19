@@ -655,6 +655,11 @@ class _Thermal(object):
         self.charges = []         # (command, OrderedDict kw -> [_F])
         self.temp_const = []      # TEMP_IMPO constant
         self.temp_timed = []      # TEMP_IMPO with function
+        # KNOWN_BUGS 147: imposed temperatures per node for the bonded tie
+        # (bonded_loads): {nid: constant}, and nodes with a time-dependent
+        # or two different values
+        self.fixed_temp = {}
+        self.unsure_temp = set()
         self.face_cache = {}
         self.inactive_faces = {}
         self.shells_union = None
@@ -1692,7 +1697,30 @@ class _Thermal(object):
                        "Translated as ideally bonded (LIAISON_MAIL, no "
                        "temperature jump across the bond).").format(
                            label, why))
-            groups = self._bonded_groups(b, label)
+            drop, warn = bridge_mesh._tied_fixed_temp(
+                b, self.fixed_temp, self.unsure_temp, self.nodes)
+            if warn:
+                log(tr(u"WARNING: {0}: op {1} slave-knopen ligt een "
+                       u"temperatuur en ook op alle master-knopen waaraan ze "
+                       u"verlijmd zijn, maar niet met dezelfde vaste waarde (of "
+                       u"tijdsafhankelijk, of over een spleet). Dat is een "
+                       u"dubbele voorwaarde: Code-Aster stopt dan "
+                       u"waarschijnlijk met FACTOR_11. Haal de temperatuur "
+                       u"aan een kant van de naad weg, of geef beide kanten "
+                       u"dezelfde vaste waarde (KNOWN_BUGS 147).",
+                       u"WARNING: {0}: {1} slave nodes have a temperature "
+                       u"and so do all master nodes they are bonded to, but "
+                       u"not with the same constant value (or time-dependent, "
+                       u"or across a gap). That is a double condition: "
+                       u"Code-Aster will probably stop with FACTOR_11. "
+                       u"Remove the temperature on one side of the bond, or "
+                       u"give both sides the same constant value "
+                       u"(KNOWN_BUGS 147).").format(label, len(warn)))
+            if drop:
+                log("INFO: {0}: {1} slave nodes with the same temperature as "
+                    "their masters left out of the thermal tie (double "
+                    "condition, KNOWN_BUGS 147).".format(label, len(drop)))
+            groups = self._bonded_groups(b, label, drop)
             if groups is None:
                 continue
             parts = ["GROUP_MA_MAIT='{0}'".format(groups[0]),
@@ -1704,12 +1732,23 @@ class _Thermal(object):
             log("INFO: {0} -> AFFE_CHAR_THER LIAISON_MAIL (TEMP of the "
                 "slave nodes = TEMP on the master face).".format(label))
 
-    def _bonded_groups(self, b, label):
+    def _bonded_groups(self, b, label, drop=()):
         """(master element group, slave node group) in the thermal mesh.
         BRMAIT/BRESCL (bridge_mesh._bonded) only creates the mechanical
         DEFI_GROUP (bridge_to_aster._build_defigroup_block); here separate
         groups, so that the chain thermal -> mechanical (same mesh) does
-        not create them twice."""
+        not create them twice. drop: slave nodes left out (KNOWN_BUGS 147;
+        a copy, extra_node_groups also feeds the mechanical BRESCL group)."""
+        nids = self.md.get("extra_node_groups", {}).get(b["slave"])
+        if not nids:
+            self.skip(tr("{0}: geen slave-knopen",
+                         "{0}: no slave nodes").format(label))
+            return None
+        nids = [n for n in nids if n not in drop]
+        if not nids:
+            log("INFO: {0}: every slave node has its masters' temperature; "
+                "no thermal tie needed.".format(label))
+            return None
         master = b["master"]
         eids = self.md.get("extra_ma_groups", {}).get(master)
         if eids is not None:
@@ -1720,11 +1759,6 @@ class _Thermal(object):
                              "{0}: element {1} not found in the mesh")
                           .format(label, e))
                 return None
-        nids = self.md.get("extra_node_groups", {}).get(b["slave"])
-        if not nids:
-            self.skip(tr("{0}: geen slave-knopen",
-                         "{0}: no slave nodes").format(label))
-            return None
         slave = self.new_group("THN")
         self.crea_no.append("_F(NOM='{0}', NOEUD={1})".format(
             slave, _fmt_seq(["'N{0}'".format(n) for n in nids])))
@@ -1790,6 +1824,9 @@ class _Thermal(object):
         if tgt is None:
             return
         v = load["value"]
+        self._note_temp(self.selection_nodes(load["sel"], load["target"]) &
+                        self.modelled,
+                        None if isinstance(v, (Formula, list)) else v)
         if isinstance(v, Formula):
             self.temp_timed.append("_F({0}='{1}', TEMP={2})".format(
                 tgt[0], tgt[1], self.formula(v.shifted(-KELVIN))))
@@ -1815,11 +1852,23 @@ class _Thermal(object):
                          "nodetemperature on {0} nodes without a modelled "
                          "element").format(dropped))
         for v, nids in by_value.items():
+            self._note_temp(nids, v)
             grp = self.new_group("THN")
             self.crea_no.append("_F(NOM='{0}', NOEUD={1})".format(
                 grp, _fmt_seq(["'N{0}'".format(n) for n in nids])))
             self.temp_const.append("_F(GROUP_NO='{0}', TEMP={1})".format(
                 grp, _r(v - KELVIN)))
+
+    def _note_temp(self, nids, v):
+        """Record imposed temperatures (v None: time-dependent) for the
+        bonded tie (KNOWN_BUGS 147, bonded_loads)."""
+        for n in nids:
+            if v is None or n in self.unsure_temp or (
+                    n in self.fixed_temp and self.fixed_temp[n] != v):
+                self.fixed_temp.pop(n, None)
+                self.unsure_temp.add(n)
+            else:
+                self.fixed_temp[n] = v
 
     def apply_face_flux(self, load, label):
         found = self.face_targets(load["sel"], label)

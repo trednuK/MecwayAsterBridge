@@ -936,9 +936,14 @@ Code-Aster value per node) and logs the largest difference per variable.
    selections), *Fixed* on nodes with rotations, two pairs that tie each other, and
    symmetry/frictionless relations on slave and masters. Not looked at: node-surface
    couplings and constraint equations on slave nodes. Thermal tie (`TEMP_IMPO` with
-   `LIAISON_MAIL` on TEMP, `bridge_thermal`): measured (19 Nov 2026, TH-04a with a fixed
-   temperature on the seam): the same value on the slave and the master seam nodes gives
-   `FACTOR_11` (no result), Mecway solves it; on one side only it computes. Not resolved.
+   `LIAISON_MAIL` on TEMP, `bridge_thermal`, measured 19 Nov 2026): the same constant
+   value on a slave node and on all its weighted master nodes gave `FACTOR_11`, Mecway
+   solves it; resolved: such slave nodes leave the thermal tie and keep their TEMP_IMPO
+   (`bridge_mesh._tied_fixed_temp`, verification TH-04e/f exact, TH-04g with part of the seam held). Another value, a
+   time-dependent temperature or a gap: WARNING, not resolved. Pairs without CCX tie data
+   (`tie_masters`, e.g. shell-edge masters) get neither. Steady state only measured;
+   transient (T31), a fine slave fully held on a coarser free master and several held slave
+   nodes sharing one free master node NOT verified.
    How CCX resolves the double condition is NOT verified. Status: partly fixed.
 
 148\. **Route `tabel`: the beam analysis can read Mecway's own beam forces, labelled Mecway internal**

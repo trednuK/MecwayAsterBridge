@@ -164,7 +164,7 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
 
 Toegevoegd na deze regressie en apart gedraaid (19 nov 2026, nog niet in een volledige
 regressie): LS-07n (2 OK), LS-07o (1 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
-149), NL-03i (1 OK).
+149), NL-03i (1 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK).
 
 **Bekende beperkingen** (status BEKEND):
 - KNOWN_BUGS 149: Mecway's tangentiële stijfheid kt wordt niet gemodelleerd, Code-Aster
@@ -3800,13 +3800,17 @@ transient, convectie op een schaalvlak → `THER_NON_LINE`; TH-03 met `lin_stati
   (conform); TH-04b: *Constraint equations*, naad 2 × 2 (master) tegen 3 × 3 (slave);
   TH-04c: *Elastic*, h = 2000 W/m²K (`<conductanceperarea>`), conform; TH-04d: twee
   schaalstroken (quad4, 2 mm, `PLAN`) in één vlak, rand van B op de laatste kolom van A,
-  3 tegen 4 knopen op de naad.
+  3 tegen 4 knopen op de naad. TH-04e/f: TH-04a en het mesh van TH-04b (*Tie*) met
+  350 K ook op de naadknopen van beide blokken, een dubbele voorwaarde (KNOWN_BUGS 147):
+  voor V2026.15 stopte Code-Aster met `FACTOR_11`, nu gaan de slave-knopen uit de
+  thermische tie en houden ze hun temperatuur. TH-04g: als TH-04f met 350 K alleen op de
+  naadknopen bij z = 0, zodat de rest van de naad verlijmd blijft.
 - **Referentie** (Incropera e.a., 2007, §3.1): T lineair, 350 K op de naad, q =
-  −k dT/dx = −50 000 W/m² (a, b, d); weerstanden in serie L/2k + 1/h + L/2k: q =
+  −k dT/dx = −50 000 W/m² (a, b, d, e, f, g); weerstanden in serie L/2k + 1/h + L/2k: q =
   40 000 W/m², 340 / 360 K aan beide kanten van de naad (c).
-- **Resultaat**: (a, c) relatieve afwijking ≤ 1e-14 (tolerantie 1e-6); (b) naad 350,067 K,
+- **Resultaat**: (a, c, e, f) relatieve afwijking ≤ 1e-14 (tolerantie 1e-6); (b) naad 350,067 K,
   flux −50 083 W/m² (+0,17 %); (d) naad 350,036 K, flux −0,04 % (tolerantie 0,1 % op T,
-  0,5 % op de flux).
+  0,5 % op de flux); (g) naad 349,96 K, flux +0,25 % (zoals (b), niet conform).
 - **Interpretatie**: conform is de knoop-op-vlak-koppeling exact. Niet-conform is ze niet
   conform in de FEM-zin (tussen de slave-knopen een kleine sprong), dus ook een lineair
   veld niet exact; Mecway 34 (interne solver, zonder GUI) rekent dezelfde koppeling:

@@ -171,6 +171,39 @@ check("cyclic ties: neither support dropped ({0}, {1})".format(
 for n in cn:
     del nodes[n]
 
+# KNOWN_BUGS 147, thermal: slave 108 and its weighted edge masters with the
+# same constant temperature -> 108 leaves the thermal tie; other value,
+# time-dependent, gap -> WARNING; a free master -> nothing
+tt = {"tie_masters": {108: face1}, "tie_gap": {108: 0.0}, "tie_tolloc": 1e-4}
+fx = dict((n, 350.0) for n in edge)
+fx[108] = 350.0
+check("thermal: same temperature on slave and masters -> dropped",
+      bm._tied_fixed_temp(tt, fx, set(), nodes) == (set([108]), set()))
+fx2 = dict(fx)
+fx2[edge[0]] = 360.0
+check("thermal: another value on a master -> WARNING",
+      bm._tied_fixed_temp(tt, fx2, set(), nodes) == (set(), set([108])))
+check("thermal: master time-dependent -> WARNING",
+      bm._tied_fixed_temp(tt, dict((k, v) for k, v in fx.items()
+                                   if k != edge[0]), set([edge[0]]),
+                          nodes) == (set(), set([108])))
+check("thermal: a master free -> no double condition",
+      bm._tied_fixed_temp(tt, dict((k, v) for k, v in fx.items()
+                                   if k != edge[0]), set(),
+                          nodes) == (set(), set()))
+tt["tie_gap"] = {108: 0.01}
+check("thermal: across a gap -> WARNING",
+      bm._tied_fixed_temp(tt, fx, set(), nodes) == (set(), set([108])))
+# two pairs tying each other: both rows go (every node keeps its TEMP_IMPO)
+nodes.update(cn)
+both = dict((n, 300.0) for n in cn)
+d1 = bm._tied_fixed_temp(cyc[0], both, set(), nodes)
+d2 = bm._tied_fixed_temp(cyc[1], both, set(), nodes)
+check("thermal: cyclic ties both dropped ({0}, {1})".format(d1, d2),
+      d1 == (set([120]), set()) and d2 == (set([121]), set()))
+for n in cn:
+    del nodes[n]
+
 # _drop_bonded_redundant on a small model_data: node selection 'Sym' (DX
 # 0) on slave 108 and the master edge, 'Pin' (DX, DZ 0) on 108 only:
 # 'Sym' loses 108, 'Pin' is split into DZ on 108 and the rest

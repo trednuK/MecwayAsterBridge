@@ -160,7 +160,7 @@ No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Offi
 
 Added since this regression and run on their own (19 Nov 2026, not yet in a full
 regression): LS-07n (2 OK), LS-07o (1 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
-149), NL-03i (1 OK).
+149), NL-03i (1 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK).
 
 **Known limitations** (status BEKEND):
 - KNOWN_BUGS 149: Mecway's tangential stiffness kt is not modelled, Code-Aster sticks
@@ -3777,13 +3777,17 @@ transient, convection on a shell face → `THER_NON_LINE`; TH-03 with `lin_stati
   (conforming); TH-04b: *Constraint equations*, seam 2 × 2 (master) against 3 × 3
   (slave); TH-04c: *Elastic*, h = 2000 W/m²K (`<conductanceperarea>`), conforming;
   TH-04d: two shell strips (quad4, 2 mm, `PLAN`) in one plane, edge of B on the last
-  column of A, 3 against 4 nodes on the seam.
+  column of A, 3 against 4 nodes on the seam. TH-04e/f: TH-04a and the mesh of TH-04b
+  (*Tie*) with 350 K also on the seam nodes of both blocks, a double condition (KNOWN_BUGS
+  147): before V2026.15 Code-Aster stopped with `FACTOR_11`, now the slave nodes leave the
+  thermal tie and keep their temperature. TH-04g: as TH-04f with 350 K only on the seam
+  nodes at z = 0, so the rest of the seam stays tied.
 - **Reference** (Incropera et al., 2007, §3.1): T linear, 350 K at the seam, q =
-  −k dT/dx = −50,000 W/m² (a, b, d); resistances in series L/2k + 1/h + L/2k: q =
+  −k dT/dx = −50,000 W/m² (a, b, d, e, f, g); resistances in series L/2k + 1/h + L/2k: q =
   40,000 W/m², 340 / 360 K on both sides of the seam (c).
-- **Result**: (a, c) relative deviation ≤ 1e-14 (tolerance 1e-6); (b) seam 350.067 K,
+- **Result**: (a, c, e, f) relative deviation ≤ 1e-14 (tolerance 1e-6); (b) seam 350.067 K,
   flux −50,083 W/m² (+0.17%); (d) seam 350.036 K, flux −0.04% (tolerance 0.1% on T,
-  0.5% on the flux).
+  0.5% on the flux); (g) seam 349.96 K, flux +0.25% (as (b), not conforming).
 - **Interpretation**: with conforming meshes the node-to-face coupling is exact. With
   non-conforming meshes it is not conforming in the FE sense (a small jump between the
   slave nodes), so even a linear field is not exact; Mecway 34 (internal solver, no

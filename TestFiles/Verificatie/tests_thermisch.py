@@ -467,9 +467,11 @@ BOND4 = ('<contact2 selectionmaster="Lijm_A" selectionslave="Lijm_B" '
          '</frictioncoefficient>{2}</contact2>')
 
 
-def build_th04(kind, na, nb, order=1):
+def build_th04(kind, na, nb, order=1, seam=None, seam_line=False):
     """kind: bondedtie / bondedce / bondedelastic; na, nb: (nx, ny) per
-    blok (ny = nz)."""
+    blok (ny = nz); seam: also this temperature (K) on the seam nodes of
+    both blocks (TH-04e/f, KNOWN_BUGS 147); seam_line: only on the seam
+    nodes at z = 0 (part of the seam stays tied)."""
     def build():
         m = Model("T30")
         _mat_th(m, "Staal", K4)
@@ -488,6 +490,16 @@ def build_th04(kind, na, nb, order=1):
         m.face_selection("Lijm_B", b["faces"]["u0"])
         m.add(_temp("Links", TA4))
         m.add(_temp("Rechts", TB4))
+        if seam is not None and seam_line:
+            for name, blk, side in (("NaadLijn_A", a, "u1"),
+                                    ("NaadLijn_B", b, "u0")):
+                m.node_selection(name, sorted(
+                    n for n in blk["nodes"][side]
+                    if abs(m.nodes[n - 1][2]) < 1e-12))
+                m.add(_temp(name, seam))
+        elif seam is not None:
+            m.add(_temp("Naad_A", seam))
+            m.add(_temp("Naad_B", seam))
         elastic = kind == "bondedelastic"
         m.add(BOND4.format(
             kind, "1e+12" if elastic else "0",
@@ -574,6 +586,29 @@ TESTS += [
               "dus niet conform (zie TH-04b): naad 350,036 K; Mecway 34 "
               "(interne solver) verschil per knoop < 0,006 K. Tolerantie "
               "0,1 % (T) en 0,5 % (flux)"),
+    Case("TH-04e", GROUP, "Verlijmd contact met dezelfde temperatuur aan "
+         "beide kanten van de naad (conform)", "ther_3d",
+         build_th04("bondedtie", (5, 1), (5, 1), seam=(TA4 + TB4) / 2),
+         _th04_tie_checks(),
+         note="TH-04a plus 350 K op de naadknopen van beide blokken: een "
+              "dubbele voorwaarde (KNOWN_BUGS 147). Zonder de bridge-regel "
+              "stopte Code-Aster met FACTOR_11; Mecway (intern) rekent het. "
+              "De slave-knopen gaan uit de thermische tie, hun TEMP_IMPO "
+              "blijft"),
+    Case("TH-04f", GROUP, "Verlijmd contact met dezelfde temperatuur aan "
+         "beide kanten van de naad (niet-conform)", "ther_3d",
+         build_th04("bondedtie", (5, 2), (4, 3), seam=(TA4 + TB4) / 2),
+         _th04_tie_checks(),
+         note="als TH-04e met de naad 2x2 (master) tegen 3x3 (slave); alle "
+              "slave-knopen gaan uit de tie, T is lineair -> exact"),
+    Case("TH-04g", GROUP, "Verlijmd contact, dezelfde temperatuur op een "
+         "lijn van de naad aan beide kanten (niet-conform)", "ther_3d",
+         build_th04("bondedtie", (5, 2), (4, 3), seam=(TA4 + TB4) / 2,
+                    seam_line=True),
+         _th04_tie_checks(1e-3, 5e-3),
+         note="als TH-04f, de temperatuur alleen op de naadknopen bij z = 0: "
+              "die slave-knopen gaan uit de tie (gewichten van de projectie "
+              "op de master-rand), de rest van de naad blijft verlijmd"),
 ]
 
 

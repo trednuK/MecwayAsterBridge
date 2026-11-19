@@ -4665,6 +4665,43 @@ def _tie_weight_nodes(masters, nodes, p):
     return [m for m, w in zip(masters, n) if abs(w) > _TIE_WEIGHT_TOL]
 
 
+def _tied_fixed_temp(b, fixed, unsure, nodes):
+    """
+    KNOWN_BUGS 147, thermal: (drop, warn) for one bonded pair with a thermal
+    tie (AFFE_CHAR_THER LIAISON_MAIL). A tied slave node whose temperature
+    is imposed (TEMP_IMPO) while every master node with a weight in its tie
+    is imposed with the same constant value is held twice: Code-Aster 17.4
+    stopped with FACTOR_11 (TH-04a with 350 K on both seams), Mecway solves
+    it. TEMP is the only DOF, so the tie row of that node is redundant: it
+    leaves the slave group (drop), its TEMP_IMPO stays. Other slave nodes
+    held where all their masters are held too (another value, a
+    time-dependent or ambiguous temperature, a gap) stay and are reported
+    (warn). Unlike the mechanical _tied_overlaps no raccord or relations
+    limit (no rotations) and no exclusion of pairs tying each other (every
+    node keeps its own TEMP_IMPO). b: bonded dict with tie_masters,
+    tie_gap, tie_tolloc; fixed: {nid: constant temperature}; unsure: nodes
+    with a time-dependent or two different temperatures. Pure.
+    """
+    drop, warn = set(), set()
+    gaps = b.get("tie_gap", {})
+    touch = b.get("tie_tolloc", 0.0)
+    for s, face in (b.get("tie_masters") or {}).items():
+        if s not in fixed and s not in unsure:
+            continue
+        masters = _tie_weight_nodes(face, nodes, nodes[s])
+        if not masters or not all(m in fixed or m in unsure
+                                  for m in masters):
+            continue            # a master free: no double condition
+        v = fixed.get(s)
+        if v is not None and gaps.get(s, 0.0) <= touch and all(
+                m in fixed and abs(fixed[m] - v) <= 1e-12 * max(1.0, abs(v))
+                for m in masters):
+            drop.add(s)
+        else:
+            warn.add(s)
+    return drop, warn
+
+
 def _tied_overlaps(ties, held, nodes, held_other=None, relation_nodes=None):
     """
     (redundant, warn): per tied slave node the translations its support
