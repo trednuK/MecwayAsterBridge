@@ -18,6 +18,7 @@ Niet-lineair statisch (Mecway L30 -> STAT_NON_LINE, analyse nonlin_static_3d).
 Toelichting, bronnen en interpretatie: doc_niet_lineair.md.
 """
 import math
+from collections import OrderedDict
 from verif_lib import (Case, Check, Model, hexmesh, quadmesh, box,
                        rect, HEX_FACE, linemesh)
 
@@ -877,30 +878,48 @@ NOTE75 = ("Zonder Quasi-static rekent Mecway een stap en neemt elke tabel op "
           "t = 1 s (Mecway 36 met CCX); de bridge rekent tot 1 s.")
 
 
-def _with_force7(build):
+def _with_force7(build, table=None):
     def b():
         m = build()
         m.add('<force selection="XL">%s<y>0 N</y><z>0 N</z></force>'
-              % _history("x", F7, "N"))
+              % _history("x", table or F7, "N"))
         return m
     return b
 
 
-def _ux_force7(dt, mw):
-    ref = ALPHA7 * dt * L7 + 1050.0 * L7 / (E7 * B7 * B7)
-    return [Check("u_x(L) op t = 1 s", lambda r: r.at("displx", (L7, 0, 0),
-                                                      _t(r, 1.0)),
+def _ux_force7(dt, mw, t_end=1.0, force=1050.0, tol_mw=1e-4):
+    ref = ALPHA7 * dt * L7 + force * L7 / (E7 * B7 * B7)
+    return [Check("u_x(L) op t = %g s" % t_end,
+                  lambda r: r.at("displx", (L7, 0, 0), _t(r, t_end)),
                   ref=ref, tol=1e-3, unit="m",
-                  source="alpha dT L + F(1 s) L/(EA), F(1 s) = 1050 N "
-                         "(puntkrachten op de hoekknopen: 1e-3)"),
+                  source="alpha dT L + F(%g s) L/(EA), F = %g N "
+                         "(puntkrachten op de hoekknopen: 1e-3)"
+                         % (t_end, force)),
             Check("u_x(L) t.o.v. Mecway (CCX)",
-                  lambda r: r.at("displx", (L7, 0, 0), _t(r, 1.0)),
-                  ref=mw, tol=1e-4, unit="m",
-                  source="Mecway 36 met CCX, headless", in_series=False),
-            Check("laatste rekentijd", lambda r: r.times()[-1], ref=1.0,
+                  lambda r: r.at("displx", (L7, 0, 0), _t(r, t_end)),
+                  ref=mw, tol=tol_mw, unit="m",
+                  source="Mecway 36 met CCX, headless (CCX lager, groeit met "
+                         "de last: 3,6e-5 / 7,4e-5 / 1,12e-4 bij 0,5 / 1 / 1,5 "
+                         "s; waarschijnlijk NLGEOM in CCX, NIET geverifieerd)",
+                  in_series=False),
+            Check("laatste rekentijd", lambda r: r.times()[-1], ref=t_end,
                   tol=1e-9, unit="s",
-                  source="Mecway zonder quasi-static: een stap tot t = 1 s "
-                         "(ook als de krachttabel tot 2 s loopt)")]
+                  source="Mecway rekent tot t = %g s (ook als de "
+                         "krachttabel tot 2 s loopt)" % t_end)]
+
+
+# NL-75e/f: CCX time points zonder stapgrootte en zonder Automatic time
+# stepping: Mecway rekent tot de periode (1,5 s) en neemt de tabel daar
+# (Mecway 36.0.9815 met CCX, headless, 19 nov 2026: tabel tot 2 s gaf
+# u_x(L) = 7,49916e-6 m (F(1,5 s) = 1575 N), tabel (0; 0), (1 s; 1050 N)
+# gaf 4,99963e-6 m op t = 1,5 s). Alleen de laatste tijd is vergelijkbaar:
+# Mecway geeft daar 1 resultaat, de bridge elke rekenstap (KNOWN_BUGS 156).
+# CCX ligt iets lager en het verschil groeit met de last (7,4e-5 bij 1050 N,
+# 1,12e-4 bij 1575 N): NL-75e krijgt daarom 2e-4 t.o.v. Mecway.
+TP7 = OrderedDict([("timeperiod", "1.5 s"),
+                   ("automatictimestepping", "false"),
+                   ("outputtimes", "regular"), ("timepointsstart", "0 s"),
+                   ("timepointsincrement", "0.5 s")])
 
 
 def _sxx7(t, mw):
@@ -1005,6 +1024,25 @@ TESTS += [
          _with_force7(build_nl70("<value>%.12g K</value>" % TREF7,
                                  timesteps=None)),
          _ux_force7(0.0, 4.99963e-6), settings=PETIT7, note=NOTE75),
+    Case("NL-75e", GROUP, "Vrije staaf, krachttabel tot 2 s met CCX time "
+         "points tot 1,5 s (zonder automatic time stepping)",
+         "nonlin_static_3d",
+         _with_force7(build_nl70("<value>%.12g K</value>" % TREF7,
+                                 timesteps=TP7)),
+         _ux_force7(0.0, 7.49916e-6, t_end=1.5, force=1575.0,
+                    tol_mw=2e-4),
+         settings=PETIT7,
+         note="Mecway rekent tot de periode 1,5 s en neemt de tabel daar "
+              "(Mecway 36 met CCX); de bridge ook."),
+    Case("NL-75f", GROUP, "Vrije staaf, krachttabel tot 1 s met CCX time "
+         "points tot 1,5 s (tabelwaarde vastgehouden)", "nonlin_static_3d",
+         _with_force7(build_nl70("<value>%.12g K</value>" % TREF7,
+                                 timesteps=TP7),
+                      table=[(0.0, 0.0), (1.0, 1050.0)]),
+         _ux_force7(0.0, 4.99963e-6, t_end=1.5, force=1050.0),
+         settings=PETIT7,
+         note="Na het laatste tabelpunt blijft de waarde staan tot de "
+              "periode; de bridge rekent dat stuk in 1 stap."),
 ]
 
 

@@ -2227,7 +2227,12 @@ samples) plus the kinks of the load tables (NL-20).
   +100 K (b), with the temperature table (c) or alone (d): Mecway 36 with CCX takes it at
   t = 1 s too (headless: 1.24994e-4 / 1.24994e-4 / 4.99963e-6 m; an imposed displacement
   table likewise); the bridge computes up to t = 1 s with a WARNING (1.2500e-4 / 1.2500e-4 /
-  5.0000e-6 m, = α·ΔT·L + F(1 s)·L/(EA)).
+  5.0000e-6 m, = α·ΔT·L + F(1 s)·L/(EA)). NL-75e/f: CCX *time points* (0.5 s, period 1.5 s,
+  without *Automatic time stepping*) with that force table (e) or with (0 s; 0 N),
+  (1 s; 1050 N) (f): Mecway 36 with CCX computes up to the period and gives one result there
+  (7.49916e-6 / 4.99963e-6 m: the table value at 1.5 s, held after its last point); the
+  bridge ends at 1.5 s too (7.5000e-6 / 5.0000e-6 m; its other stored steps are not in
+  Mecway's solution, KNOWN_BUGS 156).
 ### NL-40 Formula in y and t
 
 - **Purpose**: a formula in x, y, z and t in `STAT_NON_LINE` (`FORMULE` of Y and

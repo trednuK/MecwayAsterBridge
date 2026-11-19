@@ -1062,13 +1062,15 @@ Code-Aster value per node) and logs the largest difference per variable.
    saved). Status: open; a
    check in the Mecway window with a script that does nothing would settle it.
 
-155\. **Load tables past the period with *time points* but without a step size** (question,
-   `bridge_to_aster._build_listinst_block`). A model with `<timesteps>` (period) but
-   without `stepsize` (CCX *time points*) and with `auto_time_stepping` off computes every
-   point of the load tables, also after the period; `_mecway_static_times` (with a step
-   size) drops them, as Mecway does. Whether Mecway with CCX time points also stops at the
-   period is NOT verified (19 Nov 2026). Without `<timesteps>` the tables are cut at 1 s
-   like Mecway (NL-75b..d).
+156\. **Output times with CCX *time points* and automatic time stepping off** (question,
+   `bridge_to_aster._build_listinst_block`, `build_nonlin_static`). Nonlinear static with
+   `<timesteps>` without `stepsize` and without *Automatic time stepping* (or with the
+   setting `auto_time_stepping` off): the bridge computes `substeps_per_interval` steps per
+   interval of the load tables up to the period and stores every step; Mecway 36 with CCX
+   gave one result, at the period (headless, 19 Nov 2026, NL-75e/f). The last time and its
+   values are equal (NL-75e/f); the extra times are not in Mecway's solution. Not changed:
+   the failure loop and the `failed` contract need every step stored. Whether Mecway
+   writes the *time points* with other settings (e.g. *Output times*) is NOT verified.
 
 ## Not translated (the bridge reports it at the end of the run)
 

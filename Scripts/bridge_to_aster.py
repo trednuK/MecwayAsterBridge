@@ -5492,23 +5492,32 @@ def _auto_listinst_block(load_funcs, analysis, model_data):
 _MECWAY_STEP_TIME = 1.0
 
 
-def _cut_at_step_time(times):
+def _cut_at_step_time(times, t_cut=None, always=False):
     """
-    Time points of the load tables for Nonlinear Static without
-    Quasi-static (no <timesteps>): the points after Mecway's step time
-    _MECWAY_STEP_TIME drop out and the step time itself is added when a
-    table runs past it, so that the calculation ends at t = 1 s with the
-    table values there (the DEFI_FONCTIONs stay complete; Code-Aster
-    interpolates them at 1 s). Pure. Returns (times, last) with last the
-    last table time when one runs past 1 s, else None. A table that
-    starts at or after 1 s leaves only the step time: then 0 is the
-    start (Code-Aster holds the table at its first value, PROL_GAUCHE
-    'CONSTANT'; that Mecway does the same is NOT verified).
+    Time points of the load tables cut at the end time t_cut of Mecway's
+    calculation: the points after it drop out and t_cut itself is added
+    when a table runs past it (always=True: also when none does), so that
+    the calculation ends at t_cut with the table values there (the
+    DEFI_FONCTIONs stay complete; Code-Aster interpolates them at t_cut).
+      - Nonlinear Static without Quasi-static (no <timesteps>): t_cut =
+        Mecway's step time _MECWAY_STEP_TIME (default), always False;
+      - with CCX time points but without a step size (<timesteps> with
+        a period, no stepsize; automatic time stepping off): t_cut = the
+        period, always True. Mecway 36.0.9815 with CCX, headless, 19 Nov
+        2026: a force table (0 s; 0), (2 s; F) with period 1.5 s gave the
+        effect of F(1.5 s), a table (0 s; 0), (1 s; F') the effect of F'
+        at t = 1.5 s (the table value held up to the period).
+    Pure. Returns (times, last) with last the last table time when one
+    runs past t_cut, else None. When every remaining time lies at or
+    after t_cut, 0 is the start (a table that starts after t_cut:
+    Code-Aster holds it at its first value, PROL_GAUCHE 'CONSTANT'; that
+    Mecway does the same is NOT verified).
     """
-    t_cut = _MECWAY_STEP_TIME
+    if t_cut is None:
+        t_cut = _MECWAY_STEP_TIME
     later = [t for t in times if t > t_cut * (1.0 + 1.0e-9)]
     kept = set(t for t in times if t <= t_cut * (1.0 + 1.0e-9))
-    if later:
+    if later or always:
         kept.add(t_cut)
     if kept and min(kept) >= t_cut * (1.0 - 1.0e-9):
         kept.add(0.0)
@@ -5525,8 +5534,15 @@ def _build_listinst_block(load_funcs, analysis, model_data=None):
     calculation step is an output time. Without step size:
     all unique time points of the load functions with substeps_per_interval
     steps per interval; without <timesteps> at all (no Quasi-static) only
-    up to Mecway's step time 1 s (_cut_at_step_time). In both cases
-    DEFI_LIST_INST cuts a step that does not converge.
+    up to Mecway's step time 1 s, with <timesteps> without a step size
+    (CCX time points with automatic time stepping off, or the setting
+    auto_time_stepping off, or only a period) up to the period, also when
+    every table ends earlier (_cut_at_step_time; the held interval after
+    the last table point gets substeps_per_interval steps too: a formula
+    in t may still change there). A table whose first point lies after 0
+    starts the calculation there (DEBUT), as without <timesteps>; NOT
+    verified against Mecway. In all cases DEFI_LIST_INST cuts a step
+    that does not converge.
 
     Returns
     -------
@@ -5555,7 +5571,24 @@ def _build_listinst_block(load_funcs, analysis, model_data=None):
         for t, _ in history:
             all_times.add(t)
 
-    if (all_times and model_data is not None and
+    ts = (model_data or {}).get("timesteps") or {}
+    period = ts.get("period") or 0.0
+    if model_data is not None and ts and period > 0.0:
+        # Time points without a step size: like Mecway, up to the period
+        last_table = max(all_times) if all_times else None
+        all_times, last = _cut_at_step_time(all_times, period, always=True)
+        if last is not None:
+            log("INFO: Load table runs up to t = {0} s; computed up to "
+                "Mecway's period {1} s (like Mecway).".format(
+                    "%g" % last, "%g" % period))
+        if (last_table is not None and
+                last_table < period * (1.0 - 1.0e-9)):
+            # tables held after their last point (Mecway: the value
+            # held up to the period, NL-75f)
+            log("INFO: Load tables end at t = {0} s; held up to "
+                "Mecway's period {1} s (like Mecway).".format(
+                    "%g" % last_table, "%g" % period))
+    elif (all_times and model_data is not None and
             not model_data.get("timesteps")):
         # No Quasi-static: like Mecway, every table only up to t = 1 s
         all_times, last = _cut_at_step_time(all_times)

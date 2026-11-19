@@ -2245,7 +2245,12 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
   +100 K (b), met de temperatuurtabel (c) of alleen (d): Mecway 36 met CCX neemt die ook op
   t = 1 s (headless: 1,24994e-4 / 1,24994e-4 / 4,99963e-6 m; een opgelegde
   verplaatsingstabel net zo); de bridge rekent tot t = 1 s met een WARNING (1,2500e-4 /
-  1,2500e-4 / 5,0000e-6 m, = α·ΔT·L + F(1 s)·L/(EA)).
+  1,2500e-4 / 5,0000e-6 m, = α·ΔT·L + F(1 s)·L/(EA)). NL-75e/f: CCX-*time points* (0,5 s,
+  periode 1,5 s, zonder *Automatic time stepping*) met die krachttabel (e) of met (0 s; 0 N),
+  (1 s; 1050 N) (f): Mecway 36 met CCX rekent tot de periode en geeft daar één resultaat
+  (7,49916e-6 / 4,99963e-6 m: de tabelwaarde op 1,5 s, na het laatste punt vastgehouden);
+  de bridge eindigt ook op 1,5 s (7,5000e-6 / 5,0000e-6 m; zijn andere opgeslagen stappen
+  staan niet in Mecway's oplossing, KNOWN_BUGS 156).
 ### NL-40 Formule in y en t
 
 - **Doel**: een formule in x, y, z én t in `STAT_NON_LINE` (`FORMULE` van Y en `INST`)

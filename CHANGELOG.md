@@ -8,6 +8,12 @@
   (Mecway 36 with CCX, measured headless). The bridge computed up to the last table point;
   it now stops at t = 1 s with a WARNING, and a constant temperature ramps up to 1 s too.
   Turn on *Quasi-static* to follow the whole table. Verification NL-75b..d.
+- **Nonlinear static with CCX *time points* (no step size, no automatic time stepping):
+  up to the period, like Mecway (results change).** Mecway computes up to the *Time period*
+  and takes the load tables there, also when a table runs further, and holds a table that
+  ends earlier (Mecway 36 with CCX, measured headless). The bridge computed up to the last
+  table point; it now ends at the period (INFO). Verification NL-75e/f. The output times
+  still differ (KNOWN_BUGS 156).
 - **Result route `tabel` removed.** The results now always go through the `.liml`:
   Code-Aster writes Mecway's own results and the bridge puts them into the model (all time
   steps or modes, values per element, every analysis type). The old table route (POST_RELEVE_T

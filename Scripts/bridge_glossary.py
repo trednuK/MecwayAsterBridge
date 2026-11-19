@@ -1481,7 +1481,8 @@ SETTING_HELP = {
                               u"knikken van de lasttabellen) en knipt "
                               u"Code-Aster een stap die niet convergeert. "
                               u"Zonder Quasi-static alleen tot t = 1 s: "
-                              u"Mecway neemt elke tabel daar. "
+                              u"Mecway neemt elke tabel daar; met time "
+                              u"points tot de periode. "
                               u"Meer = robuuster, langzamer. Standaard 10.",
                               u"Number of solver steps per time interval of "
                               u"the load table, only for a model without "
@@ -1490,7 +1491,8 @@ SETTING_HELP = {
                               u"kinks of the load tables) and Code-Aster cuts "
                               u"a step that does not converge. Without "
                               u"Quasi-static only up to t = 1 s: Mecway takes "
-                              u"every table there. More = more "
+                              u"every table there; with time points up to the "
+                              u"period. More = more "
                               u"robust, slower. Default 10."),
     "newton_max_iter": (u"Maximum aantal Newton-iteraties per stap "
                         u"(ITER_GLOB_MAXI); daarna wordt de stap opgedeeld. "
@@ -1620,10 +1622,12 @@ SETTING_HELP = {
         u"Only with PENALISATION: warning after the run if the largest "
         u"penetration exceeds this fraction of the shortest edge of the "
         u"slave face. Default 0.05 (5%); 0 = off."),
-    "default_time_end": (u"Eindtijd als het model geen tijdsbelasting of "
-                         u"tijdstappen heeft. Standaard 1 s (pseudotijd).",
-                         u"End time when the model has no time load or time "
-                         u"steps. Default 1 s (pseudo time)."),
+    "default_time_end": (u"Eindtijd als het model geen tijdstappen en "
+                         u"(statisch) geen lasttabel heeft; met tijdstappen "
+                         u"geldt de periode. Standaard 1 s (pseudotijd).",
+                         u"End time when the model has no time steps and "
+                         u"(static) no load table; with time steps the "
+                         u"period counts. Default 1 s (pseudo time)."),
     "plastic_strain_definition": (u"Of de rek in Mecway's hardingscurve de "
                                   u"plastische of de totale rek is. Mecway "
                                   u"zelf leest de curve als totale rek. "

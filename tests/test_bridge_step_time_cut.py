@@ -87,9 +87,46 @@ check("late table: 0 -> 1 s", d == 0.0 and up == [1.0] and te == 1.0)
 d, up, te, w = times_of([("f", [(1.0, 0.0), (3.0, 1.0)])], NO_TS)
 check("table from 1 s: 0 -> 1 s", d == 0.0 and up == [1.0] and te == 1.0)
 
-# 6. <timesteps> without step size (time points): not cut
+# 6. <timesteps> without step size (time points): up to the period, like
+#    Mecway (INFO, no WARNING); also when the tables end earlier
+INFOS = lambda: [m for m in LOG if m.startswith("INFO: Load table")]
 d, up, te, w = times_of([("f", [(0.0, 0.0), (2.0, 1.0)])], TP)
-check("time points: not cut", up == [2.0] and te == 2.0 and not w)
+check("time points: table to the period: unchanged", up == [2.0] and te == 2.0
+      and not w and not INFOS())
+TP15 = {"timesteps": {"period": 1.5, "increment": 0.5}}
+d, up, te, w = times_of([("f", [(0.0, 0.0), (2.0, 1.0)])], TP15)
+check("time points: table past the period ends at 1.5 s",
+      up == [1.5] and te == 1.5 and not w and len(INFOS()) == 1)
+del LOG[:]
+block, te = b._build_listinst_block([("f", [(0.0, 0.0), (1.0, 1.0)])],
+                                    ANALYSIS, TP15)
+check("time points: short table held up to the period (INFO)",
+      te == 1.5 and "JUSQU_A=1.0, NOMBRE=10" in block
+      and "JUSQU_A=1.5, NOMBRE=10" in block
+      and len([m for m in LOG if "held up to" in m]) == 1)
+d, up, te, w = times_of([], {"timesteps": {"period": 3.0}},
+                        {"substeps_per_interval": 10, "default_time_end": 1.0})
+check("time points, no table: 0 -> period (not default_time_end)",
+      d == 0.0 and up == [3.0] and te == 3.0)
+d, up, te, w = times_of([("f", [(0.0, 0.0), (1.5, 1.0), (2.0, 0.0)])], TP15)
+check("time points: kink at the period once", up == [1.5] and te == 1.5)
+d, up, te, w = times_of([("f", [(0.0, 0.0), (1.5000000001, 1.0)])], TP15)
+check("time points: period + 1e-10 not a separate time",
+      te in (1.5, 1.5000000001) and len(up) == 1)
+d, up, te, w = times_of([("f", [(2.0, 0.0), (3.0, 1.0)])], TP15)
+check("time points: table after the period: 0 -> period",
+      d == 0.0 and up == [1.5] and te == 1.5)
+d, up, te, w = times_of([("f", [(0.0, 0.0), (2.0, 1.0)]),
+                         ("_temp", [(0.0, 300.0), (3.0, 400.0)])], TP15)
+check("time points: temperature history cut at the period too", te == 1.5)
+d, up, te, w = times_of([("f", [(0.0, 0.0), (2.0, 1.0)])],
+                        {"timesteps": {"period": 0.0}})
+check("period 0: old behaviour (not cut)", te == 2.0)
+# automatic time stepping in the model but the setting off: this branch
+md_auto = {"timesteps": {"period": 1.5, "increment": 0.5, "automatic": True}}
+an_off = dict(ANALYSIS, auto_time_stepping=False)
+d, up, te, w = times_of([("f", [(0.0, 0.0), (2.0, 1.0)])], md_auto, an_off)
+check("automatic in the model, setting off: cut at the period", te == 1.5)
 
 # 7. model_data None: not cut (old callers)
 d, up, te, w = times_of([("f", [(0.0, 0.0), (2.0, 1.0)])], None)
