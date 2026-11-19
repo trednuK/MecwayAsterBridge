@@ -380,7 +380,9 @@ CONFIG_BRIDGE = {
             # Line search RECH_LINEAIRE (U4.51.03; S27): "auto" = only
             # with cables (CABLE) and without contact, "on", "off".
             "line_search":           "auto",
-            "contact_algo":          "STANDARD",
+            # See nonlin_static_3d; "auto" here since V2026.15 (measured:
+            # docs Settings contact, contact_algo).
+            "contact_algo":          "auto",
             # DEFI_CONTACT LISSAGE (S28): smoothed normals for faceted
             # curved contact surfaces; not across sharp edges.
             "contact_smoothing":     False,

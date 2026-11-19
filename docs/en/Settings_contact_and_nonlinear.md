@@ -650,26 +650,39 @@ contact = DEFI_CONTACT(
 
 - **Formulation (`contact_algo`, label "Contact method (auto / STANDARD / PENALISATION)").** `CONTINUE` with per zone
   `ALGO_CONT`:
-  - `auto` (default for Nonlinear Static since V2026.15): `PENALISATION` for every zone
+  - `auto` (default for Nonlinear Static and implicit dynamics since V2026.15):
+    `PENALISATION` for every zone
     with Mecway's *normal stiffness* (Mecway requires one, so in practice every zone),
     otherwise `STANDARD`; 2D models (`**ASTER-PLANE`) keep `STANDARD`: Mecway has no 2D
     contact to compare with. With `PENALISATION` chosen (19 Nov 2026, PL-40 … PL-47 with
     kn = 1e12 Pa/m) every 2D case runs, and the shrink fits give exactly the solution with an
     elastic interface, p = δ/(C + 1/kn) (PL-40: 9.977 MPa against 9.9774 MPa, 20 % below
-    hard contact); the Hertz contact PL-45 then spreads over 4.8 times the Hertz width. Dynamics keeps the default `STANDARD` (see the end of this item).
+    hard contact); the Hertz contact PL-45 then spreads over 4.8 times the Hertz width. Implicit dynamics: see the end of this item.
     Measured against Mecway 36 with CCX (headless, largest node deviation / largest
     displacement): contact patch tests NL-03c and NL-30 2e-5 with `PENALISATION`
     against 0.50 with `STANDARD` (no penetration p/kn), Voorbeeld_C 3.2 % against 7.0 %,
     line contact NL-03a/NL-30c runs where `STANDARD` stops. Verification NL-03g. A
     start screen saved before V2026.15 keeps its explicit `STANDARD`: choose `auto` once.
-    Dynamics, measured (19 Nov 2026, implicit, the patch tests of NL-03g/NL-03h as a slow
-    1 s load, headless): with `PENALISATION` the top of NL-03g settles exactly
-    2pH/E + p/kn (as NL-03g), with `STANDARD` 51 % less (no penetration); NL-03h (friction)
-    with `PENALISATION` and kt as `COEF_PENA_FROT` stopped at t = 0.00024 s, with the
-    coefficient of the rigid stick (see **Friction**) it completed with the static result.
-    That is quasi-static only: no impact or release is compared with Mecway's own
-    dynamics, so the default stays `STANDARD` (in explicit dynamics a stiff spring can also
-    lower the stable time step).
+    Implicit dynamics, `auto` since V2026.15, measured against Mecway 36 with CCX (D31,
+    headless, 19 Nov 2026):
+    - slow load (NL-03j): `PENALISATION` gives exactly 2pH/E + p/kn as NL-03g and Mecway,
+      `STANDARD` settles 51 % less (no penetration);
+    - push and release (NL-03k, a force pulse of 70 µs, after which the upper block comes
+      loose): `PENALISATION` follows Mecway's whole history within 4.7 % of the largest
+      displacement (the remaining difference is the time scheme: HHT −4.7 %, NEWMARK
+      +4.7 % in free flight); `STANDARD` is 59 % too stiff while pushing and stops at the
+      release (`MECANONLINE9_4`);
+    - impact across a gap of 2 µm (NL-03m): the same as Mecway up to the impact; Mecway/CCX
+      and `STANDARD` stop at the impact, `PENALISATION` completes without a penetration
+      warning (once also measured with a 100 times stiffer kn: completes);
+    - friction (NL-03l, NL-03h as D31): the static result with the rigid stick of
+      **Friction** (with kt as `COEF_PENA_FROT` the run stopped at t = 0.00024 s;
+      `STANDARD` w −52 %).
+
+    Not measured: explicit dynamics (`auto` gives `STANDARD` there, with an INFO: a stiff
+    contact spring can lower the stable time step) and `NEWMARK` with impacts. A start
+    screen saved before V2026.15 keeps its explicit `STANDARD` for dynamics too: choose
+    `auto` once on the page of the dynamic analysis.
   - `STANDARD` (CA default): augmented Lagrangian (EDF R&D, U4.44.11), with
     the contact pressure as an extra unknown on the slave side; no stiffness needed, no
     penetration. Use it for hard contact without penetration (the interference-fit
@@ -748,10 +761,11 @@ contact = DEFI_CONTACT(
   the bridge is stiffer in shear (NL-03h: −10% at kt = 1e13 Pa/m). Before V2026.15 kt
   itself was written as `COEF_PENA_FROT`: just as rigid, but NL-03h needed 754 steps
   instead of 10, and Tutorials/AssemblyWithContact *Friction* and *Quadratic_ramp* stopped
-  (now they complete). Dynamics and 2D (with `PENALISATION` chosen) still write kt; in
-  implicit dynamics that stopped NL-03h at t = 0.00024 s (19 Nov 2026), so there give the
-  zone your own `#ASTER-ZONE COEF_PENA_FROT=...` (1/m, e.g. 1/(1e-8 × the diagonal of the contact
-  faces in m)); it takes precedence.
+  (now they complete). Implicit dynamics sticks rigidly the same way since V2026.15 (NL-03l;
+  the creep bound counts per solver step, including substeps and automatic step cuts).
+  Explicit dynamics and 2D (with `PENALISATION` chosen) still write kt (not measured); if
+  such a run stops, give the zone your own `#ASTER-ZONE COEF_PENA_FROT=...` (1/m, e.g.
+  1/(1e-8 × the diagonal of the contact faces in m)); it takes precedence.
 
   ![Friction: tangential displacement per load step](../img/contact_friction_stick.svg)
 
@@ -867,8 +881,8 @@ that is slave against a blade and against a contour).
 The bridge merges such pairs into one zone: master = union of the masters, slave =
 union of the slaves (`DEFI_GROUP ... UNION`, groups `CMAIT<n>`/`CESCL<n>`). Friction:
 the largest coefficient; with `contact_algo` = PENALISATION also the largest normal and
-tangential stiffness (the tangential one only in dynamics and 2D: Nonlinear Static 3D sticks
-rigidly, KNOWN_BUGS 149). Every merge writes a WARNING to `<model>_<run-id>_bridge_log.txt`,
+tangential stiffness (the tangential one only in explicit dynamics and 2D: 3D static and implicit
+stick rigidly, KNOWN_BUGS 149). Every merge writes a WARNING to `<model>_<run-id>_bridge_log.txt`,
 with an extra one if the friction coefficients differed (KNOWN_BUGS 10). The solution
 suggested by `CONTACT2_16` itself (swapping master and slave) is not used by the bridge:
 the stiff tool would then become slave.
@@ -1154,7 +1168,7 @@ cause, not a numerical one.
 5. **Friction later.** Start without friction (coefficient 0 in Mecway) (U2.04.04
    §4.1).
 6. **Contact method.** With line contact, contact that is lost or `MECANONLINE9_4`
-   with `LAGS_C`: `contact_algo` = `auto` (default in Nonlinear Static) or `PENALISATION`
+   with `LAGS_C`: `contact_algo` = `auto` (default in Nonlinear Static and implicit dynamics) or `PENALISATION`
    (§3.1, NL-03b).
 7. **Smaller steps.** Reduce Mecway's *Time step size* (static; without a step size
    increase `substeps_per_interval`) or increase `substeps_per_output` (implicit; or reduce Mecway's *Time step size*). Code-Aster already cuts a failed step itself

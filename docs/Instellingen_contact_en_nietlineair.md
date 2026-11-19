@@ -658,27 +658,40 @@ contact = DEFI_CONTACT(
 
 - **Formulering (`contact_algo`, label "Contactmethode (auto / STANDARD / PENALISATION)").** `CONTINUE` met per zone
   `ALGO_CONT`:
-  - `auto` (standaard bij niet-lineair statisch sinds V2026.15): `PENALISATION` voor elke
+  - `auto` (standaard bij niet-lineair statisch en impliciete dynamica sinds V2026.15):
+    `PENALISATION` voor elke
     zone met Mecway's *normal stiffness* (Mecway eist die, dus in de praktijk elke zone),
     anders `STANDARD`; 2D-modellen (`**ASTER-PLANE`) houden `STANDARD`: Mecway heeft geen
     2D-contact om mee te vergelijken. Met `PENALISATION` gekozen (19 nov 2026, PL-40 … PL-47
     met kn = 1e12 Pa/m) rekent elke 2D-case door, en de krimpverbindingen geven precies de
     oplossing met een elastisch grensvlak, p = δ/(C + 1/kn) (PL-40: 9,977 MPa tegen
     9,9774 MPa, 20 % onder hard contact); het Hertz-contact PL-45 spreidt dan over 4,8 keer
-    de Hertz-breedte. Dynamica houdt de standaard `STANDARD` (zie het eind van dit punt). Gemeten tegen Mecway 36 met CCX (headless, grootste knoopafwijking /
+    de Hertz-breedte. Impliciete dynamica: zie het eind van dit punt. Gemeten tegen Mecway 36 met CCX (headless, grootste knoopafwijking /
     grootste verplaatsing): contact-patchtests NL-03c en NL-30 2e-5 met `PENALISATION`
     tegen 0,50 met `STANDARD` (geen penetratie p/kn), Voorbeeld_C 3,2 % tegen 7,0 %,
     lijncontact NL-03a/NL-30c rekent door waar `STANDARD` stopt. Verificatie NL-03g. Een
     startscherm dat voor V2026.15 is opgeslagen, houdt zijn expliciete `STANDARD`: kies
-    eenmalig `auto`. Dynamica, gemeten (19 nov 2026, impliciet, de patchtests van
-    NL-03g/NL-03h als langzame belasting in 1 s, headless): met `PENALISATION` zakt de
-    bovenkant van NL-03g precies 2pH/E + p/kn (zoals NL-03g), met `STANDARD` 51 % minder
-    (geen penetratie); NL-03h (wrijving) met `PENALISATION` en kt als `COEF_PENA_FROT`
-    stopte bij t = 0,00024 s, met de coëfficiënt van het starre plakken (zie **Wrijving**)
-    rekende hij door met het statische resultaat. Dat is alleen quasi-statisch: geen
-    botsing of loslaten is vergeleken met Mecway's eigen dynamica, dus de standaard blijft
-    `STANDARD` (bij expliciete dynamica kan een stijve veer ook de stabiele tijdstap
-    verkleinen).
+    eenmalig `auto`.
+    Impliciete dynamica, `auto` sinds V2026.15, gemeten tegen Mecway 36 met CCX (D31,
+    headless, 19 nov 2026):
+    - langzame belasting (NL-03j): `PENALISATION` geeft precies 2pH/E + p/kn zoals NL-03g
+      en Mecway, `STANDARD` zakt 51 % minder (geen penetratie);
+    - duwen en loslaten (NL-03k, een krachtpuls van 70 µs, waarna het bovenste blok
+      loskomt): `PENALISATION` volgt het hele verloop van Mecway binnen 4,7 % van de
+      grootste verplaatsing (het verschil dat overblijft is het tijdschema: HHT −4,7 %,
+      NEWMARK +4,7 % in de vrije vlucht); `STANDARD` is 59 % te stijf tijdens het duwen en
+      stopt bij het loslaten (`MECANONLINE9_4`);
+    - botsing over een spleet van 2 µm (NL-03m): gelijk aan Mecway tot de botsing;
+      Mecway/CCX en `STANDARD` stoppen bij de botsing, `PENALISATION` rekent door zonder
+      penetratiewaarschuwing (een keer ook gemeten met een 100 keer stijvere kn: rekent door);
+    - wrijving (NL-03l, NL-03h als D31): het statische resultaat met het starre plakken van
+      **Wrijving** (met kt als `COEF_PENA_FROT` stopte de run bij t = 0,00024 s;
+      `STANDARD` w −52 %).
+
+    Niet gemeten: expliciete dynamica (`auto` geeft daar `STANDARD`, met een INFO: een stijve
+    contactveer kan de stabiele tijdstap verkleinen) en `NEWMARK` met botsingen. Een
+    startscherm dat voor V2026.15 is opgeslagen, houdt ook voor dynamica zijn expliciete
+    `STANDARD`: kies eenmalig `auto` op de pagina van de dynamische analyse.
   - `STANDARD` (CA-standaard): augmented-Lagrangiaan (EDF R&D, U4.44.11),
     met contactdruk als extra onbekende op de slave-kant; geen stijfheid nodig, geen
     penetratie. Gebruik dit voor hard contact zonder penetratie (de krimpverbindingen
@@ -760,10 +773,11 @@ contact = DEFI_CONTACT(
   in afschuiving (NL-03h: −10% bij kt = 1e13 Pa/m). Voor V2026.15 werd kt zelf als
   `COEF_PENA_FROT` geschreven: even star, maar NL-03h had 754 stappen nodig in plaats van
   10, en Tutorials/AssemblyWithContact *Friction* en *Quadratic_ramp* stopten (nu rekenen
-  ze door). Dynamica en 2D (met `PENALISATION` gekozen) schrijven nog kt; bij impliciete
-  dynamica stopte NL-03h daarmee bij t = 0,00024 s (19 nov 2026), geef de zone daar dus een
-  eigen `#ASTER-ZONE COEF_PENA_FROT=...` (1/m, bijv. 1/(1e-8 × de diagonaal van de
-  contactvlakken in m)); die gaat voor.
+  ze door). Impliciete dynamica plakt sinds V2026.15 op dezelfde manier star (NL-03l; de
+  grens voor de kruip telt per rekenstap, ook tussenstappen en automatische halveringen).
+  Expliciete dynamica en 2D (met `PENALISATION` gekozen) schrijven nog kt (niet gemeten);
+  stopt zo'n run, geef de zone dan een eigen `#ASTER-ZONE COEF_PENA_FROT=...` (1/m, bijv.
+  1/(1e-8 × de diagonaal van de contactvlakken in m)); die gaat voor.
 
   ![Wrijving: tangentiële verplaatsing per belastingstap](img/contact_friction_stick.svg)
 
@@ -885,8 +899,8 @@ Code-Aster verbiedt knopen die in de slave-vlakken van twee zones zitten
 De bridge voegt zulke paren samen tot één zone: master = unie van de masters,
 slave = unie van de slaves (`DEFI_GROUP ... UNION`, groepen `CMAIT<n>`/`CESCL<n>`).
 Wrijving: de grootste coëfficiënt; met `contact_algo` = PENALISATION ook de grootste
-normaal- en tangentiële stijfheid (de tangentiële alleen bij dynamica en 2D: Nonlinear
-Static 3D plakt star, KNOWN_BUGS 149). Elke samenvoeging zet een WARNING in
+normaal- en tangentiële stijfheid (de tangentiële alleen bij expliciete dynamica en 2D: 3D
+statisch en impliciet plakt star, KNOWN_BUGS 149). Elke samenvoeging zet een WARNING in
 `<model>_<run-id>_bridge_log.txt`, en nog een als de wrijvingscoëfficiënten verschilden
 (KNOWN_BUGS 10). De oplossing die `CONTACT2_16` zelf voorstelt (master en slave wisselen)
 gebruikt de bridge niet: dan wordt het stijve gereedschap slave.
@@ -1179,7 +1193,7 @@ fysische oorzaak, geen numerieke.
    (U2.04.04 §4.1).
 6. **Contactmethode.** Bij lijncontact, contact dat verloren gaat of
    `MECANONLINE9_4` met `LAGS_C`: `contact_algo` = `auto` (standaard bij niet-lineair
-   statisch) of `PENALISATION` (§3.1, NL-03b).
+   statisch en impliciete dynamica) of `PENALISATION` (§3.1, NL-03b).
 7. **Kleinere stappen.** Verklein Mecway's *Time step size* (statisch; zonder
    stapgrootte `substeps_per_interval` verhogen) of verhoog `substeps_per_output`
    (impliciet; of verklein Mecway's *Time step size*). Code-Aster knipt een mislukte stap al zelf

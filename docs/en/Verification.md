@@ -160,7 +160,7 @@ No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Offi
 
 Added since this regression and run on their own (19 Nov 2026, not yet in a full
 regression): LS-07n (2 OK), LS-07o (1 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
-149), NL-03i (1 OK), NL-03j (5 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK).
+149), NL-03i (1 OK), NL-03j (5 OK), NL-03k (3 OK), NL-03l (1 OK, 1 BEKEND: KNOWN_BUGS 149), NL-03m (3 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK).
 
 **Known limitations** (status BEKEND):
 - KNOWN_BUGS 149: Mecway's tangential stiffness kt is not modelled, Code-Aster sticks
@@ -2143,6 +2143,15 @@ samples) plus the kinks of the load tables (NL-20).
   Mecway writes for CCX), loaded slowly, `PENALISATION`: top 1.9524 µm, penetration
   1.000 µm and 10 output steps, equal to Mecway 36 with CCX (D31, headless). Before
   V2026.15 the bridge ignored the step size of a D31 model (one step at t = 1 s).
+- **NL-03k/l/m** (contact in implicit dynamics, default `contact_algo` = `auto`, D31 with
+  steel's density and *Time step size* 2 µs, against Mecway 36 with CCX, headless): k: a
+  force pulse (4000 N on in 20 µs, held to 50 µs, off at 70 µs; then the upper block comes
+  loose): top −2.2230 µm at 20 µs and −2.1154 µm at 50 µs (Mecway −2.223 / −2.109), +5.985 µm
+  at 200 µs in free flight (Mecway +6.28 µm: −4.7 % with HHT, +4.7 % with NEWMARK, the time
+  scheme); `STANDARD` was 59 % too stiff and stopped at the release. l: NL-03h as D31:
+  w = Mecway, u BEKEND (KNOWN_BUGS 149). m: the upper block starts 2 µm above the lower one:
+  −1.9779 µm at 12 µs (Mecway −1.972, before the impact), the run completes to 200 µs without
+  a penetration warning (Mecway/CCX and `STANDARD` stopped at the impact).
 - **NL-03i** (friction, step count): NL-03h with step 0.02 s (25 shear steps instead of 5).
   Penalised friction slips (τ/(μp))/`COEF_PENA_FROT` per step (KNOWN_BUGS 149), here about
   1.5 nm in all. u = 1.8656 µm against 1.8638 µm of NL-03h with Lagrange friction
