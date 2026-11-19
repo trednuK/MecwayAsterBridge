@@ -374,12 +374,6 @@ def _check_model(model_data, analysis, basis):
                "ERROR: Thermal strain (Thermal stress) is not translated in "
                "the harmonic analysis. Switch it off in Mecway."))
         ok = False
-    if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
-        log(tr("ERROR: De resultaatroute 'tabel' werkt niet voor de "
-               "harmonische analyse. Kies 'liml' (pagina Algemeen).",
-               "ERROR: The result route 'tabel' does not work for the "
-               "harmonic analysis. Choose 'liml' (General page)."))
-        ok = False
     dampers = _dampers(model_data)
     if dampers and basis == "GENE":
         # A damper makes the damping non-proportional: the modal

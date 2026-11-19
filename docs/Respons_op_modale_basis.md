@@ -51,8 +51,7 @@ alleen: [Modaal_en_knik.md](Modaal_en_knik.md).
 
 1. **Actieve analyse** `auto`: D30 met *Mode superposition* → `dyna_modal_3d`; D30
    zonder → `dyna_impl_3d` (§2.6). Of kies de analyse zelf.
-2. **Resultaten naar Mecway** moet `liml` zijn (pagina Algemeen).
-3. Pagina **Respons op modale basis**:
+2. Pagina **Respons op modale basis**:
 
 | Instelling (label) | Standaard | Wanneer aanpassen |
 |---|---|---|
@@ -234,7 +233,6 @@ Met de standaard `HHT` (numerieke demping) en `GROT_GDEP` meldt de bridge een WA
 | ERROR: Thermische rek ... niet vertaald | niet gebouwd | `dyna_impl_3d` |
 | ERROR: De uitvoertijden ... liggen niet op een regelmatig raster | eindtijd geen veelvoud van de tijdstap | pas *Time period* of *Time step* aan |
 | ERROR: ... kan niet in een respons op modale basis (lineair) | contact, gap, tension/compression only | verwijder of onderdruk het, of `dyna_impl_3d` |
-| ERROR: De resultaatroute 'tabel' werkt niet ... | modes en tijdstappen alleen via `liml` | *Resultaten naar Mecway* = `liml` |
 | WARNING: Het Mecway-model rekent Dynamic Response zonder Mode superposition ... | `dyna_modal_3d` zelf gekozen voor een D30 zonder mode superposition | gewenst? Anders `auto` of `dyna_impl_3d` |
 | WARNING: Mecway Dynamic Response (D30) rekent lineair met Newmark ... | D30 zonder mode superposition, `dyna_impl_3d` met HHT of grote verplaatsingen | schema `NEWMARK` en deformation `PETIT` voor hetzelfde schema als Mecway (§2.6) |
 | WARNING: Geen belastingen: de respons is overal 0 | geen last | breng de belasting aan |
@@ -307,8 +305,7 @@ eindtoestand, maar wel voor veel frequenties tegelijk.
 
 1. **Actieve analyse:** kies *Harmonische respons* (`harmonic_3d`) zelf; `auto` kiest
    bij V30 de modale en bij D30 de transiënte analyse.
-2. **Resultaten naar Mecway** moet `liml` zijn.
-3. Pagina **Harmonische respons**:
+2. Pagina **Harmonische respons**:
 
 | Instelling (label) | Standaard | Wanneer aanpassen |
 |---|---|---|

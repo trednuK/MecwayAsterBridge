@@ -628,12 +628,6 @@ def build_acoustic_modes(work_dir, model_data, msh_path, resu_name, analysis):
     """
     import bridge_to_aster as bta
     log("--- Generating Aster Files (CALC_MODES akoestisch) ---")
-    if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
-        log(tr("ERROR: De resultaatroute 'tabel' werkt niet voor modale "
-               "analyses. Kies 'liml' (pagina Algemeen).",
-               "ERROR: The result route 'tabel' does not work for modal "
-               "analyses. Choose 'liml' (General page)."))
-        return None
     ac = model_data.get("acoustic_data")
     if ac is None:
         log(tr("ERROR: Geen akoestische gegevens gelezen; is het Mecway-"
@@ -1531,12 +1525,6 @@ def build_acoustic_harm(work_dir, model_data, msh_path, resu_name, analysis):
     """
     import bridge_to_aster as bta
     log("--- Generating Aster Files (DYNA_VIBRA HARM akoestisch) ---")
-    if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
-        log(tr("ERROR: De resultaatroute 'tabel' werkt niet voor de "
-               "harmonische akoestiek. Kies 'liml' (pagina Algemeen).",
-               "ERROR: The result route 'tabel' does not work for harmonic "
-               "acoustics. Choose 'liml' (General page)."))
-        return None
     ac = model_data.get("acoustic_data")
     if ac is None:
         log(tr("ERROR: Geen akoestische gegevens gelezen; is het Mecway-"

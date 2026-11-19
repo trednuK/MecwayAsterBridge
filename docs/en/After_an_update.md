@@ -87,6 +87,9 @@ against `CONFIG_BRIDGE`, and whether the Dutch and English pages have the same s
 - The cell array of failed elements in the `.vtu` files ("VTU/PVD files for ParaView") is now
   called `failed` instead of `BEZWEKEN`: adjust a saved ParaView state that filters on
   `BEZWEKEN` (*Threshold*).
+- From V2026.15 the result route `tabel` no longer exists: the results always go through
+  the `.liml`. A kept `bridge_utils.py` with `"result_route": "tabel"` gives a WARNING and
+  the run goes through the `.liml`; remove that line.
 
 ## 4. Choosing another Code-Aster version
 
@@ -174,9 +177,7 @@ it was last verified:
 | Element failure (`#ASTER-BEZWIJKEN`) in 2D and axisymmetric with `**ASTER-PLANE` in L30, WARNING for KNOWN_BUGS 144 (V2026.14) | NOT verified | NOT verified in the Mecway window: measured headless with Code-Aster 17.4 (PL-70 … PL-74 against closed forms) | NOT verified in the Mecway window (headless runs do not depend on the Mecway version) |
 | The thermomechanical chain (T31 with *Thermal stress*) with `**ASTER-PLANE C_PLAN` or `D_PLAN`, and with plasticity in `AXIS` (V2026.14) | NOT verified | NOT verified in the Mecway window: measured headless with Code-Aster 17.4 (PL-75 … PL-80 against closed forms) | NOT verified in the Mecway window (headless runs do not depend on the Mecway version) |
 | Gaps with their own U axis (*Element orientation* card), no lateral stiffness of a closed gap, KNOWN_BUGS 23 (V2026.14) | NOT verified | Mecway 35 (35.0.9802) headless: NL-92e … NL-92l equal to Mecway's own solution; NL-92m against the hand calculation | NOT verified (Mecway's own gap not re-measured on Mecway 36) |
-| Route `tabel` without a Mecway solution: a clear message and a stop before Code-Aster (V2026.14) | NOT verified | NOT verified in the Mecway window: offline tests | NOT verified in the Mecway window (route `tabel` with a normal solution was, 18 Nov 2026) |
-| The model as text through `mw.liml_text()`: a run and "Show section" read a copy of the open model; route `liml` saves only when the results go into it, route `tabel` not at all (V2026.15) | n/a (no `mw.liml_text()`: the model is saved as before) | n/a (no `mw.liml_text()`: the model is saved as before) | verified headless (36.0.9815, 18 Nov 2026: route `tabel` and "Show section" in a hidden Mecway, the model file unchanged, the same `.comm`, mesh and fatigue result as with saving; 19 Nov 2026: route `liml` on VM-01a and LS-20a, the same results and model file as with saving first, a failed run leaves the file unchanged); NOT verified in the Mecway window |
-| Route `tabel`: values per element node (stresses, strains, von Mises, shell layers) replaced by Code-Aster's node values through `solution.set_element_node_variable()`, KNOWN_BUGS 7 (V2026.15) | n/a (no `set_element_node_variable()`: Mecway's own values stay, with a WARNING; NOT verified) | n/a (no `set_element_node_variable()`: Mecway's own values stay, with a WARNING; NOT verified) | verified headless (36.0.9815, 18 Nov 2026: VM-01a and a solid with a shell skin and a beam in a hidden Mecway, values per element node equal to the node values; without the function the WARNING); NOT verified in the Mecway window; Mecway's derived variables (principal stresses, Tresca) after the replacement NOT verified |
+| The model as text through `mw.liml_text()`: a run and "Show section" read a copy of the open model; the model is saved only when the results go into it (V2026.15) | n/a (no `mw.liml_text()`: the model is saved as before) | n/a (no `mw.liml_text()`: the model is saved as before) | verified headless (36.0.9815, 18 Nov 2026: the former route `tabel` and "Show section" in a hidden Mecway, the model file unchanged, the same `.comm`, mesh and fatigue result as with saving; 19 Nov 2026: a run on VM-01a and LS-20a, the same results and model file as with saving first, a failed run leaves the file unchanged); NOT verified in the Mecway window |
 | Contact (V2026.15): contact method `auto`, `SEUIL_INIT` with friction, double supports on bonded slave nodes (KNOWN_BUGS 147), `bonded_close_gap`, rigid friction stick (KNOWN_BUGS 149) | NOT verified | NOT verified | verified headless (36.0.9815, 18-19 Nov 2026: NL-03g/h/i and LS-07n against Mecway 36's own CCX solve, LS-07o against the Mecway 34 reference of LS-07m); NOT verified in the Mecway window |
 
 "Verified" means the verification of §2 and a run in Mecway with that version. Comparisons
@@ -223,6 +224,6 @@ route `liml` (`Voorbeeld_A.liml` with the lines of example 1 of
 faces); configurations (LS-20a); the Saved monitor; hiding failed elements
 (`BezwijkenTrekstaaf`); showing and hiding the section (LS-97a); the status window and the
 convergence window; the buttons ParaView and AsterStudy; `mw.face_nodes` (PL-07, LS-92a); route
-`tabel` (a cantilever beam, tip displacement −35.3 mm). All ten as expected (see the table, where a row exists). The check
+`tabel` (a cantilever beam, tip displacement −35.3 mm; that route no longer exists since V2026.15). All ten as expected (see the table, where a row exists). The check
 of the version compares the major version only, so 36 also covers the final build of Mecway 36: run
 §2 with `--mecway-opslaan` again on that build.

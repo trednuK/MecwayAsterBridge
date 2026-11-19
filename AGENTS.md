@@ -39,17 +39,17 @@ Planned extensions and the procedure for them are in `STAPPENPLAN.md` (run with 
   `.liml` XML (`bridge_from_liml.py`). Code-Aster: v17.4.
 - `mw.liml_text()` (Mecway 36) only through `bridge_liml_text.py` (`hasattr`, 2.7 and 3; test:
   `python tests/test_bridge_liml_text.py`): a run reads a model-only copy
-  `run_name("_model.liml")` instead of saving (it is `model_data["liml_path"]` for the job; route
-  `liml` saves right before the results go into the `.liml`, after checking that the open model
-  still equals the copy; an untitled model in route `liml` is still saved first; removed after
-  a clean job whose results were loaded, kept otherwise), *Show section* a
+  `run_name("_model.liml")` instead of saving (it is `model_data["liml_path"]` for the job; the
+  run saves right before the results go into the `.liml`, after checking that the open model
+  still equals the copy; an untitled model is still saved first; removed after a clean job whose
+  results were loaded, kept otherwise), *Show section* a
   temporary one. The decisions are pure functions there (`wants_snapshot`, `save_problem`,
   `same_text`, `clean_end`). Equal to what `mw.save_as` writes minus `<solution>` (measured); every
   caller falls back to saving when it returns None.
-- `solution.set_element_node_variable()` (Mecway 36) only through `bridge_element_node.py` (route
-  `tabel`, 2.7 and 3; test: `python tests/test_bridge_element_node.py`): replaces Mecway's own values
-  per element node of the written stress/strain names on the elements that have them; beam variables
-  are never touched (contract with MecwayAdvancedBeamAnalysis).
+- Results reach Mecway only through the `.liml` (`aster_results_export` + `bridge_results_liml`);
+  the result route `tabel` was removed in V2026.15. Do not read a setting `result_route`: only
+  `bridge_utils.legacy_route_note` does, for a kept `bridge_utils.py` (test:
+  `python tests/test_route_removed.py`).
 
 ## Branches and files
 
@@ -86,7 +86,7 @@ with a regex. A diff here may therefore be a saved setting; a `.bak` is normal.
 |---|---|
 | BC/load | subclass of `BaseBC` in `bridge_bcs.py` (`parse_xml`, `to_aster_dict`) + `SUPPORTED_BCS` under the `.liml` tag name |
 | Analysis type | `Scripts/AsterTemplate_<Name>.comm` + builder in `bridge_to_aster.py` + `SOLVER_BUILDERS_ASTER` + entry in `CONFIG_BRIDGE["analyses"]` |
-| Result field | group in `RESULT_FIELD_SPECS` (`bridge_from_aster.py`; also the selection list on the start screen) + `FIELD_TABLE` in `aster_results_export.py` (route `liml`, default) + for route `tabel` POST_RELEVE_T with the same INTITULE in `bridge_to_aster._result_tables` |
+| Result field | group in `RESULT_FIELD_SPECS` (`bridge_from_aster.py`; also the selection list on the start screen) + `FIELD_TABLE` in `aster_results_export.py` |
 | Section/material type | `_parse_geometric_props()` / material block in `bridge_from_liml.py`; OpenRadioss cards (PLAS_TAB, /FUNCT) in `bridge_radioss.py` |
 | Code-Aster feature without Mecway input | user: `#ASTER` lines in Mecway's custom model definition (`bridge_custom.py`; examples in `docs/ASTER_regels_voorbeelden.md`) |
 | Format of the section outline | `bridge_section_view.parse_shapes` and the same change in MecwaySectionProps (see Contract with MecwaySectionProps) |

@@ -131,14 +131,12 @@ spelling (`**ASTER-VLAK AXIS`). De bridge leest de regel welke solver er ook gek
 
 ### 1.2 In het hoofdvenster van de bridge
 
-![Pagina Algemeen met de actieve analyse en de resultaatroute](img/general_analysis_results_nl.png)
+![Pagina Algemeen met de actieve analyse](img/general_analysis_results_nl.png)
 
 1. *Actieve analyse (auto = volgens Mecway)*: `auto` (of `lin_static_3d`; voor D20/DA0
    `dyna_impl_3d`).
-2. *Resultaten naar Mecway*: `liml`.
 
-*Actieve analyse (auto = volgens Mecway)* `auto` (of `lin_static_3d`) en *Resultaten naar Mecway* `liml` (pagina
-Algemeen; de route `tabel` schaalt de reacties niet, de bridge stopt). De instellingen
+*Actieve analyse (auto = volgens Mecway)* `auto` (of `lin_static_3d`). De instellingen
 van de pagina Statisch of Dynamisch (impliciet) gelden zoals in 3D; voor D20/DA0 gelijk
 aan Mecway: *Tijdschema (SCHEMA_TEMPS)* `NEWMARK`, `deformation` `PETIT` en
 *Rekenstappen per Mecway-tijdstap* = 1 (standaard; §2.4). De
@@ -252,8 +250,7 @@ bridge met een regel het in 2D te rekenen (voorbeelden 2, 3 en 4 in §1.5):
    model in 3D). Of Mecway's venster shell-randen laat kiezen voor een
    contact is NIET nagelopen.
 7. **Bridge.** *Actieve analyse (auto = volgens Mecway)* `auto` (→ `nonlin_static_3d` voor
-   L30, `lin_static_3d` voor S30) en *Resultaten naar Mecway* `liml` (de route `tabel`:
-   ERROR). Controleer in de log dat de regel gelezen is: per elset
+   L30, `lin_static_3d` voor S30). Controleer in de log dat de regel gelezen is: per elset
    `INFO: Elset '…' -> MODELISATION='C_PLAN', thickness … m (Mecway L30).` (bij `AXIS` zonder
    de dikte) en een keer `INFO: 2D analysis L30: MODELISATION='…'; concentrated forces / …
    and reactions x … (…).` Zonder deze regels heeft de bridge de elementen als shells
@@ -318,7 +315,7 @@ shell-elementen in T30 of T31 zijn al een thermisch 2D-model (`PLAN`,
    ([`Thermisch.md`](Thermisch.md); *Internal heat generation* en een *Heat flow* op
    elementen nagelopen: PL-56, PL-57). T31: een begintemperatuur (zoals in 3D).
 6. **Bridge.** *Actieve analyse (auto = volgens Mecway)* `auto` (→ `ther_3d`, pagina
-   Thermisch) en *Resultaten naar Mecway* `liml`. De log toont `INFO: T30 (of T31) with '#ASTER-PLANE
+   Thermisch). De log toont `INFO: T30 (of T31) with '#ASTER-PLANE
    AXIS': thermal MODELISATION='AXIS' about Y (per radian in Code-Aster, 360 degrees in
    Mecway).` en per elset `INFO: Elset '…' -> thermal MODELISATION='AXIS' (the shell
    thickness does not count).`
@@ -373,8 +370,7 @@ vast (σ_xx = −E α ΔT, in `D_PLAN` /(1 − ν), en σ_zz), met een druk, een
 warmtestroom in W op een rand (2 mm dik), en met plasticiteit: alle binnen 1e-6 van de
 gesloten oplossing.
 
-ERROR in de keten (`AXIS`, `C_PLAN`, `D_PLAN`): de resultaatroute `tabel` (de reacties worden
-niet naar 360 graden of de dikte geschaald), contact, koppelingen tussen knoop en oppervlak,
+ERROR in de keten (`AXIS`, `C_PLAN`, `D_PLAN`): contact, koppelingen tussen knoop en oppervlak,
 verlijmd contact en een beginsnelheid. Een bezwijkgrens (`#ASTER-BEZWIJKEN`) geeft een
 WARNING: de keten heeft geen bezwijklus, de elementen bezwijken niet (ook in 3D). Puntmassa's
 worden met een INFO genegeerd; vergelijkingen tussen vrijheidsgraden, flexibele verbindingen
@@ -452,7 +448,7 @@ Uitgewerkt voorbeeld: voorbeeld 7 in §1.5.
    vertaald: traction, een kracht op faceid 1, een druk met een formule in x, y, z, line
    pressure, centrifugaalkracht, temperaturen en contact (§1.6).
 7. **Bridge.** *Actieve analyse (auto = volgens Mecway)* `auto` (→ `lin_static_3d` of
-   `nonlin_static_3d`) en *Resultaten naar Mecway* `liml`. De log toont per elset
+   `nonlin_static_3d`). De log toont per elset
    `INFO: Elset '…' -> MODELISATION='COQUE_AXIS' (axisymmetric shell, SEG3), thickness … m
    (Mecway S30).` en een keer `INFO: 2D analysis S30: axisymmetric shells (COQUE_AXIS) about Y;
    …`. In L30 rekenen de schalen met kleine verplaatsingen (`deformation` anders dan `PETIT`:
@@ -733,7 +729,7 @@ Stappen:
    **ASTER-PLANE AXIS
    ```
 
-6. Bridge: `auto` (→ `ther_3d`, pagina Thermisch), *Resultaten naar Mecway* `liml`. De log
+6. Bridge: `auto` (→ `ther_3d`, pagina Thermisch). De log
    toont `INFO: T30 with '#ASTER-PLANE AXIS': thermal MODELISATION='AXIS' about Y (per radian
    in Code-Aster, 360 degrees in Mecway).` en `INFO: Elset 'Buis' -> thermal
    MODELISATION='AXIS' (the shell thickness does not count).`
@@ -762,7 +758,7 @@ Stappen:
    | – | – | *Thermal stress* met *Reference temperature* 293 K (= de begintemperatuur) |
 
 5. De regel: in CCX > *Custom model definition* `**ASTER-PLANE AXIS`.
-6. Bridge: `auto` (→ `ther_3d`), *Resultaten naar Mecway* `liml`; op de pagina Thermisch
+6. Bridge: `auto` (→ `ther_3d`); op de pagina Thermisch
    *Tijdschema THETA (0 .. 1)* = 1 zoals in de verificatie (de standaard 0,57 is voor dit
    geval niet nagelopen). De log toont de twee INFO-regels van voorbeeld 5 (met T31 in plaats van T30) en `INFO: T31: the
    mechanical part of the thermomechanical chain as MODELISATION='AXIS' (reactions x 2 pi).`
@@ -879,7 +875,6 @@ typte.
 | Route A met `C_PLAN`/`D_PLAN` maar zonder shell-dikte | ERROR: Elset '…': #ASTER-PLANE C_PLAN heeft een dikte nodig; geef materiaal '…' in Mecway een geometrie Shell/membrane met een dikte (ook voor plane strain; zonder dikte rekent Mecway zelf ook niet). | geef het materiaal *Shell/membrane* met de dikte t |
 | Twee materialen met een verschillende dikte | ERROR: De 2D-analyse heeft elsets met verschillende modelisatie of dikte (…); de bridge vertaalt een model met een enkele dikte en een enkel type (plane stress of plane strain). | een dikte voor het hele model |
 | Een andere bridge-analyse dan `auto` gekozen | ERROR: Mecway-analysetype L30 (2D) wordt alleen vertaald naar nonlin_static_3d, niet naar …. Kies op het startscherm 'auto' of nonlin_static_3d. | `auto` |
-| Resultaatroute `tabel` | ERROR: Een 2D-analyse (…) werkt alleen met de resultaatroute 'liml' (pagina Algemeen); de route 'tabel' schaalt de reactiekrachten niet naar de dikte of 360 graden. | resultaatroute `liml` |
 | Plasticiteit in een S20/SA0-model | WARNING: Materiaal '…' heeft plasticiteit, maar S20 is lineair (ook in Mecway); de bridge rekent elastisch. Voor plasticiteit in 2D: Nonlinear Static (L30) met vlakke shell-elementen en de regel '**ASTER-PLANE C_PLAN\|D_PLAN\|AXIS' (docs 2D par. 1.4). | route A (voorbeeld 2 of 3) |
 | Een belasting of oplegging op de elementvlakken (faceid 5/6) in plaats van op randen in route A | ERROR: … op '…' in een 2D-analyse: alleen randen van vlakke elementen (faceid 1..4), hier shellface. NIET meegenomen. | een vlakselectie van randen |
 | Een contact tussen elementvlakken in plaats van randen | ERROR: contact '…' / '…': in een 2D-analyse alleen randen van de vlakke elementen (hier […]). NIET meegenomen. | vlakselecties van randen (voorbeeld 4) |
@@ -893,7 +888,6 @@ typte.
 | `#ASTER-LASBRON`, `#ASTER-METALLURGIE` of *Bonded* contact in een axisymmetrisch thermisch model | ERROR: Bonded contact in een axisymmetrisch thermisch model ('#ASTER-PLANE AXIS' in T30) wordt (nog) niet vertaald. (of de naam van het andere item; T31 net zo). In T31 met *Thermal stress* (de keten) geeft verlijmd contact: ERROR: Bonded contact in een axisymmetrische thermomechanische keten (T31) wordt (nog) niet vertaald. | laat het weg, of reken in 3D |
 | *Heat flow* op knopen in een axisymmetrisch thermisch model | ERROR: Niet vertaald: … op '…': warmtestroom op knopen in een axisymmetrisch model (AXIS) wordt niet vertaald; gebruik een heat flow op een rand. | een *Heat flow* op een rand |
 | Een thermische last op het vlak van de doorsnede (faceid 5/6) in een axisymmetrisch thermisch model | ERROR: Niet vertaald: … op '…': N vlak(ken) van de doorsnede (faceid 5/6) in '…': in een axisymmetrisch model (AXIS) geen oppervlak; alleen randen (faceid 1..4). | leg de last op een rand (faceid 1..4) of op de elementen |
-| De keten (T31 met *Thermal stress*) met de resultaatroute `tabel` | ERROR: Een axisymmetrische thermomechanische keten (T31) werkt alleen met de resultaatroute 'liml' (pagina Algemeen); de route 'tabel' schaalt de reactiekrachten niet naar 360 graden. (`C_PLAN`/`D_PLAN`: Een 2D thermomechanische keten (T31, '#ASTER-PLANE C_PLAN') … naar de dikte.) | resultaatroute `liml` |
 | Contact, een koppeling tussen knoop en oppervlak, verlijmd contact of een beginsnelheid in de keten | ERROR: … in een axisymmetrische thermomechanische keten (T31) wordt (nog) niet vertaald. (`C_PLAN`/`D_PLAN`: … in een 2D thermomechanische keten (T31, '#ASTER-PLANE C_PLAN') wordt (nog) niet vertaald.) | laat het weg |
 | Een vergelijking tussen vrijheidsgraden, flexibele verbinding of element offset in de keten | WARNING: … op '…' wordt in de keten thermisch -> mechanisch (Thermal stress in een T31-model) niet vertaald; de mechanische berekening rekent zonder. | laat het weg, of reken in 3D |
 | Axisymmetrische schalen (§1.4.2) van line2-elementen | ERROR: Elset '…' bevat line2-elementen; axisymmetrische schalen ('#ASTER-PLANE AXIS', …) alleen met line3 (COQUE_AXIS op SEG3, zoals in alle testgevallen van Code-Aster). Maak de elementen kwadratisch in Mecway. | line3-elementen |
@@ -1069,7 +1063,7 @@ en §6.
   de keten (WARNING). Lassen, metallurgie en *Bonded* contact:
   ERROR; een *Heat flow* op knopen en lasten op het vlak van de doorsnede: overgeslagen (ERROR
   "Niet vertaald: …").
-- De foutschatter (INFO) en de resultaatroute `tabel` (ERROR).
+- De foutschatter (INFO).
 
 ## 4. Akoestiek in 2D
 
@@ -1109,7 +1103,6 @@ warmtetransport en van de keten thermisch -> mechanisch, letterlijk: §1.6.
 | ERROR: Mecway-analysetype A20 (Acoustic Resonance 2D) wordt alleen vertaald naar de holtemodes … | een andere analyse gekozen | kies `auto` of `acoustic_modes_3d` ([`Akoestiek.md`](Akoestiek.md) §3.5) |
 | ERROR: Mecway-analysetype D20 (2D) wordt alleen vertaald naar dyna_impl_3d, niet naar … | een andere analyse gekozen op het startscherm | kies `auto` of de genoemde analyse |
 | ERROR: D20 (2D) wordt vertaald met het impliciete schema … | expliciet schema of *Mode superposition* | kies `NEWMARK` of `HHT`; zet *Mode superposition* in Mecway uit |
-| ERROR: Een 2D-analyse (…) werkt alleen met de resultaatroute 'liml' | route `tabel` gekozen | kies `liml` op de pagina Algemeen |
 | ERROR: '#ASTER-PLANE …' werkt alleen in Mecway's Static 3D (S30) en Nonlinear Static (L30) … | de schakelaar in een ander analysetype | gebruik S30 of L30 (§1.4), T30/T31 met `AXIS` (§1.4.1), of haal de regel weg |
 | ERROR: '#ASTER PLANE …' is Code-Aster-code en wordt overgeslagen; bedoeld is '#ASTER-PLANE …' | de schakelaar zonder streepje | schrijf `**ASTER-PLANE` (§1.4) |
 | WARNING: Materiaal '…' heeft plasticiteit, maar S20 is lineair … | plasticiteit in S20/SA0 | Nonlinear Static (L30) met `**ASTER-PLANE` (§1.4) |

@@ -33,9 +33,7 @@ tussen buurelementen en ten opzichte van de last op de rand). Alleen
 
 ### 1.2 In het hoofdvenster van de bridge
 
-1. **Resultaten naar Mecway** = `liml` (tabblad Algemeen, standaard). Met `tabel`
-   staat alleen de globale fout in de log, niet het veld.
-2. Pagina (tabblad) **Statisch**, kopje *Controle*:
+1. Pagina (tabblad) **Statisch**, kopje *Controle*:
 
 | Instelling (label) | Sleutel | Standaard | Wanneer aanpassen |
 |---|---|---|---|
@@ -261,7 +259,6 @@ Andere gevallen met thermische spanning: NIET geverifieerd.
 | WARNING: Foutschatter: ... op overlappende vlakken | twee drukken/tractions op hetzelfde vlak | de schatter neemt er één mee; voor een betrouwbare schatting de lasten samenvoegen in Mecway |
 | WARNING: Foutschatter: geen last of vrij vlak voor CALC_ERREUR | alle randen opgelegd en geen vlaklast | geen schatting |
 | WARNING: Foutschatter (error_estimator) werkt alleen bij lineair statisch | instelling bij een andere analyse | normaal; geen schatting |
-| INFO: Foutschatter: het veld gaat alleen via result_route 'liml' | route `tabel` | zet *Resultaten naar Mecway* op `liml` |
 | statusvak: "Boven 20%: de mesh is grof" | grove mesh | verfijn waar `errorestimate` groot is (§1.5) |
 
 De Code-Aster-meldingen bij een eigen `CALC_ERREUR` (bijv. in `#ASTER-POST`-code) staan
@@ -299,8 +296,7 @@ Code: `Scripts/bridge_adapt.py`, de lus in `MecwayAsterBridgeMain.main()`
    knoopselectie (§6.4). Een puntlast of een oplegging op één knoop mag.
 3. Hoofdvenster, pagina **Statisch**, kopje *Adaptieve verfijning*: zet
    *Adaptieve verfijning (Mecway refine_x2)* aan en kies het doel (§6.2). De
-   foutschatter moet aan staan (standaard), *Resultaten naar Mecway* = `liml`
-   (standaard).
+   foutschatter moet aan staan (standaard).
 4. Klik *Starten*. Per lus start Code-Aster en wacht de bridge zoals altijd tot de
    berekening klaar is (statusvenster, of OK met *Wachten op Code-Aster* = `confirm`;
    [Handleiding §2](Handleiding.md#2-werkwijze) stap 5). *Stoppen...* beëindigt ook de lus.
@@ -422,7 +418,6 @@ Deze grenzen staan ook in `KNOWN_BUGS.md` (punt 65).
 | ERROR: ... de knoopselectie(s) ... liggen op ribben die verfijnd worden | voorwaarde/last op een knoopselectie | leg ze op een vlakselectie |
 | Adaptieve verfijning gestopt: ... zou het model ongeveer ... elementen hebben | grens `adapt_max_elements` | hogere grens (en `memory_limit`), of een ruimer doel |
 | WARNING: Adaptieve verfijning (adapt_refine) vraagt een lineair statische analyse met de foutschatter | andere analyse of foutschatter uit | `error_estimator` aan, analyse `lin_static_3d` |
-| Adaptieve verfijning: alleen met resultaatroute 'liml' | route `tabel` | *Resultaten naar Mecway* = `liml` |
 | Adaptieve verfijning gestopt: geen globale foutschatting in de .mess | de schatter draaide niet (geen volumes, geen last) | zie §4 |
 | ERROR: Mecway-verfijning (refine_x2) mislukt | Mecway weigerde | zie de log; verfijn met de hand in Mecway |
 
@@ -604,7 +599,7 @@ Deze eerste versie geeft een ERROR (en rekent niet) bij:
   aan; zet de last op een vlakselectie);
 - **contact**, verlijmd contact, koppelingen, vergelijkingen tussen knopen,
   **Compression only**, voorspansecties, flexibele verbindingen;
-- **bezwijken van elementen**, `LINE_QUAD` (`elem_hex8`), resultaatroute `tabel`, 2D.
+- **bezwijken van elementen**, `LINE_QUAD` (`elem_hex8`), 2D.
 
 Verder: de lus vergroft niet, en de elementknoopwaarden en reacties zie §7.5. Deze grenzen
 staan ook in `KNOWN_BUGS.md` (punt 65).

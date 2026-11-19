@@ -33,9 +33,7 @@ elements** get an estimate. General working of the bridge:
 
 ### 1.2 In the bridge main window
 
-1. **Results to Mecway** = `liml` (General tab, default). With `tabel` only the
-   global error is in the log, not the field.
-2. Page (tab) **Static**, heading *Checks*:
+1. Page (tab) **Static**, heading *Checks*:
 
 | Setting (label) | Key | Default | When to change |
 |---|---|---|---|
@@ -262,7 +260,6 @@ The log lines are in the language of the bridge (`tr()`); the English text is sh
 | WARNING: Error estimator: ... on overlapping faces | two pressures/tractions on the same face | the estimator takes one; for a reliable estimate merge the loads in Mecway |
 | WARNING: Error estimator: no load or free face for CALC_ERREUR | all boundaries constrained and no face load | no estimate |
 | WARNING: Error estimator (error_estimator) only works for linear static | setting with another analysis | normal; no estimate |
-| INFO: Error estimator: the field only goes to Mecway with result_route 'liml' | route `tabel` | set *Results to Mecway* to `liml` |
 | status box: "Above 20%: the mesh is coarse" | coarse mesh | refine where `errorestimate` is large (§1.5) |
 
 The Code-Aster messages for a `CALC_ERREUR` of your own (e.g. in `#ASTER-POST` code)
@@ -299,7 +296,7 @@ and constraints on faces, materials and components along. Code:
    point load or a support on a single node is fine.
 3. Main window, page **Static**, heading *Adaptive refinement*: switch on *Adaptive
    refinement (Mecway refine_x2)* and choose the target (§6.2). The error estimator
-   must be on (default), *Results to Mecway* = `liml` (default).
+   must be on (default).
 4. Click *Start*. In each loop Code-Aster starts and the bridge waits until the
    calculation has finished, as always (status window, or OK with "Waiting for
    Code-Aster" = `confirm`; [User guide §2](UserGuide.md#2-workflow) step 5). "Stop..."
@@ -421,7 +418,6 @@ These limits are also in `KNOWN_BUGS.md` (item 65).
 | ERROR: ... the node selection(s) ... lie on edges that would be refined | constraint/load on a node selection | apply it to a face selection |
 | Adaptive refinement stopped: ... the model would have about ... elements | limit `adapt_max_elements` | a higher limit (and `memory_limit`), or a looser target |
 | WARNING: Adaptive refinement (adapt_refine) needs a linear static analysis with the error estimator | other analysis or estimator off | `error_estimator` on, analysis `lin_static_3d` |
-| Adaptive refinement: only with result route 'liml' | route `tabel` | *Results to Mecway* = `liml` |
 | Adaptive refinement stopped: no global error estimate in the .mess | the estimator did not run (no solids, no load) | see §4 |
 | ERROR: Mecway refinement (refine_x2) failed | Mecway refused | see the log; refine by hand in Mecway |
 
@@ -606,7 +602,7 @@ This first version gives an ERROR (and does not compute) for:
   extend them; put the load on a face selection);
 - **contact**, bonded contact, couplings, constraint equations, **Compression only**,
   pre-tension sections, flexible joints;
-- **element failure**, `LINE_QUAD` (`elem_hex8`), result route `tabel`, 2D.
+- **element failure**, `LINE_QUAD` (`elem_hex8`), 2D.
 
 Further: the loop does not coarsen, and for the element-node values and reactions see
 §7.5. These limits are also in `KNOWN_BUGS.md` (item 65).

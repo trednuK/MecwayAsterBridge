@@ -349,12 +349,6 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
     (ERROR logged).
     """
     log("--- Generating Aster Files (DYNA_VIBRA HARM vibro-akoestisch) ---")
-    if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
-        log(tr("ERROR: De resultaatroute 'tabel' werkt niet voor de "
-               "harmonische vibro-akoestiek. Kies 'liml' (pagina Algemeen).",
-               "ERROR: The result route 'tabel' does not work for harmonic "
-               "vibroacoustics. Choose 'liml' (General page)."))
-        return None
     vib = model_data.get("vibro")
     if not vib:
         log(tr("ERROR: Vibro-akoestiek harmonisch: het model heeft geen "

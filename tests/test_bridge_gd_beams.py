@@ -8,7 +8,7 @@
 # generated .comm for nonlinear static (MODELISATION, RELATION
 # ELAS_POUTRE_GR, DEFORMATION GROT_GDEP, section forces from SIEF_ELNO/
 # SIEF_NOEU, no SIPM_ELNO/EFGE_ELNO, AY/AZ for a general section, line3
-# split, centrifugal force as FORMULE instead of ROTATION, route 'tabel'),
+# split, centrifugal force as FORMULE instead of ROTATION),
 # the fallback to POU_D_T in other analyses and with PETIT, the ERRORs for
 # crit_stab and imperfection_amplitude and the WARNINGs (beam offset,
 # imposed rotation). POU_D_E stays as it was. The results of a run:
@@ -293,15 +293,6 @@ def test_centrifugal_formula():
               is not None, "GD centrifugal + truss: FORCE_POUTRE on BARRE")
         check("not translated" not in log,
               "GD centrifugal + truss: no ERROR\n" + log)
-
-
-def test_route_tabel():
-    comm, _md, log = _translate("nonlin_static_3d", _liml(),
-                                general={"result_route": "tabel"})
-    check(comm is not None, "GD tabel: no .comm\n" + log)
-    if comm:
-        check(re.search(r"NOM_CHAM='SIEF_NOEU'", comm) is not None,
-              "GD tabel: beam_forces table from SIEF_NOEU")
 
 
 def test_warnings_links_and_rotation():

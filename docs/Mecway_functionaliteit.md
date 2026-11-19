@@ -149,9 +149,9 @@ Verlijmd contact per combinatie (slave op master):
 | Mecway-veld | Status | Opmerking |
 |---|---|---|
 | Verplaatsing, rotatie | Ja | Modaal en knik: de vormen. |
-| Spanningstensor volume-elementen (knoop en element-knoop) | Ja | Code-Aster-middeling, anders dan Mecway (KB3). Route `tabel`: met Mecway 36 of later en een solution zonder tijdstappen zijn de waarden per element-knoop de knoopwaarden van Code-Aster; anders KB7. |
+| Spanningstensor volume-elementen (knoop en element-knoop) | Ja | Code-Aster-middeling, anders dan Mecway (KB3). De waarden per element-knoop zijn die van Code-Aster zelf. |
 | von Mises (volumes; schalen boven/midden/onder) | Ja | KB3. |
-| Spanningstensor schalen (globaal, boven/midden/onder), krachten en momenten per lengte | Ja | Velden `shell_stresses` (standaard uit) en `shell_forces`; alleen route `liml`. `shell_forces` staat aan bij statisch en niet-lineair en maakt de resultaten bij schalen ca. 2,5 keer zo groot (WARNING; uitvinken op de pagina van de analyse). Mecway's *stress in element coordinates* van schalen niet (van volume-elementen met orthotroop materiaal wel: `lamuu` .., [`Orthotroop_materiaal.md`](Orthotroop_materiaal.md) §4). U-as uit *Element properties* of een *Element orientation*-kaart ([`Handleiding.md`](Handleiding.md) §4.1). |
+| Spanningstensor schalen (globaal, boven/midden/onder), krachten en momenten per lengte | Ja | Velden `shell_stresses` (standaard uit) en `shell_forces`. `shell_forces` staat aan bij statisch en niet-lineair en maakt de resultaten bij schalen ca. 2,5 keer zo groot (WARNING; uitvinken op de pagina van de analyse). Mecway's *stress in element coordinates* van schalen niet (van volume-elementen met orthotroop materiaal wel: `lamuu` .., [`Orthotroop_materiaal.md`](Orthotroop_materiaal.md) §4). U-as uit *Element properties* of een *Element orientation*-kaart ([`Handleiding.md`](Handleiding.md) §4.1). |
 | Balkspanning | Deels | Kleinste/grootste axiale spanning bij rechthoekige en ronde doorsneden (`beamsixxmin/max`; niet met `POU_D_T_GD`, WARNING). General sections met omtrek en I, T, L, C: von Mises, langs- en schuifspanning over de doorsnede (`beamvonmisesmax`, `beamsixxabsmax`, `beamtaumax`, schalen van de doorsnede; [Handleiding §4.3](Handleiding.md#43-de-vorm-van-een-general-section)). Geen welvingsspanning. |
 | Snedekrachten en -momenten van balken | Ja | Veld `beam_forces` (`tensileforce`, `sheary`, `shearz`, `torsion`, `bendingmomv/w`), ook per mode. Met `POU_D_T_GD` uit `SIEF_ELNO`, één waarde per element in de meedraaiende assen (NL-81, NL-83). |
 | Reactiekrachten en -momenten | Ja | Niet bij mode superposition, harmonisch en vibro-akoestiek (KB54, KB59). |
@@ -164,7 +164,7 @@ Verlijmd contact per combinatie (slave op master):
 | Temperatuur, warmteflux | Ja | Thermisch. |
 | Eigenfrequenties, kniklastfactoren, effectieve massa | Ja | Fractie van de effectieve massa anders dan Mecway (KB49). |
 | Akoestische druk | Ja | [`Akoestiek.md`](Akoestiek.md). |
-| *Saved monitor* (Solution) | Optie | De samenvatting van de Code-Aster-run in plaats van de solvermeldingen van Mecway, alleen met de instelling `save_monitor_liml` (standaard uit; route `liml`). De samenvatting staat altijd in `<model>_<run-id>_aster_summary.txt` ([`Handleiding.md`](Handleiding.md) §5.2). |
+| *Saved monitor* (Solution) | Optie | De samenvatting van de Code-Aster-run in plaats van de solvermeldingen van Mecway, alleen met de instelling `save_monitor_liml` (standaard uit). De samenvatting staat altijd in `<model>_<run-id>_aster_summary.txt` ([`Handleiding.md`](Handleiding.md) §5.2). |
 
 Extra velden van de bridge (foutschatter, vermoeiing, metallurgie) en welk Code-Aster-veld
 bij welke Mecway-naam hoort: [`Handleiding.md`](Handleiding.md) §4.1.

@@ -551,9 +551,9 @@ Valkuilen:
   `DEFI_GROUP`. In deze tests werkte `DEFI_GROUP(reuse=mesh)` na de solve; breekt een
   job daarop zonder melding af, zie
   [Foutmeldingen §9](Foutmeldingen_CodeAster.md#zonder-code-crash-afgebroken-job-of-loggingfout).
-- `UNITE=6` schrijft naar de `.mess`. Unit 8 is het `.resu`-bestand dat de bridge in de
-  route `tabel` zelf leest (in de route `liml` bestaat het niet); daar niet naartoe
-  schrijven.
+- `UNITE=6` schrijft naar de `.mess`. De bridge schrijft zelf geen tabellen
+  naar een eigen bestand (er is geen `.resu` meer): schrijf eigen tabellen met
+  `UNITE=6`.
 - *Statisch*: `t_res` bestaat niet; schrijf `NUME_ORDRE=1` (doorgerekend op model A met
   `GROUP_MA='<<Root>>'`: reactie (0; -50; 100) N, gelijk aan minus de last).
 
@@ -580,7 +580,7 @@ vmis_max         0000000a SIEQ_NOEU                   1  0.00000E+00 MIN      8 
 ```
 
 Valkuilen:
-- De bridge berekent `SIGM_NOEU`, `SIEQ_NOEU` en, in de route `liml`, voor
+- De bridge berekent `SIGM_NOEU`, `SIEQ_NOEU` en voor
   volume-elementen ook `SIGM_ELNO`/`SIEQ_ELNO` al zelf (bij model A staan `stressxx` …
   `vonmises` als knoop- en als elementknoopwaarden in de resultaten, met of zonder
   extra regels). Een eigen

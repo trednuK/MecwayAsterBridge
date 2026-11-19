@@ -76,21 +76,17 @@ Verwante documenten:
    [`README.md`](../README.md)).
 3. Het **hoofdvenster** verschijnt (§3). Controleer de instellingen en klik
    *Starten* (*Sluiten* stopt de bridge zonder run).
-4. De bridge slaat het model op (`mw.save()`). Met Mecway 36 of later niet: dan leest hij
-   een kopie van het open model, `<model>_<run-id>_model.liml`, en slaat route `liml` het
-   model pas op vlak voordat de resultaten erin gaan; een run zonder resultaten laat je
-   `.liml` dan zoals hij was (met *Samenvatting ook als Saved monitor in de .liml* aan wordt
-   hij voor de monitor wel opgeslagen, ook als het model al resultaten heeft). Een model dat
-   nog nooit is opgeslagen, slaat route `liml` wel eerst op. Wijzigingen die je nog niet hebt
+4. Met Mecway 36 of later leest de bridge bij elke run een kopie van het open model,
+   `<model>_<run-id>_model.liml`, en slaat hij het model pas op vlak voordat de
+   resultaten erin gaan; een run zonder resultaten laat je `.liml` dan zoals hij was (met
+   *Samenvatting ook als Saved monitor in de .liml* aan wordt hij voor de monitor wel
+   opgeslagen, ook als het model al resultaten heeft). Wijzigingen die je nog niet hebt
    opgeslagen, blijven tijdens de run dus onopgeslagen: loopt Mecway vast, dan ben je ze
-   kwijt. In route `liml` (en zonder `mw.liml_text()` in elke route) stopt een alleen-lezen
-   model of een verdwenen map de run meteen. Daarna leest hij de `.liml`, schrijft het mesh,
-   `<model>_<run-id>.comm` en `.export` in de werkmap (§5) en start Code-Aster in een
-   **apart venster**. Met route `tabel` controleert hij eerst of de Mecway-solution
-   bij het mesh past; zo niet, dan stopt hij met een melding. Route `tabel` vraagt dus een
-   model dat Mecway zelf kan oplossen: een model waar Mecway's eigen solve mislukt
-   (bijvoorbeeld contact op schaalranden) laat een solution zonder knopen achter, en dan
-   stopt de bridge met de raad route `liml` te kiezen.
+   kwijt. Een model dat nog nooit is opgeslagen, slaat hij wel eerst op. Zonder
+   `mw.liml_text()` (eerdere Mecway-versies) slaat hij het model eerst op (`mw.save()`).
+   Een alleen-lezen model of een verdwenen map stopt de run meteen. Daarna leest
+   hij de `.liml`, schrijft het mesh, `<model>_<run-id>.comm` en `.export` in de werkmap
+   (§5) en start Code-Aster in een **apart venster**.
 5. Het **statusvenster** "Code-Aster-run" verschijnt (instelling *Wachten op Code-Aster* =
    `auto`, standaard). Het toont de verstreken tijd (met de tijdslimiet van de `.export`),
    wat Code-Aster op dat moment doet (niet-lineair: bereikt tijdstip, poging, niveau en
@@ -141,12 +137,10 @@ Verwante documenten:
    "Het convergentiescherm toont de voortgang."). Wacht tot in het Code-Aster-venster
    `DIAGNOSTIC JOB` staat en klik dan pas op OK. Klik je te vroeg, dan vraagt de bridge het
    nog een keer.
-6. De resultaten komen in Mecway:
-   - route `liml` (standaard): de bridge zet de resultaten in de `.liml` (de vorige
-     versie blijft als `<model>.liml.bak`) en opent het model opnieuw; de resultaten
-     blijven ook los bewaard en zijn later opnieuw in te laden (§5.1);
-   - route `tabel`: de bridge schrijft knoopwaarden in de bestaande Mecway-solution
-     (alleen statisch en niet-lineair statisch, §3).
+6. De resultaten komen in Mecway: de bridge zet de resultaten in de `.liml` (de vorige
+   versie blijft als `<model>.liml.bak`) en opent het model opnieuw. De resultaten
+   blijven ook los bewaard: met *Resultaten...* haal je ze uit het model en laad je ze
+   later opnieuw in (§5.1).
 7. Daarna komt het hoofdvenster terug. Het statusvak meldt de uitkomst, wat niet
    vertaald is ("Let op: deze belastingen/randvoorwaarden zijn NIET naar Code-Aster
    vertaald ...") en welke fouten Code-Aster gaf (§6). Bij modaal en knik staan daar
@@ -186,7 +180,7 @@ schuiven de lijst en de pagina (de lijst met het muiswiel of de balk rechts erva
 | 7 | Doorsnede ▾ | Een menu voor de vorm van General sections (§4.3). *Doorsnede tonen* slaat de instellingen en het model op (het model met Mecway 36 of later niet) en toont de vorm op de balken als tijdelijke elementen, vóór een berekening; *Doorsnede verbergen* haalt ze weer weg. *Doorsnede in resultaten* slaat de instellingen en het model op, zet die vorm met zijn waarden in de resultaten in de `.liml` en opent het model opnieuw; na een Code-Aster-run gebeurt dat vanzelf |
 | 8 | Convergentiescherm | Opent het convergentie- en meldingenscherm als apart venster (blijft open naast Mecway) voor de nieuwste run van het open model in de werkmap die het venster toont (veld *Werkmap*, of met *Werkmap naast het model* de map naast het model); is er geen run van dit model, dan de nieuwste `.mess` in die map. Zonder run meldt het statusvak dat er niets te tonen is |
 | 9 | Sluiten | Sluit de bridge. Instellingen die je na de laatste *Starten*, *Resultaten...* of actie in het menu *Doorsnede* hebt gewijzigd, worden niet opgeslagen |
-| 10 | Starten | Slaat de instellingen op, slaat het model op (met Mecway 36 of later pas als de resultaten erin gaan, met route `tabel` niet) en start Code-Aster (§2). Daarna komt het venster terug |
+| 10 | Starten | Slaat de instellingen op, slaat het model op (met Mecway 36 of later pas als de resultaten erin gaan) en start Code-Aster (§2). Daarna komt het venster terug |
 
 - **Tooltips:** ga met de muis over een instelling voor uitleg; bij een keuzelijst
   staat ook de betekenis van elke optie erbij.
@@ -213,13 +207,12 @@ elke waarde zo gekozen is: [`Standaardinstellingen_en_aannames.md`](Standaardins
 | Actieve analyse (auto = volgens Mecway) | `auto` | `auto` volgt het Mecway-analysetype: S30 → Statisch, S20 en SA0 (2D, axisymmetrisch) → Statisch, D20 en DA0 → Dynamisch (impliciet) ([`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md)), L30 → Niet-lineair statisch, D30 met *Mode superposition* → Respons op modale basis, D30 zonder en D31 → Dynamisch (impliciet), T30/T31 → Thermisch, V30 → Modaal (met een fluïdum-onderdeel: Vibro-akoestiek (modes)), B30 → Knik, A30 → Akoestiek (holtemodes; met een bron, `BRON_`-selectie, Akoestiek (harmonisch)), A20 → Akoestiek (holtemodes, 2D); geldt alleen voor die run. Of kies zelf een analyse (Dynamisch (expliciet) kies je altijd zelf). Een ander Mecway-type (E30, ...) met `auto`: de bridge stopt met een melding |
 | Configuratie (auto = volgens de regel) | `auto` | welke configuratie de bridge rekent en in welke solution de resultaten komen; de lijst toont de configuraties van het open model (laatst opgeslagen versie). `auto`: de enige configuratie, anders de enige zonder onderdrukte items, anders de eerste (WARNING). Een naam die niet in het model staat: WARNING en `auto` (§4) |
 | Eerst Mecway-solve ter controle | uit | lost eerst in Mecway op en stopt bij een fout. Schrijft `<model>_<run-id>_vergelijking.csv` (Mecway- en Code-Aster-waarde per knoop) en logt per variabele het grootste verschil; bij modaal en knik vergelijkt de log de frequentie of factor per mode. Laat de solve geen solution achter (Mecway kan het model niet oplossen), dan volgt een WARNING en gaat de run door zonder vergelijking |
-| Resultaten naar Mecway | `liml` | `liml`: alle tijdstappen of modes, ook element-knoopwaarden; het model wordt heropend. `tabel`: alleen knoopwaarden van het laatste tijdstip, in de bestaande Mecway-solution (met Mecway 36 of later en een solution zonder tijdstappen, Statisch, worden de spanningen per element-knoop ook die knoopwaarden; anders houdt Mecway daar zijn eigen, met een WARNING; op Mecway 33-35 NIET nagelopen); vraagt een solution die bij het mesh past, dus een model dat Mecway zelf kan oplossen; alleen voor Statisch en Niet-lineair statisch (niet voor dynamisch, thermisch, modaal en knik) |
 | Convergentie- en meldingenscherm | aan | opent bij elke run een apart venster: bij een niet-lineaire analyse residuen, voortgang en contact; bij de statische analyse de lineaire oplosser (tijd per fase, foutgrens, conditiegetal; bij GCPC het residu per iteratie); bij modaal en knik de eerste modes; bij elke analyse de meldingen (fouten en alarmen met uitleg) en de diagnose. Achteraf: knop *Convergentiescherm*. Zie [Instellingen §4.4](Instellingen_contact_en_nietlineair.md#44-convergentiescherm) |
 | Wachten op Code-Aster | `auto` | `auto`: een modaal statusvenster met de voortgang en *Stoppen...*; de bridge herkent zelf het einde van de run en laadt dan de resultaten (§2 stap 5). `confirm`: je klikt op OK in Mecway als het Code-Aster-venster `DIAGNOSTIC JOB` toont (het eerdere gedrag) |
 | MED-bestand voor ParaView | uit | schrijft ook `<model>_<run-id>.rmed` (ParaView/Salome); Mecway gebruikt het niet en het kan honderden MB worden |
 | Samenvatting Code-Aster-run (_aster_summary.txt) | `summary` | na elke run (ook een mislukte of gestopte) een samenvatting van de Code-Aster-uitvoer in `<model>_<run-id>_aster_summary.txt` in de werkmap; knop *Samenvatting* in het resultatenscherm en het convergentiescherm (§5.2). `summary`: fouten en alarmen, stappen, tijden en het pad van de volledige `.mess`; `full`: een kopie van de hele `.mess` (boven 4 miljoen tekens het begin en het einde); `off`: geen bestand |
-| Samenvatting ook als Saved monitor in de .liml | uit | aan: dezelfde tekst ook in de `.liml` als Mecway's item *Saved monitor* onder *Solution*; alleen route `liml`; een mislukte run alleen als het model nog geen resultaten heeft (§5.2) |
-| Bezweken elementen verbergen | uit | aan: na een run (route `liml`) en na *Resultaten... > Inladen* verdwijnen bezweken elementen in Mecway's eigen resultaatweergave, elk vanaf de stap na het bezwijken; de bridge herschrijft daarvoor de oplossing in de `.liml` (§5.1; [Bezwijken §4](Bezwijken.md#4-resultaten-in-mecway)) |
+| Samenvatting ook als Saved monitor in de .liml | uit | aan: dezelfde tekst ook in de `.liml` als Mecway's item *Saved monitor* onder *Solution*; een mislukte run alleen als het model nog geen resultaten heeft (§5.2) |
+| Bezweken elementen verbergen | uit | aan: na een run en na *Resultaten... > Inladen* verdwijnen bezweken elementen in Mecway's eigen resultaatweergave, elk vanaf de stap na het bezwijken; de bridge herschrijft daarvoor de oplossing in de `.liml` (§5.1; [Bezwijken §4](Bezwijken.md#4-resultaten-in-mecway)) |
 | Verlijmd contact: spleet sluiten zoals CCX | uit | aan: gekoppelde slave-knopen van verlijmd contact volume op volume worden in het mesh voor Code-Aster (niet in de `.liml`) op de master geschoven, zoals CCX doet; uit: de spleet blijft, met een WARNING ([Instellingen §3.4](Instellingen_contact_en_nietlineair.md#34-beginspleet-en-beginpenetratie)) |
 | VTU/PVD-bestanden voor ParaView | uit | schrijft ook `<model>_<run-id>.pvd` met een `.vtu` per tijdstap (elke ParaView leest het, ook zonder MED-lezer), met dezelfde velden als Mecway krijgt |
 | ParaView (leeg = automatisch zoeken) | leeg | `paraview.exe` voor de knoppen *ParaView* in het resultatenscherm (§5.1) en het convergentiescherm; ingevuld geldt dit pad altijd. Leeg = automatisch: voor een `.pvd` eerst de officiele ParaView 6.x (`%ProgramFiles%\ParaView 6*\bin\paraview.exe`, nieuwste eerst), dan die van Salome-Meca, dan een oudere ParaView; voor een `.rmed` alleen de ParaView van Salome-Meca (laadt zelf de plugin MEDReader; zie *Salome-Meca-map*): de officiele ParaView 6.2.1 heeft MEDReader wel, maar laadt hem niet, en opent een `.rmed` pas na *Tools > Manage Plugins > MEDReader* (vink *Auto Load* aan als je `paraview_exe` op de officiele ParaView zet). De ParaView van Salome-Meca start via `run_paraview.bat` van de installatie. ParaView 5.10 van paraview.org kan een `.rmed` **niet** openen. Omgevingsvariabelen mogen |
@@ -471,7 +464,7 @@ als die van Mecway's eigen oplossing waar Mecway ze kent.
 | `principal_stresses` | `principal1` >= `principal2` >= `principal3` en `tresca` (= principal1 − principal3), volume-elementen, per elementknoop en als knoopgemiddelde, zoals Mecway ze berekent (Mecway's velden *principal stress* en *Tresca stress*); schalen: `principal1u1` .. `principal3u1`, `trescau1`, idem `m1` (midden) en `b1` (onder), uit de globale spanningstensor van dat vlak (de normaalspanning 0 telt mee, dus één waarde is ongeveer 0) | uit `SIGM_ELNO` (schalen na `EXTR_COQUE`; in de job) | uit |
 | `principal_strains` | volumes: `lprincipalstrain1..3`, bij Green-Lagrange (niet-lineair met grote verplaatsingen) `greenlagrangeprincipalstrain1..3`, zoals Mecway; schalen: `lprincipalstrain1u1` .. `lprincipalstrain3b1` (boven/midden/onder); per elementknoop en knoopgemiddelde | uit `EPSI_ELNO`/`EPSG_ELNO`, schalen `EPSI_ELNO` + `EXTR_COQUE` (ook zonder `strain`; in de job) | uit |
 | `contact` | `contactpressure` (Pa, positief bij druk; negatief wordt 0), `contactstate` (0 open, 1 gesloten, 2 glijdend) op de slave-knopen | `-LAGS_C` (`DEPL`); status uit `CONT_NOEU` (alleen lineaire contactvlakken) of uit de druk (> 1% van de grootste) | niet-lineair, dynamisch |
-| `metallurgy` | `ferrite`, `pearlite`, `bainite`, `martensite`, `austenite` (fasefracties), `hardness` (als de dataset hardheid heeft); namen van de bridge | `META_NOEU`, `DURT_NOEU` | thermisch transient: met `#ASTER-METALLURGIE` altijd mee, alleen route `liml` ([`Lassen.md`](Lassen.md) §10) |
+| `metallurgy` | `ferrite`, `pearlite`, `bainite`, `martensite`, `austenite` (fasefracties), `hardness` (als de dataset hardheid heeft); namen van de bridge | `META_NOEU`, `DURT_NOEU` | thermisch transient: met `#ASTER-METALLURGIE` altijd mee ([`Lassen.md`](Lassen.md) §10) |
 | druk (akoestiek, niet in deze keuzelijst) | `pressure` per mode (Mecway's naam); harmonisch per frequentie ook `pressurei`, `pressuremag`, `pressurephase`, `spl` | `PRES` (vibro-akoestiek: `DEPL` component `PRES`) | akoestiek, altijd ([`Akoestiek.md`](Akoestiek.md)) |
 
 **`shell_forces` staat standaard aan** (statisch en niet-lineair). Heeft het model
@@ -497,8 +490,7 @@ Knoopspanningen volgen de Code-Aster-standaard (extrapolatie en middeling per kn
 en wijken daardoor af van Mecway (KNOWN_BUGS 3).
 
 De extra velden (`strain` .. `contact`) gaan alleen mee als ze gekozen zijn en het
-model er iets voor heeft (anders een INFO). Via route `tabel` alleen `strain` (volumes)
-en `beam_forces` (knoopwaarden); de rest alleen via route `liml`. Niet in respons op
+model er iets voor heeft (anders een INFO). Niet in respons op
 modale basis, harmonisch, spectrum en de keten thermisch → mechanisch. Mecway's namen,
 assen en tekens zijn headless nagelopen in Mecway 34; met Mecway's eigen oplossing
 vergeleken in [`Verificatie.md`](Verificatie.md) (LS-30 .. LS-32, NL-30). Grenzen:
@@ -653,8 +645,7 @@ gebeurt dit één keer vanzelf als het model een omtrek heeft (met *Bezweken ele
 aan ook na een run waarvan de resultaten maar deels zijn ingeladen); de `.bak` bevat dan de resultaten
 zonder de vorm. Met de hand is het nodig na een
 solve in Mecway zelf en na het opnieuw inladen van resultaten. Een nieuwe solve in Mecway
-vervangt de oplossing: de schalen zijn dan weg tot je de knop opnieuw gebruikt. Bij route
-`tabel` gebeurt niets vanzelf; schalen die al in de oplossing staan, zijn daar geen bezwaar.
+vervangt de oplossing: de schalen zijn dan weg tot je de knop opnieuw gebruikt.
 
 In de boom onder *Solution* staan op de schalen:
 
@@ -691,7 +682,7 @@ schaalvariabelen hierboven levert dat op de balken zelf, per elementeinde:
 | `beamtaumax` | grootste schuifspanning over de doorsnede, door dwarskracht en wringing, in Pa |
 
 - Voor een General section met omtrek, en voor Mecway's I, T, L en C, ook zonder *Doorsnede in
-  resultaten*. Op een rechthoek, koker en cirkel blijven `beamsixxmin/max`. Alleen route `liml`.
+  resultaten*. Op een rechthoek, koker en cirkel blijven `beamsixxmin/max`.
 - Elk maximum staat op zichzelf: de drie kunnen op verschillende punten van de doorsnede liggen.
 - Een scherpe inwendige hoek heeft geen eindige spanning, dus de drie maxima laten een zone van
   1 × de plaatselijke dikte rond zo'n hoek buiten beschouwing. Op de schalen toont een punt in een
@@ -786,9 +777,8 @@ volgende run niets. In meldingen staat de echte naam. De werkmap is de map uit h
 | `<model>_<run-id>_console.txt` | volledige console-uitvoer van Code-Aster (ook Python-fouten) |
 | `<model>_<run-id>_aster_summary.txt` | samenvatting van de run: fouten en alarmen, stappen, tijden (§5.2) |
 | `<model>_<run-id>_done.txt` | eindmarkering met de exitcode van `run_aster` (§2 stap 5); bestaat alleen kort, de bridge verwijdert hem na de run |
-| `<model>_<run-id>_results.xml` | **de resultaten** in Mecway's eigen formaat (route `liml`); de bridge zet ze in de `.liml` en laat het bestand staan, zodat je ze later opnieuw kunt inladen (§5.1) |
+| `<model>_<run-id>_results.xml` | **de resultaten** in Mecway's eigen formaat; de bridge zet ze in de `.liml` en laat het bestand staan, zodat je ze later opnieuw kunt inladen (§5.1) |
 | `<model>.liml.bak` | de `.liml` van vóór het inlezen of verwijderen van resultaten, of van vóór het toevoegen van de vorm aan de resultaten (met de hand of aan het eind van een run) |
-| `<model>_<run-id>.resu` | resultaattabellen, alleen bij route `tabel` |
 | `<model>_<run-id>_model.liml` | het model zoals de run het las (zonder resultaten), met Mecway 36 of later. Verwijderd na een run zonder fouten waarvan de resultaten zijn ingeladen; anders (een mislukte of gestopte run) blijft hij staan, want de `.comm` leest hem bij opnieuw draaien met `run_aster.bat` |
 | `<model>_<run-id>.rmed` | resultaten in MED (ParaView/Salome), alleen met *MED-bestand voor ParaView*; de knoppen *ParaView* (als er geen `.pvd` is) en *AsterStudy* in het resultatenscherm en het convergentiescherm openen hem (§5.1) |
 | `<model>_<run-id>.pvd`, `_<k>.vtu` | resultaten in VTK (ParaView), alleen met *VTU/PVD-bestanden voor ParaView*; de knop *ParaView* opent de `.pvd` (§5.1); met bezwijken ook de celvelden `failed` (0 intact, 1 bezweken) en `T_BEZWIJK`; met balkkrachten ook de snedekrachten per element-uiteinde als celvelden `EFGE_<N/VY/VZ/MT/MFY/MFZ>_1/_2` |
@@ -867,7 +857,7 @@ het sessiescript een komma bevat. De melding zegt dat.
 
 ### 5.2 Samenvatting van de Code-Aster-run
 
-Na elke run (route `liml` en `tabel`, ook een mislukte of gestopte run) schrijft de bridge een
+Na elke run (ook een mislukte of gestopte run) schrijft de bridge een
 leesbare samenvatting van de Code-Aster-uitvoer naar `<model>_<run-id>_aster_summary.txt` in
 de werkmap van de run, zodat je die terugleest als de Code-Aster-vensters dicht zijn. Openen
 met de knop *Samenvatting* in het resultatenscherm (§5.1, nummer 1 in de afbeelding; de run die
@@ -894,7 +884,7 @@ Algemeen):
 De meldingen zijn die van Code-Aster zelf (Frans).
 
 **In het model als Saved monitor (optie).** Met *Samenvatting ook als Saved monitor in de
-.liml* (`save_monitor_liml`, standaard uit) en route `liml` zet de bridge dezelfde tekst ook in
+.liml* (`save_monitor_liml`, standaard uit) zet de bridge dezelfde tekst ook in
 de `.liml` als Mecway's eigen item *Saved monitor* (boom, onder *Solution*;
 Mecway-handleiding §10.3), het item dat Mecway gebruikt voor de voortgangsmeldingen van zijn
 eigen solver. Het blijft dan in het model als je het opslaat of aan iemand anders geeft;
@@ -902,9 +892,7 @@ eigen solver. Het blijft dan in het model als je het opslaat of aan iemand ander
 staat. Een run zonder resultaten krijgt alleen een solution met de monitor als het model nog
 geen resultaten heeft; heeft het model al resultaten (van een eerdere run of van Mecway's eigen
 solve), dan blijft het model ongemoeid. Een solution met alleen de monitor van een eerdere
-mislukte run telt niet als resultaten. Met route `tabel` is er geen Saved monitor (die route
-vult Mecway's bestaande solution via de API, die het item niet kan toevoegen); het
-samenvattingsbestand komt er gewoon. Reken je het model daarna met Mecway's eigen solver, dan
+mislukte run telt niet als resultaten. Reken je het model daarna met Mecway's eigen solver, dan
 vervangt Mecway de tekst door zijn eigen voortgangsmeldingen; *Uit model verwijderen* (§5.1)
 haalt hem ook weg. Met de instelling uit (standaard) schrijft de bridge nooit een Saved monitor
 en verandert een mislukte run het model nooit.

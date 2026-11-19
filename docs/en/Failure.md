@@ -150,7 +150,7 @@ Code-Aster allows nothing else with an explicit scheme).
     from the `.mess`), also when there was nothing to hide; not after "Results..." >
     "Load". Elements without a finite displacement before failing stay visible too; the
     status box also names them separately.
-  - Only for results with time steps; not with the result route `tabel`, not for static
+  - Only for results with time steps; not for static
     or modal results (nor the whole wheel of cyclic symmetry). "Section in results"
     refuses results with hidden elements. After a run the section goes into the
     results first and the hiding comes after it: the section of a failed beam

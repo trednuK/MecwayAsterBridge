@@ -24,7 +24,7 @@ template `Scripts/AsterTemplate_Thermique.comm`). Code-Aster 17.4.
 - **Begintemperatuur:** `<initialconditions><temperature2>`; knopen zonder
   begintemperatuur starten, zoals in Mecway, op 0 K (manual v33 §6.7.2). De
   bridge waarschuwt als er geen begintemperatuur is.
-- **Resultaten:** alleen via `result_route = "liml"`: `temperature` (knopen) en
+- **Resultaten:** `temperature` (knopen) en
   de warmteflux `heatfluxx/y/z` + `heatfluxmag` (`FLUX_NOEU` = −λ grad T; knopen), en voor
   volume-elementen ook per elementknoop (`FLUX_ELNO`), zoals Mecway die opslaat.
 - **Formules** (*Solution > Formula*, bijv. `qf.z/3600/(12^2)`): de bridge rekent ze

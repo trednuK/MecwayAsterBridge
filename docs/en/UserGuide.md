@@ -84,21 +84,16 @@ Related documents:
    [`README.md`](../../README.md)).
 3. The **main window** appears (§3). Check the settings and click "Start"
    ("Close" stops the bridge without a run).
-4. The bridge saves the model (`mw.save()`). Not with Mecway 36 or later: it then reads
-   a copy of the open model, `<model>_<run-id>_model.liml`, and route `liml` saves the
-   model only right before the results go into it; a run without results then leaves your
-   `.liml` as it was (with "Summary also as Saved monitor in the .liml" on it is saved for
-   the monitor, also when the model already has results). A model that was never saved is
-   still saved first in route `liml`. Changes you have not saved therefore stay unsaved
-   during the run: if Mecway crashes, they are lost. In route `liml` (and in every route
-   without `mw.liml_text()`) a read-only model or a folder that is gone stops the run at
-   once. Then it reads the `.liml`, writes the mesh,
-   `<model>_<run-id>.comm` and `.export` to the work folder (§5) and starts Code-Aster
-   in a **separate window**. With route `tabel` it first checks that the Mecway
-   solution matches the mesh; if not, it stops with a message. Route `tabel` therefore
-   needs a model that Mecway itself can solve: a model on which Mecway's own solve fails
-   (for example contact on shell edges) leaves a solution without nodes, and the bridge
-   then stops with the advice to choose route `liml`.
+4. With Mecway 36 or later the bridge reads, in every run, a copy of the open model,
+   `<model>_<run-id>_model.liml`, and saves the model only right before the results go
+   into it; a run without results then leaves your `.liml` as it was (with "Summary also
+   as Saved monitor in the .liml" on it is saved for the monitor, also when the model
+   already has results). Changes you have not saved therefore stay unsaved during the
+   run: if Mecway crashes, they are lost. A model that was never saved is still saved
+   first. Without `mw.liml_text()` (earlier Mecway versions) it saves the model first
+   (`mw.save()`). A read-only model or a folder that is gone stops the run at once. Then
+   it reads the `.liml`, writes the mesh, `<model>_<run-id>.comm` and `.export` to the
+   work folder (§5) and starts Code-Aster in a **separate window**.
 5. The **status window** "Code-Aster run" appears (setting "Waiting for Code-Aster" =
    `auto`, default). It shows the elapsed time (with the time limit of the `.export`), what
    Code-Aster is doing at that moment (nonlinear: time reached, attempt, level and Newton
@@ -149,12 +144,10 @@ Related documents:
    "Code_Aster is gestart in een apart venster. ..."). Wait until the Code-Aster window
    shows `DIAGNOSTIC JOB` and only then click OK. If you click too early, the bridge asks
    again.
-6. The results arrive in Mecway:
-   - route `liml` (default): the bridge writes the results into the `.liml` (the
-     previous version is kept as `<model>.liml.bak`) and reopens the model; the
-     results are also kept separately and can be loaded again later (§5.1);
-   - route `tabel` (table): the bridge writes nodal values into the existing Mecway
-     solution (static and nonlinear static only, §3).
+6. The results arrive in Mecway: the bridge writes the results into the `.liml` (the
+   previous version is kept as `<model>.liml.bak`) and reopens the model. The results
+   are also kept separately: with "Results..." you take them out of the model and load
+   them again later (§5.1).
 7. Then the main window comes back. The status box reports the outcome, what was not
    translated ("Note: these loads/constraints were NOT translated to Code-Aster;
    the results were computed without them: ...") and which errors Code-Aster reported (§6). For modal and buckling it also
@@ -194,7 +187,7 @@ are at the bottom right, the other buttons on the left.
 | 7 | "Section ▾" | A menu for the shape of General sections (§4.3). "Show section" saves the settings and the model (the model not with Mecway 36 or later) and shows the shape on the beams as temporary elements, before a calculation; "Hide section" removes them again. "Section in results" saves the settings and the model, puts that shape with its values in the results in the `.liml` and reopens the model; after a Code-Aster run this happens automatically |
 | 8 | "Convergence window" | Opens the convergence and messages window as a separate window (stays open next to Mecway) for the newest run of the open model in the work folder the window shows (the "Work folder" field, or with "Work folder next to the model" the folder next to the model); if there is no run of this model, the newest `.mess` in that folder. Without a run the status box says there is nothing to show |
 | 9 | "Close" | Closes the bridge. Settings changed after the last Start, Results... or action in the Section menu are not saved |
-| 10 | "Start" | Saves the settings, saves the model (with Mecway 36 or later only when the results go into it, not with route `tabel`) and starts Code-Aster (§2). Then the window comes back |
+| 10 | "Start" | Saves the settings, saves the model (with Mecway 36 or later only when the results go into it) and starts Code-Aster (§2). Then the window comes back |
 
 - **Tooltips:** hover over a setting for an explanation; for a choice list the
   meaning of each option is shown too.
@@ -221,13 +214,12 @@ value was chosen: [`Default_settings_and_assumptions.md`](Default_settings_and_a
 | "Active analysis (auto = follow Mecway)" | `auto` | `auto` follows the Mecway analysis type: S30 → Static, S20 and SA0 (2D, axisymmetric) → Static, D20 and DA0 → Dynamic (implicit) ([`2D_and_axisymmetric.md`](2D_and_axisymmetric.md)), L30 → Nonlinear static, D30 with *Mode superposition* → Mode superposition, D30 without and D31 → Dynamic (implicit), T30/T31 → Thermal, V30 → Modal (with a fluid part: Vibroacoustics (modes)), B30 → Buckling, A30 → Acoustics (cavity modes; with a source, `SOURCE_` selection, Acoustics (harmonic)), A20 → Acoustics (cavity modes, 2D); applies only to that run. Or choose an analysis yourself (Dynamic (explicit) is always chosen by hand). Another Mecway type (E30, ...) with `auto`: the bridge stops with a message |
 | "Configuration (auto = by rule)" | `auto` | which configuration the bridge solves and which solution receives the results; the list shows the configurations of the open model (last saved version). `auto`: the only configuration, else the only one without suppressed items, else the first (WARNING). A name that is not in the model: WARNING and `auto` (§4) |
 | "Mecway solve first as a check" | off | solves in Mecway first and stops on an error. Writes `<model>_<run-id>_vergelijking.csv` (Mecway and Code-Aster value per node) and logs the largest difference per variable; for modal and buckling the log compares the frequency or factor per mode. If the solve leaves no solution (Mecway cannot solve the model), a WARNING follows and the run goes on without a comparison |
-| "Results to Mecway" | `liml` | `liml`: all time steps or modes, element-node values too; the model is reopened. `tabel` (table): nodal values of the last time only, into the existing Mecway solution (with Mecway 36 or later and a solution without time steps, Static, the stresses per element node become those nodal values too; otherwise Mecway keeps its own there, with a WARNING; on Mecway 33-35 NOT verified); requires a solution that matches the mesh, so a model that Mecway itself can solve; Static and Nonlinear static only (not dynamic, thermal, modal or buckling) |
 | "Convergence and messages window" | on | opens a separate window on every run: for a nonlinear analysis the residuals, progress and contact; for the static analysis the linear solver (time per phase, error bound, condition number; with GCPC the residual per iteration); for modal and buckling the first modes; for every analysis the messages (errors and alarms with explanation) and the diagnosis. Afterwards: the "Convergence window" button. See [Settings §4.4](Settings_contact_and_nonlinear.md#44-convergence-screen) |
 | "Waiting for Code-Aster" | `auto` | `auto`: a modal status window with the progress and "Stop..."; the bridge recognises the end of the run itself and then loads the results (§2 step 5). `confirm`: you click OK in Mecway when the Code-Aster window shows `DIAGNOSTIC JOB` (the earlier behaviour) |
 | "MED file for ParaView" | off | also writes `<model>_<run-id>.rmed` (ParaView/Salome); Mecway does not use it and it can grow to hundreds of MB |
 | "Summary of the Code-Aster run (_aster_summary.txt)" | `summary` | after every run (also a failed or stopped one) a summary of the Code-Aster output in `<model>_<run-id>_aster_summary.txt` in the work folder; button "Summary" in the Results window and the convergence window (§5.2). `summary`: errors and alarms, steps, timings and the path of the full `.mess`; `full`: a copy of the whole `.mess` (start and end above 4 million characters); `off`: no file |
-| "Summary also as Saved monitor in the .liml" | off | on: the same text also in the `.liml` as Mecway's *Saved monitor* item under *Solution*; route `liml` only; a failed run only if the model has no results yet (§5.2) |
-| "Hide failed elements" | off | on: after a run (route `liml`) and after "Results..." > "Load" failed elements disappear in Mecway's own result view, each from the step after its failure; for this the bridge rewrites the solution in the `.liml` (§5.1; [Failure §4](Failure.md#4-results-in-mecway)) |
+| "Summary also as Saved monitor in the .liml" | off | on: the same text also in the `.liml` as Mecway's *Saved monitor* item under *Solution*; a failed run only if the model has no results yet (§5.2) |
+| "Hide failed elements" | off | on: after a run and after "Results..." > "Load" failed elements disappear in Mecway's own result view, each from the step after its failure; for this the bridge rewrites the solution in the `.liml` (§5.1; [Failure §4](Failure.md#4-results-in-mecway)) |
 | "Bonded contact: close gaps like CCX" | off | on: tied slave nodes of a solid-on-solid bonded contact are moved onto the master in the mesh for Code-Aster (not in the `.liml`), as CCX does; off: the gap stays, with a WARNING ([Settings §3.4](Settings_contact_and_nonlinear.md#34-initial-gap-and-initial-penetration)) |
 | "VTU/PVD files for ParaView" | off | also writes `<model>_<run-id>.pvd` with one `.vtu` per time step (any ParaView reads it, also without a MED reader), with the same fields as Mecway gets |
 | "ParaView (empty = search automatically)" | empty | `paraview.exe` for the "ParaView" buttons in the Results window (§5.1) and the convergence window; when filled in, this path is always used. Empty = automatic: for a `.pvd` first the official ParaView 6.x (`%ProgramFiles%\ParaView 6*\bin\paraview.exe`, newest first), then Salome-Meca's, then an older ParaView; for a `.rmed` only Salome-Meca's ParaView (it loads the MEDReader plugin itself; see "Salome-Meca folder"): the official ParaView 6.2.1 has MEDReader but does not load it, and opens a `.rmed` only after *Tools > Manage Plugins > MEDReader* (tick *Auto Load* when you set `paraview_exe` to the official ParaView). Salome-Meca's ParaView is started through the installation's `run_paraview.bat`. ParaView 5.10 from paraview.org **cannot** open a `.rmed`. Environment variables are allowed |
@@ -476,7 +468,7 @@ are the same as those of Mecway's own solution where Mecway knows them.
 | `principal_stresses` | `principal1` >= `principal2` >= `principal3` and `tresca` (= principal1 − principal3), solids, per element node and as the node average, as Mecway computes them (Mecway's fields *principal stress* and *Tresca stress*); shells: `principal1u1` .. `principal3u1`, `trescau1`, likewise `m1` (middle) and `b1` (bottom), from the global stress tensor of that surface (the normal stress 0 counts, so one value is about 0) | from `SIGM_ELNO` (shells after `EXTR_COQUE`; in the job) | off |
 | `principal_strains` | solids: `lprincipalstrain1..3`, with Green-Lagrange (nonlinear with large displacements) `greenlagrangeprincipalstrain1..3`, like Mecway; shells: `lprincipalstrain1u1` .. `lprincipalstrain3b1` (top/middle/bottom); per element node and node average | from `EPSI_ELNO`/`EPSG_ELNO`, shells `EPSI_ELNO` + `EXTR_COQUE` (also without `strain`; in the job) | off |
 | `contact` | `contactpressure` (Pa, positive in compression; negative becomes 0), `contactstate` (0 open, 1 closed, 2 sliding) on the slave nodes | `-LAGS_C` (`DEPL`); state from `CONT_NOEU` (linear contact faces only) or from the pressure (> 1% of the largest) | nonlinear, dynamic |
-| `metallurgy` | `ferrite`, `pearlite`, `bainite`, `martensite`, `austenite` (phase fractions), `hardness` (if the dataset has hardness); names of the bridge | `META_NOEU`, `DURT_NOEU` | thermal transient: always included with `#ASTER-METALLURGIE`, route `liml` only ([`Welding.md`](Welding.md) §10) |
+| `metallurgy` | `ferrite`, `pearlite`, `bainite`, `martensite`, `austenite` (phase fractions), `hardness` (if the dataset has hardness); names of the bridge | `META_NOEU`, `DURT_NOEU` | thermal transient: always included with `#ASTER-METALLURGIE` ([`Welding.md`](Welding.md) §10) |
 | pressure (acoustics, not in this list) | `pressure` per mode (Mecway's name); harmonic per frequency also `pressurei`, `pressuremag`, `pressurephase`, `spl` | `PRES` (vibroacoustics: `DEPL` component `PRES`) | acoustics, always ([`Acoustics.md`](Acoustics.md)) |
 
 **`shell_forces` is on by default** (static and nonlinear). If the model has
@@ -501,8 +493,7 @@ are ignored (INFO in the log). Nodal stresses follow the Code-Aster standard
 (extrapolation and averaging per node) and therefore differ from Mecway (KNOWN_BUGS 3).
 
 The extra fields (`strain` .. `contact`) are only included when selected and when the
-model has something for them (otherwise an INFO). Via route `tabel` only `strain`
-(solids) and `beam_forces` (nodal values); the rest via route `liml` only. Not in mode
+model has something for them (otherwise an INFO). Not in mode
 superposition, harmonic, spectrum and the thermal → mechanical chain. Mecway's names,
 axes and signs were checked headless in Mecway 34; compared with Mecway's own solution
 in [`Verification.md`](Verification.md) (LS-30 .. LS-32, NL-30). Limits:
@@ -653,8 +644,7 @@ run this happens automatically once when the model has an outline (with "Hide fa
 on also after a run whose results were loaded only partly); the `.bak` then holds the results
 without the shape. By hand it is needed after a solve
 in Mecway itself and after loading results again. A new solve in Mecway replaces the solution:
-the shells are then gone until you use the button again. With route `tabel` nothing happens
-automatically; shells already in the solution are no problem there.
+the shells are then gone until you use the button again.
 
 In the tree under *Solution* the shells have:
 
@@ -691,7 +681,7 @@ Besides the shell variables above that gives, on the beams themselves, per eleme
 | `beamtaumax` | largest shear stress over the section, from shear force and torsion, in Pa |
 
 - For a General section with an outline, and for Mecway's I, T, L and C, also without
-  "Section in results". On a rectangle, tube and circle `beamsixxmin/max` stay. Route `liml` only.
+  "Section in results". On a rectangle, tube and circle `beamsixxmin/max` stay.
 - Each maximum is its own: the three can lie at different points of the section.
 - A sharp inner corner has no finite stress, so the three maxima leave out a zone of 1 × the
   local thickness around such a corner. On the shells a point inside a zone shows the larger of
@@ -785,9 +775,8 @@ overwrites nothing. Messages show the real name. The working directory is the fo
 | `<model>_<run-id>_console.txt` | full console output of Code-Aster (including Python errors) |
 | `<model>_<run-id>_aster_summary.txt` | summary of the run: errors and alarms, steps, timings (§5.2) |
 | `<model>_<run-id>_done.txt` | end marker with the exit code of `run_aster` (§2 step 5); exists only briefly, the bridge removes it after the run |
-| `<model>_<run-id>_results.xml` | **the results** in Mecway's own format (route `liml`); the bridge puts them into the `.liml` and keeps the file, so you can load them again later (§5.1) |
+| `<model>_<run-id>_results.xml` | **the results** in Mecway's own format; the bridge puts them into the `.liml` and keeps the file, so you can load them again later (§5.1) |
 | `<model>.liml.bak` | the `.liml` from before results were read in or removed, or from before the shape went into the results (by hand or at the end of a run) |
-| `<model>_<run-id>.resu` | result tables, only with route `tabel` |
 | `<model>_<run-id>_model.liml` | the model as the run read it (without results), with Mecway 36 or later. Removed after a run without errors whose results were loaded; otherwise (a failed or stopped run) it stays, because the `.comm` reads it when run again with `run_aster.bat` |
 | `<model>_<run-id>.rmed` | results in MED (ParaView/Salome), only with "MED file for ParaView"; the "ParaView" (when there is no `.pvd`) and "AsterStudy" buttons in the Results window and the convergence window open it (§5.1) |
 | `<model>_<run-id>.pvd`, `_<k>.vtu` | results in VTK (ParaView), only with "VTU/PVD files for ParaView"; the "ParaView" button opens the `.pvd` (§5.1); with failure also the cell fields `failed` (0 intact, 1 failed) and `T_BEZWIJK`; with beam forces also the section forces per element end as the cell fields `EFGE_<N/VY/VZ/MT/MFY/MFZ>_1/_2` |
@@ -863,7 +852,7 @@ contains a comma. The message says so.
 
 ### 5.2 Summary of the Code-Aster run
 
-After every run (route `liml` and `tabel`, also a run that failed or was stopped) the bridge
+After every run (also a run that failed or was stopped) the bridge
 writes a readable summary of the Code-Aster output to `<model>_<run-id>_aster_summary.txt` in
 the work folder of the run, so that you can read it after the Code-Aster windows have been
 closed. Open it with the button "Summary" in the Results window (§5.1, number 1 in the image;
@@ -888,16 +877,14 @@ Setting "Summary of the Code-Aster run (_aster_summary.txt)" (`aster_summary`, p
 The messages are Code-Aster's own (French).
 
 **In the model as Saved monitor (optional).** With "Summary also as Saved monitor in the
-.liml" (`save_monitor_liml`, off by default) and route `liml` the bridge also puts the same text
+.liml" (`save_monitor_liml`, off by default) the bridge also puts the same text
 into the `.liml` as Mecway's own *Saved monitor* item (outline tree, under *Solution*; Mecway
 manual §10.3), the item Mecway uses for the progress messages of its own solver. It then stays
 in the model when you save it or send it to someone else; "Load" (§5.1) also adds the monitor
 of that run if its `.mess` is still in the work folder. A run without results gets a solution
 with only the monitor only if the model has no results yet; if the model already has results
 (of an earlier run or of Mecway's own solve), the model is left untouched. A solution with only
-the monitor of an earlier failed run does not count as results. With route `tabel` there is no
-Saved monitor (that route fills Mecway's existing solution through the API, which cannot add
-the item); the summary file is written as usual. If you solve the model with Mecway's own
+the monitor of an earlier failed run does not count as results. If you solve the model with Mecway's own
 solver afterwards, Mecway replaces the text with its own progress messages; "Remove from model"
 (§5.1) removes it too. With the setting off (default) the bridge never writes a Saved monitor
 and a failed run never changes the model.

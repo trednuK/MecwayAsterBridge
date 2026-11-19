@@ -78,17 +78,6 @@ Code-Aster value per node) and logs the largest difference per variable.
    the torsion centre SIEQ_NOEU gives 7.5 MPa, Mecway (von Mises from the averaged
    tensor) 0.09 MPa. Do not "fix" towards Mecway (user's wish).
 
-7\. **Stresses per element node stay from Mecway in the table route** (confirmed
-   in Mecway). Only with `result_route` "tabel": `solution.set_variable()` writes
-   only nodal values, the values per element node (e.g. `stressxx`, `vonmises`) of the
-   last Mecway solve remain. With `solution.set_element_node_variable()` (Mecway 36)
-   `bridge_element_node.finish` replaces them by Code-Aster's node values (measured in a
-   hidden Mecway 36.0.9815, 18 Nov 2026). It remains, with a WARNING, for: a Mecway without
-   that function (33-35), a solution with time steps or modes (NOT probed), a section view in
-   the solution, and a variable with a value on a node that lies in no element with values
-   per element node. The default route "liml" does write SIGM_ELNO/SIEQ_ELNO of solid
-   elements (`bridge_to_aster._build_calc_champ_block`).
-
 46\. **Buckling: negative buckling load factors and Mecway's shift** (confirmed with runs,
    `bridge_to_aster._calc_modes_block`). The bridge searches for the smallest |CHAR_CRIT|
    (`PLUS_PETITE`) and also shows negative factors (buckling under the reversed load;
@@ -946,22 +935,6 @@ Code-Aster value per node) and logs the largest difference per variable.
    nodes sharing one free master node NOT verified.
    How CCX resolves the double condition is NOT verified. Status: partly fixed.
 
-148\. **Route `tabel`: the beam analysis can read Mecway's own beam forces, labelled Mecway internal**
-   (measured headless, Mecway 36.0.9815, 19 Nov 2026, LS-51a: Mecway solve, then
-   `set_variable` of the six beam forces as route `tabel` does; MecwayAdvancedBeamAnalysis
-   V2026.3 read, not run). After the `set_variable`, `node_value` gives the bridge's value but
-   `element_node_value` of `tensileforce`, `sheary`, `torsion`, `bendingmomv`, `bendingmomw`
-   gives Mecway's own force per element end (computed on demand; `shearz` gave None there).
-   The beam analysis takes the forces per element end when all six exist at both ends
-   (`beam_mecway.pick_route`, route "element"), else the node values: where all six exist it
-   shows Mecway's own beam forces; in LS-51a (`shearz` None) it falls back to the bridge's node
-   values merged over the elements (derived from its code, not run). It decides "Code-Aster" only from
-   the saved file (`beam_utils.scan_head`/`_from_bridge`, the empty `<nodes />` tails of route
-   `liml`), which route `tabel` never writes: label Mecway internal, no `#ASTER-SECTIE` offset, no
-   refusal to write over it. `bridge_element_node` leaves beam variables alone on purpose: route
-   `tabel` has the beam forces only per node, merged over the elements, which is wrong per
-   element end at a joint or a point load. Status: open; use route `liml` for beams.
-
 149\. **Contact with friction: Mecway's tangential stiffness kt is not modelled** (confirmed,
    Code-Aster 17.4 source and runs, Mecway 36 with CCX headless, 19 Nov 2026;
    `bridge_to_aster._penalty_args`, `_FRIC_SLIP_REL`, verification NL-03h/NL-03i). Mecway (CCX)
@@ -1349,7 +1322,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    classical part (NOT verified); fatigue not together with XFEM (WARNING), the error
    estimator neither (INFO: it is on by default); tet10/wedge15/pyr13 and `groep=`
    (`GROUP_MA_ENRI`) NOT verified, `LINE_QUAD` only outside the regression (BR-07 with
-   LINE_QUAD: K_I 0.0 %), `result_route` `tabel` NOT verified; a crack from an `XFEM_` face
+   LINE_QUAD: K_I 0.0 %); a crack from an `XFEM_` face
    selection (BR-13) always lies on a node layer; a curved crack plane or front, tet and
    quadratic elements from a selection NOT verified; (f) a crack on an interface between
    materials (WARNING), thermal strain and pressure on the lips in `CALC_G`: NOT verified;
@@ -1392,8 +1365,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    refining (AD-03). HOMARD route for thermal and nonlinear static (§7, S35b): solids
    only, loads and constraints on face selections; ERROR (`bridge_homard.check_scope`) for
    shells, beams, springs and masses, contact (also bonded), couplings, constraint equations,
-   pre-tension sections, flexible joints, compression only, element failure, LINE_QUAD, 2D,
-   route 'tabel' and node selections with more than one node in a load or constraint (HOMARD
+   pre-tension sections, flexible joints, compression only, element failure, LINE_QUAD, 2D
+   and node selections with more than one node in a load or constraint (HOMARD
    keeps node groups with their old nodes only; AD-12). After the projection onto the Mecway
    mesh the element-node values lose the jump between coarse elements (one refined neighbour
    gives the value at a shared node) and the reactions are not passed on (WARNING). Only
@@ -1566,7 +1539,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    offsets), with contact on edges (S44b, PL-40 … PL-46; no bonded contact); heat transfer
    axisymmetric (T30/T31 on plane shells with `**ASTER-PLANE AXIS`, S44d, PL-50 … PL-57) and
    the thermal -> mechanical chain in `AXIS` (T31 with *Thermal stress*, S44d piece 2, PL-58, PL-59 with an internal pressure;
-   not: the result route `tabel`, contact, node-surface couplings, bonded contact and an initial
+   not: contact, node-surface couplings, bonded contact and an initial
    velocity in the chain, welding, metallurgy and bonded contact in `AXIS`, the chain in `C_PLAN`/`D_PLAN`);
    axisymmetric shells (S44e, PL-60 … PL-68): line3 elements in S30/L30 with
    `**ASTER-PLANE AXIS` as `COQUE_AXIS`, the thickness from `**ASTER-SHELL`, *Shell/membrane* or
@@ -1581,8 +1554,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    checked 29 Oct 2026 in the manual §6.9, §9.34, §9.35 and
    headless: an A20 model with fluid pressure 1 Pa gives no solution), nodes with Z ≠ 0 (ERROR, Mecway ignores Z), beams/trusses/springs in S20, several thicknesses, other loads and constraints
    (moment, line pressure, hydrostatic, frictionless, elastic support, oblique directions,
-   constraint equations, couplings, contact, point masses, temperatures in D20/DA0), the error estimator
-   (INFO) and the result route `tabel` (ERROR) (step S16e; nonlinear, contact, thermal and
+   constraint equations, couplings, contact, point masses, temperatures in D20/DA0) and the error
+   estimator (INFO) (step S16e; nonlinear, contact, thermal and
    axisymmetric shells: S44). Mecway itself has no thermal,
    frequency, buckling, axisymmetric acoustic or nonlinear 2D type (Mecway 34 converts V20 to V30 and B20/T20/L20 to
    S30; thermal 2D is made of shells, `bridge_thermal`).

@@ -383,8 +383,6 @@ bouw nagelopen met `POST_FATIGUE`):
   Miner.
 - **Een filter op kleine cycli** (`DELTA_OSCI` van `POST_FATIGUE`): niet gebouwd; met
   `PROL_GAUCHE = EXCLU` (standaard) tellen cycli onder de tabel toch niet.
-- Resultaatroute `tabel`: de velden gaan niet naar Mecway (INFO); de log en de
-  cyclustabel wel.
 
 Zie ook KNOWN_BUGS 66.
 

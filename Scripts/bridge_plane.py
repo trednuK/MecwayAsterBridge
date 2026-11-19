@@ -91,7 +91,7 @@
 import math
 from collections import OrderedDict
 
-from bridge_utils import CONFIG_BRIDGE, log, tr
+from bridge_utils import log, tr
 
 # Mecway analysis type -> kind of 2D analysis. D20/DA0 (Dynamic Response 2D /
 # Axisymmetric, S16b): linear Newmark like D30, bridge analysis dyna_impl_3d.
@@ -263,14 +263,6 @@ def apply(model_data, run_cfg, elset_shapes):
             "{0} (2D) is translated with the implicit scheme (NEWMARK or "
             "HHT, dyna_impl_3d); explicit and Mode superposition are not "
             "verified in 2D.", atype)
-    if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
-        return _fatal(
-            "Een 2D-analyse ({0}) werkt alleen met de resultaatroute 'liml' "
-            "(pagina Algemeen); de route 'tabel' schaalt de reactiekrachten "
-            "niet naar de dikte of 360 graden.",
-            "A 2D analysis ({0}) only works with the result route 'liml' "
-            "(General page); the route 'tabel' does not scale the reaction "
-            "forces to the thickness or 360 degrees.", atype)
     axis = (switch == "AXIS") if switch else PLANE_TYPES[atype] == "axis"
     # Model items without a verified 2D route (S16a)
     blocked = _NOT_VERIFIED + (
@@ -668,24 +660,6 @@ def _apply_thermal(model_data, elset_shapes, atype, switch):
             "model ('PLAN') already; the line is not needed.".format(
                 switch, atype))
         return True
-    if chain and CONFIG_BRIDGE.get("result_route", "liml") != "liml":
-        if switch != "AXIS":
-            return _fatal(
-                "Een 2D thermomechanische keten ({0}, '#ASTER-PLANE {1}') "
-                "werkt alleen met de resultaatroute 'liml' (pagina Algemeen); "
-                "de route 'tabel' schaalt de reactiekrachten niet naar de "
-                "dikte.",
-                "A 2D thermomechanical chain ({0}, '#ASTER-PLANE {1}') only "
-                "works with the result route 'liml' (General page); the route "
-                "'tabel' does not scale the reaction forces to the "
-                "thickness.", atype, switch)
-        return _fatal(
-            "Een axisymmetrische thermomechanische keten ({0}) werkt alleen "
-            "met de resultaatroute 'liml' (pagina Algemeen); de route 'tabel' "
-            "schaalt de reactiekrachten niet naar 360 graden.",
-            "An axisymmetric thermomechanical chain ({0}) only works with "
-            "the result route 'liml' (General page); the route 'tabel' does "
-            "not scale the reaction forces to 360 degrees.", atype)
     blocked = (_NOT_VERIFIED + _CONTACT) if chain else ()
     for key, what in blocked:
         if model_data.get(key):

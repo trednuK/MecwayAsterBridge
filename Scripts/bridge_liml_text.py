@@ -58,20 +58,15 @@ def saved_path(file_name):
     return file_name
 
 
-def wants_snapshot(has_api, route, file_name):
+def wants_snapshot(has_api, file_name):
     """
     True if a run reads a model-only copy instead of saving the user's
-    file first: with mw.liml_text() (has_api), route 'tabel' always (it
-    writes into Mecway's own solution, never into the file; also an
-    untitled model) and route 'liml' for a saved model (it saves only
-    right before the results go into the file). Otherwise the model is
-    saved first, as before.
+    file first: with mw.liml_text() (has_api) and a saved model (the run
+    saves only right before the results go into the file). Otherwise
+    (older Mecway, an untitled model) the model is saved first, as
+    before.
     """
-    if not has_api:
-        return False
-    if route == "tabel":
-        return True
-    return route == "liml" and saved_path(file_name) is not None
+    return bool(has_api) and saved_path(file_name) is not None
 
 
 def save_problem(path):

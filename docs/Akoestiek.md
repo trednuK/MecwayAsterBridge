@@ -64,8 +64,7 @@ constructies: [`Modaal_en_knik.md`](Modaal_en_knik.md).
 
 1. **Actieve analyse:** `auto` kiest bij A30 en A20 `acoustic_modes_3d`; of kies hem
    zelf.
-2. **Resultaten naar Mecway** moet `liml` zijn (pagina Algemeen).
-3. Pagina **Akoestiek (holtemodes)** (alleen aanpassen als dat nodig is):
+2. Pagina **Akoestiek (holtemodes)** (alleen aanpassen als dat nodig is):
 
 | Instelling (label) | Standaard | Wanneer aanpassen |
 |---|---|---|
@@ -302,7 +301,7 @@ van Mecway's tutorial 17.13). De bridge vertaalt dat als A30, met vlakke element
 3. **Randen** op randen (vlakselectie van de randen) of knopen: een rand zonder
    voorwaarde is een harde wand, *Fluid pressure* = 0 een drukknoop, *Impedance* geeft
    complexe modes (§3.3), alles als in 3D.
-4. **Bridge:** `auto` (of `acoustic_modes_3d`), resultaatroute `liml`. Code-Aster:
+4. **Bridge:** `auto` (of `acoustic_modes_3d`). Code-Aster:
    `PHENOMENE='ACOUSTIQUE'`, `MODELISATION='PLAN'` (impedantieranden `PLAN_ABSO`,
    Code-Aster-testcase ahlv100f); de rest is de A30-route. De 2D-analyse heeft geen
    harmonisch drukveld (`acoustic_harm_3d`: ERROR, en `auto` houdt bij een
@@ -414,8 +413,7 @@ uit (`Bron_luidspreker` werkt ook).
    `acoustic_modes_3d`. Wil je van een model met een bron toch de holtemodes: kies
    `acoustic_modes_3d` zelf (de bron- en absorberende selecties zijn dan harde wanden,
    INFO in de log).
-2. **Resultaten naar Mecway** moet `liml` zijn.
-3. Pagina **Akoestiek (harmonisch)**:
+2. Pagina **Akoestiek (harmonisch)**:
 
 | Instelling (label) | Standaard | Wanneer aanpassen |
 |---|---|---|
@@ -615,10 +613,9 @@ De voorvoegsels gelden voor de naam in Mecway; hoofdletters maken niet uit.
 1. **Actieve analyse:** `auto` kiest bij een Frequency-model met een fluïdum
    `vibroacoustic_modes_3d` (INFO in de log); of kies hem zelf. Kies je bij zo'n model
    `modal_3d`, dan rekent de bridge het fluïdum als vaste stof (WARNING).
-2. **Resultaten naar Mecway** moet `liml` zijn.
-3. **Eerst Mecway-solve ter controle**: heeft geen zin (Mecway rekent een materiaal
+2. **Eerst Mecway-solve ter controle**: heeft geen zin (Mecway rekent een materiaal
    zonder Young's modulus als vaste stof met E = 0; de bridge vergelijkt dan niet).
-4. Pagina **Vibro-akoestiek (modes)**:
+3. Pagina **Vibro-akoestiek (modes)**:
 
 | Instelling (label) | Standaard | Wanneer aanpassen |
 |---|---|---|

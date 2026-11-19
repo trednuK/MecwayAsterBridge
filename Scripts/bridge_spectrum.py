@@ -143,12 +143,6 @@ def _check_model(model_data, analysis):
     if not b2a._check_linear(model_data, tr("een spectrumanalyse",
                                             "a response spectrum analysis")):
         ok = False
-    if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
-        log(tr("ERROR: De resultaatroute 'tabel' werkt niet voor de "
-               "spectrumanalyse. Kies 'liml' (pagina Algemeen).",
-               "ERROR: The result route 'tabel' does not work for the "
-               "response spectrum analysis. Choose 'liml' (General page)."))
-        ok = False
     timed = [bc["selection"] for bc in model_data["bcs"]
              if bc["type"] in _CONSTRAINT_TYPES and any(
                  isinstance(v, list) for v in bc["aster_dict"].values())]

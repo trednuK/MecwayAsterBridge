@@ -68,8 +68,7 @@ multiply by a_g. This is an illustration, not a design spectrum.
 1. **Active analysis**: choose **`spectrum_3d`** yourself. With *Frequency*, `auto`
    picks the modal analysis (`modal_3d`): the Mecway model does not say it is a
    spectrum.
-2. **Results to Mecway** must be `liml` (General page).
-3. Page **Response spectrum**:
+2. Page **Response spectrum**:
 
 | Setting (label) | Key | Default | When to change |
 |---|---|---|---|
@@ -236,7 +235,6 @@ nappe or formula). Verification SP-01 (test case sdld25a).
 | ERROR: Imposed displacement or rotation <> 0 / with a time table | only fixed supports | set the value to 0, remove the table |
 | ERROR: ... is not possible in a response spectrum analysis (linear) | contact, gap, tension/compression only | remove or suppress it |
 | ERROR: Setting ... is unknown / spectrum_damping | choice or value outside the list | see §1.2 |
-| ERROR: The result route 'tabel' does not work | maxima only via `liml` | *Results to Mecway* = `liml` |
 | ERROR: '#ASTER-SPECTRE ...': expected 'X, Y = name' | syntax | `#ASTER-SPECTRE X = spec, ECHELLE=9.81` |
 | WARNING: Response spectrum analysis: loads (...) are not included | forces, pressure, ... in the model | intended (the load is the spectrum); compute self-weight separately |
 | WARNING: The Mecway model is not a Frequency analysis | other analysis type | choose *Frequency* in Mecway (Number of modes) |

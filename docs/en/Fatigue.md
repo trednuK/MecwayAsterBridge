@@ -382,8 +382,6 @@ with `POST_FATIGUE` during the build):
   only.
 - **A filter on small cycles** (`DELTA_OSCI` of `POST_FATIGUE`): not built; with
   `PROL_GAUCHE = EXCLU` (default) cycles below the table do not count anyway.
-- Result route `tabel`: the fields do not go to Mecway (INFO); the log and the cycle
-  table do.
 
 See also KNOWN_BUGS 66.
 

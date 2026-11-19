@@ -68,8 +68,7 @@ vermenigvuldig met a_g. Dit is een illustratie, geen ontwerpspectrum.
 
 1. **Actieve analyse**: kies **`spectrum_3d`** zelf. `auto` kiest bij *Frequency* de
    modale analyse (`modal_3d`): het Mecway-model zegt niet dat het een spectrum is.
-2. **Resultaten naar Mecway** moet `liml` zijn (pagina Algemeen).
-3. Pagina **Responsspectrum**:
+2. Pagina **Responsspectrum**:
 
 | Instelling (label) | Sleutel | Standaard | Wanneer aanpassen |
 |---|---|---|---|
@@ -235,7 +234,6 @@ sdld25a).
 | ERROR: Opgelegde verplaatsing of rotatie <> 0 / met een tijdstabel | alleen vaste opleggingen | zet de waarde op 0, haal de tabel weg |
 | ERROR: ... kan niet in een spectrumanalyse (lineair) | contact, gap, tension/compression only | verwijder of onderdruk het |
 | ERROR: Instelling ... is onbekend / spectrum_damping | keuze of waarde buiten de lijst | zie §1.2 |
-| ERROR: De resultaatroute 'tabel' werkt niet | maxima alleen via `liml` | *Resultaten naar Mecway* = `liml` |
 | ERROR: '#ASTER-SPECTRE ...': verwacht 'X, Y = naam' | schrijfwijze | `#ASTER-SPECTRE X = spec, ECHELLE=9.81` |
 | WARNING: Spectrumanalyse: belastingen (...) doen niet mee | krachten, druk, ... in het model | gewenst (de belasting is het spectrum); reken eigen gewicht apart |
 | WARNING: Het Mecway-model is geen Frequency-analyse | ander analysetype | kies *Frequency* in Mecway (Number of modes) |
