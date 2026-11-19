@@ -852,6 +852,15 @@ The bridge does not set `CONTACT_INIT`, so the CA default `'INTERPENETRE'` appli
 (catalogue 17.4, U4.44.11): at the start, all points with zero gap or with penetration
 are active. Tolerance: 1e-6 × the smallest edge (U2.04.04 §4.4.1).
 
+![Start of a contact: a slave part with a gap, one with zero gap and one with a penetration](../img/contact_initial_gap.svg)
+
+1. The master face.
+2. A gap: these slave points are not active at the start; they can become active later,
+   when the gap closes.
+3. Zero gap (within the tolerance): active from the start.
+4. A penetration: active from the start and pushed out.
+5. Pushing out gives forces on both bodies.
+
 - An initial penetration is pushed out and **produces forces**; it is not a geometric
   correction (U2.04.04 §4.4.1). So make sure the mesh in Mecway has no overlap.
 - Other values (not via the bridge): `'OUI'` activates all points, also with a gap
@@ -885,6 +894,22 @@ are active. Tolerance: 1e-6 × the smallest edge (U2.04.04 §4.4.1).
   not when a *CCX keyword* modification turns `ADJUST` off. A slave face moves as a whole
   or not at all; what stays gets the WARNING. Verification LS-07o: the lap of LS-07m with
   a 0.2 mm gap gives 0.230166 mm, equal to Mecway (without the option +0.26 %).
+
+![Bonded contact across a gap: the setting bonded_close_gap off (left) and on (right)](../img/bonded_gap_close.svg)
+
+The gap is drawn much larger than the 0.1 × h up to which the bridge moves a node.
+
+1. The master solid, with a flat face.
+2. The slave solid; the nodes of its face are tied to the master.
+3. The gap g.
+4. Setting off (default): `LIAISON_MAIL` ties the slave nodes where they are, across the
+   gap. The gap stays, with (for this large gap) a WARNING.
+5. Setting on: the bridge moves the slave nodes perpendicular onto the plane of the master
+   face, only in the mesh for Code-Aster; the `.liml` keeps the old position (dashed).
+6. h: the shortest distance from the node to another node of an element at the node
+   (here the thickness of a thin layer; mid-side nodes, diagonals and the edges of the
+   slave face count too). A node moves only if g ≤ 0.1 × h, and a slave face moves as a
+   whole or not at all.
 
 ### 3.5 Zones sharing slave nodes
 

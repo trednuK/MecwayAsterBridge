@@ -866,6 +866,15 @@ De bridge zet `CONTACT_INIT` niet, dus geldt de CA-standaard `'INTERPENETRE'`
 (catalogus 17.4, U4.44.11): aan het begin zijn alle punten met spleet nul of met
 penetratie actief. Tolerantie: 1e-6 × de kleinste ribbe (U2.04.04 §4.4.1).
 
+![Begin van een contact: een slave-deel met een spleet, een met spleet nul en een met een penetratie](img/contact_initial_gap.svg)
+
+1. Het mastervlak.
+2. Een spleet: deze slave-punten zijn aan het begin niet actief; ze kunnen later actief
+   worden, als de spleet sluit.
+3. Spleet nul (binnen de tolerantie): actief vanaf het begin.
+4. Een penetratie: actief vanaf het begin en weggedrukt.
+5. Het wegdrukken geeft krachten op beide lichamen.
+
 - Een beginpenetratie wordt weggedrukt en **geeft krachten**; het is geen
   geometrische correctie (U2.04.04 §4.4.1). Zorg dus in Mecway voor een mesh
   zonder overlap.
@@ -904,6 +913,23 @@ penetratie actief. Tolerantie: 1e-6 × de kleinste ribbe (U2.04.04 §4.4.1).
   keyword*-wijziging `ADJUST` uitzet. Een slave-vlak schuift helemaal of niet; wat blijft,
   krijgt de WARNING. Verificatie LS-07o: de overlapnaad van LS-07m met 0,2 mm spleet geeft
   0,230166 mm, gelijk aan Mecway (zonder de optie +0,26 %).
+
+![Verlijmd contact over een spleet: de instelling bonded_close_gap uit (links) en aan (rechts)](img/bonded_gap_close.svg)
+
+De spleet is veel groter getekend dan de 0,1 × h tot waar de bridge een knoop verschuift.
+
+1. Het master-volume, met een vlak oppervlak.
+2. Het slave-volume; de knopen van zijn vlak zijn aan de master gekoppeld.
+3. De spleet g.
+4. Instelling uit (standaard): `LIAISON_MAIL` koppelt de slave-knopen waar ze liggen,
+   over de spleet heen. De spleet blijft, met (bij deze grote spleet) een WARNING.
+5. Instelling aan: de bridge schuift de slave-knopen loodrecht naar het vlak waarin het
+   mastervlak ligt, alleen in het mesh voor Code-Aster; de `.liml` houdt de oude plaats
+   (gestreept).
+6. h: de kortste afstand van de knoop tot een andere knoop van een element bij de knoop
+   (hier de dikte van een dunne laag; ook middenknopen, diagonalen en de randen van het
+   slave-vlak tellen mee). Een knoop schuift alleen als g ≤ 0,1 × h, en een slave-vlak
+   schuift helemaal of niet.
 
 ### 3.5 Zones die slave-knopen delen
 
