@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 380" width="720" height="380">
+  <rect width="720" height="380" fill="#ffffff"/>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#333"/>
+    </marker>
+  </defs>
+  <!-- section perpendicular to the crack front; the front runs into the paper at the centre -->
+  <rect x="40" y="40" width="660" height="300" fill="#d6e4f0" stroke="#333" stroke-width="1.5"/>
+  <!-- ring between R_INF and R_SUP around the front -->
+  <path d="M 510 190 A 150 150 0 1 0 210 190 A 150 150 0 1 0 510 190 Z M 440 190 A 80 80 0 1 1 280 190 A 80 80 0 1 1 440 190 Z" fill="#f2c9a0" fill-opacity="0.75" fill-rule="evenodd" stroke="none"/>
+  <circle cx="360" cy="190" r="80" fill="none" stroke="#a0522d" stroke-width="1.8" stroke-dasharray="7 4"/>
+  <circle cx="360" cy="190" r="150" fill="none" stroke="#a0522d" stroke-width="1.8" stroke-dasharray="7 4"/>
+  <!-- the opened crack: two lips with double nodes, meeting at the front -->
+  <polygon points="40,174 360,190 40,206" fill="#ffffff" stroke="none"/>
+  <line x1="40" y1="174" x2="360" y2="190" stroke="#2c5d8a" stroke-width="3.5"/>
+  <line x1="40" y1="206" x2="360" y2="190" stroke="#2c5d8a" stroke-width="3.5"/>
+  <!-- ligament: shared nodes -->
+  <line x1="360" y1="190" x2="700" y2="190" stroke="#333" stroke-width="1.5" stroke-dasharray="10 4"/>
+  <g fill="#2c5d8a" stroke="#ffffff" stroke-width="1.5">
+    <circle cx="120" cy="178" r="5.5"/><circle cx="200" cy="182" r="5.5"/><circle cx="280" cy="186" r="5.5"/>
+    <circle cx="120" cy="202" r="5.5"/><circle cx="200" cy="198" r="5.5"/><circle cx="280" cy="194" r="5.5"/>
+  </g>
+  <g fill="#333" stroke="#ffffff" stroke-width="1.5">
+    <circle cx="440" cy="190" r="5.5"/><circle cx="520" cy="190" r="5.5"/><circle cx="600" cy="190" r="5.5"/><circle cx="680" cy="190" r="5.5"/>
+  </g>
+  <circle cx="360" cy="190" r="8" fill="#c0392b" fill-opacity="0" stroke="#333" stroke-width="2.5"/>
+  <circle cx="360" cy="190" r="3" fill="#333"/>
+  <!-- radii -->
+  <line x1="360" y1="190" x2="403.5" y2="257" stroke="#333" stroke-width="1.5" marker-end="url(#ah)"/>
+  <line x1="360" y1="190" x2="246" y2="287" stroke="#333" stroke-width="1.5" marker-end="url(#ah)"/>
+  <!-- markers -->
+  <g font-family="sans-serif" font-weight="bold" font-size="14" fill="#ffffff" text-anchor="middle">
+    <circle cx="160" cy="156" r="11" fill="#c0392b"/><text x="160" y="161">1</text>
+    <circle cx="160" cy="226" r="11" fill="#c0392b"/><text x="160" y="231">2</text>
+    <circle cx="360" cy="160" r="11" fill="#c0392b"/><text x="360" y="165">3</text>
+    <circle cx="640" cy="166" r="11" fill="#c0392b"/><text x="640" y="171">4</text>
+    <circle cx="412" cy="232" r="11" fill="#c0392b"/><text x="412" y="237">5</text>
+    <circle cx="232" cy="300" r="11" fill="#c0392b"/><text x="232" y="305">6</text>
+    <circle cx="456" cy="126" r="11" fill="#c0392b"/><text x="456" y="131">7</text>
+  </g>
+</svg>

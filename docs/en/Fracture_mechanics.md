@@ -105,6 +105,21 @@ which `CALC_G` integrates (theta method). For one model it also works with
 and `#ASTER-OPTIE fracture_r_sup = 0.004`
 ([`ASTER_lines_examples.md`](ASTER_lines_examples.md) example 16).
 
+The figure below is a section perpendicular to the front. The crack is drawn open for
+clarity; in the mesh the two lips lie at the same place (§1.2).
+
+![Section across the crack front: the two lips, the front, the ligament and the ring between R_INF and R_SUP](../img/fracture_lips_ring.svg)
+
+1. One lip, `CRACK_LIP_UPPER`: the element faces of that lip.
+2. The other lip, `CRACK_LIP_LOWER`: its nodes lie at the same place as those of the first
+   lip, but are not connected to them.
+3. The front, `CRACK_FRONT`: here one node; the front runs into the paper.
+4. The ligament: the uncracked part of the crack plane, nodes shared by both sides.
+5. R_INF, the inner radius of the ring (`fracture_r_inf`).
+6. R_SUP, the outer radius (`fracture_r_sup`).
+7. The ring between R_INF and R_SUP, where θ drops from 1 to 0, over which `CALC_G`
+   integrates.
+
 ### 1.5 Running and results
 
 Click *Start*. Afterwards the log and the status box show for example (verification
