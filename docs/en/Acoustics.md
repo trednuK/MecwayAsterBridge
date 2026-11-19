@@ -416,6 +416,16 @@ The prefixes apply to the name of the selection in Mecway; case does not matter
    at least **10 linear** or **5 quadratic** elements per wavelength (§5.4); the bridge
    warns if the mesh is coarser.
 
+![A duct for harmonic acoustics: source face, absorbing end, microphone and element size](../img/acoustic_harmonic_setup.svg)
+
+1. `SOURCE_` face: the normal velocity is directed into the fluid (a pushing piston).
+2. `ABSORBING_` face: impedance ρc, no reflection of a plane wave that hits it
+   perpendicularly.
+3. `MICROPHONE_` node.
+4. The other faces: hard walls (no condition).
+5. h: the largest element edge; at most λ/10 for linear and λ/5 for quadratic elements.
+6. λ = c/f_max, the shortest wavelength.
+
 ### 5.2 In the bridge's main window
 
 1. **Active analysis:** with A30 and a source (`SOURCE_` selection, `#ASTER-BRON` or

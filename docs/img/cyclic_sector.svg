@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 450" width="560" height="450">
+  <rect width="560" height="450" fill="#ffffff"/>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#333"/>
+    </marker>
+    <marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2c5d8a"/>
+    </marker>
+    <marker id="as" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a0522d"/>
+    </marker>
+  </defs>
+  <!-- cyclic symmetry seen from +axis (z out of the paper): sector 0 between DROITE (blue, lower angle) and GAUCHE (sienna, +360/N counter-clockwise); dashed: sector 1 and sector N-1 -->
+  <path d="M 250 330 L 476.6 435.7 A 250 250 0 0 0 484.9 244.5 Z" fill="#f3f7fb" stroke="#999" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <path d="M 250 330 L 355.7 103.4 A 250 250 0 0 0 164.5 95.1 Z" fill="#f3f7fb" stroke="#999" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <path d="M 250 330 L 484.9 244.5 A 250 250 0 0 0 355.7 103.4 Z" fill="#d6e4f0" stroke="#333" stroke-width="1.5"/>
+  <path d="M 367.5 287.2 A 125 125 0 0 0 302.8 216.7" fill="none" stroke="#333" stroke-width="1"/>
+  <path d="M 428.5 265.0 A 190 190 0 0 0 330.3 157.8" fill="none" stroke="#333" stroke-width="1"/>
+  <line x1="250" y1="330" x2="434.319" y2="161.102" stroke="#333" stroke-width="1"/>
+  <line x1="250" y1="330" x2="484.923" y2="244.495" stroke="#2c5d8a" stroke-width="3.5"/>
+  <line x1="250" y1="330" x2="355.655" y2="103.423" stroke="#a0522d" stroke-width="3.5"/>
+  <circle cx="367.462" cy="287.247" r="4.5" fill="#2c5d8a" stroke="#ffffff" stroke-width="1.2"/>
+  <circle cx="302.827" cy="216.712" r="4.5" fill="#a0522d" stroke="#ffffff" stroke-width="1.2"/>
+  <circle cx="428.542" cy="265.016" r="4.5" fill="#2c5d8a" stroke="#ffffff" stroke-width="1.2"/>
+  <circle cx="330.297" cy="157.802" r="4.5" fill="#a0522d" stroke="#ffffff" stroke-width="1.2"/>
+  <circle cx="484.923" cy="244.495" r="4.5" fill="#2c5d8a" stroke="#ffffff" stroke-width="1.2"/>
+  <circle cx="355.655" cy="103.423" r="4.5" fill="#a0522d" stroke="#ffffff" stroke-width="1.2"/>
+  <path d="M 424.9 255.8 A 190 190 0 0 0 339.2 162.2" fill="none" stroke="#333" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#ah)"/>
+  <circle cx="250" cy="330" r="10" fill="#ffffff" stroke="#333" stroke-width="2"/>
+  <circle cx="250" cy="330" r="3.5" fill="#333" stroke="#333" stroke-width="1.2"/>
+  <text x="220" y="336" font-family="serif" font-style="italic" font-size="16" fill="#333" text-anchor="start">z</text>
+  <path d="M 306.4 309.5 A 60 60 0 0 0 275.4 275.6" fill="none" stroke="#333" stroke-width="1.5" marker-end="url(#ah)"/>
+  <path d="M 450.5 146.2 A 272 272 0 0 0 261.9 58.3" fill="none" stroke="#333" stroke-width="2" marker-end="url(#ah)"/>
+  <g font-family="sans-serif" font-weight="bold" font-size="14" fill="#ffffff" text-anchor="middle">
+    <line x1="206" y1="296" x2="241" y2="324" stroke="#c0392b" stroke-width="1.5"/>
+    <circle cx="206" cy="296" r="11" fill="#c0392b"/><text x="206" y="301">1</text>
+    <line x1="421.652" y1="294.987" x2="397.652" y2="277.987" stroke="#c0392b" stroke-width="1.5"/>
+    <circle cx="421.652" cy="294.987" r="11" fill="#c0392b"/><text x="421.652" y="299.987">2</text>
+    <line x1="281.506" y1="185.522" x2="313.506" y2="190.522" stroke="#c0392b" stroke-width="1.5"/>
+    <circle cx="281.506" cy="185.522" r="11" fill="#c0392b"/><text x="281.506" y="190.522">3</text>
+    <line x1="407.142" y1="169.504" x2="390.083" y2="201.638" stroke="#c0392b" stroke-width="1.5"/>
+    <circle cx="407.142" cy="169.504" r="11" fill="#c0392b"/><text x="407.142" y="174.504">4</text>
+    <line x1="260.4" y1="32.1815" x2="259.562" y2="56.1669" stroke="#c0392b" stroke-width="1.5"/>
+    <circle cx="260.4" cy="32.1815" r="11" fill="#c0392b"/><text x="260.4" y="37.1815">5</text>
+    <line x1="321.931" y1="259.25" x2="295.711" y2="288.113" stroke="#c0392b" stroke-width="1.5"/>
+    <circle cx="321.931" cy="259.25" r="11" fill="#c0392b"/><text x="321.931" y="264.25">6</text>
+  </g>
+</svg>

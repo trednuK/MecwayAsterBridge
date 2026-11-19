@@ -467,6 +467,21 @@ from the Code-Aster test cases sdld313d and sdld21b):
   to u_st/η, phase −90° there (Aubry, 2023, §3.3.4). For a beam or solid: (static
   contribution of the mode)/η.
 
+![Amplitude and phase of one mode over the frequency ratio, and the displacement as a phasor](../img/harmonic_phase.svg)
+
+One mode with damping ξ = 0.1, r = f/f_n (hand check above).
+
+1. The static response u_st (r = 0).
+2. The peak ≈ u_st/(2ξ), at r = √(1 − 2ξ²).
+3. The half-power width ≈ 2ξ·f_n.
+4. The phase −90° at r = 1.
+5. Below the resonance: in phase with the load (0°).
+6. Far above it: antiphase (−180°).
+7. The load at phase 0, on the real axis.
+8. The phasor U: it lags the load and turns counter-clockwise with ωt.
+9. Re(U) = `displx/y/z`: the displacement at the moment ωt = 0.
+10. Im(U) = `displix/y/z`, negative when U lags.
+
 ### 7.6 Not possible
 
 - **Imposed (base) motion** ≠ 0 (ERROR): the modes have those degrees of freedom

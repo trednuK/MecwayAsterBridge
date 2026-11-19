@@ -237,6 +237,18 @@ betekent boven de vermoeiingsgrens van het criterium** (eindige levensduur), ≤
 oneindige levensduur volgens het criterium. Code-Aster's `D_VAN_B`/`MATAKE_B` tellen in
 SIGEQ niet mee (gemeten: b = 2 en b = 100 geven dezelfde SIGEQ).
 
+![De Dang Van-grens: schuifamplitude op het kritieke vlak tegen de grootste hydrostatische spanning](img/fatigue_multiaxial_criterion.svg)
+
+Dang Van met de constanten uit de tabel hierboven (a > 0 als τ₋₁/σ₋₁ > ½).
+
+1. τ_a = Δτ/2: de schuifamplitude op het kritieke vlak.
+2. P: de grootste hydrostatische spanning P_max in de cyclus.
+3. De grens τ_a + a·P = b, helling −a.
+4. Zuivere wisseltorsie op de grens: P = 0, τ_a = b = τ₋₁.
+5. Wisselende trek-druk op de grens: P = σ₋₁/3, τ_a = σ₋₁/2.
+6. Boven de grens: `fatigue_ratio` > 1, eindige levensduur.
+7. P < 0 telt als 0 (max(P, 0)): druk verhoogt de grens niet.
+
 **Periodiek of niet** (`belasting`):
 
 - `PERIODIEK` (standaard): het hele verloop (signaal, tijdstappen of één blok) is

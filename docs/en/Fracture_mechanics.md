@@ -586,6 +586,18 @@ otherwise `LEGENDRE` (as for the shapes, §7.3); the settings `fracture_r_inf`/`
 and `fracture_legendre_degree` apply. Keys per crack (`points=`, `smoothing=`,
 `r_inf=`) do not exist for a selection.
 
+![The crack plane of an XFEM crack from a face selection: selected faces, front, mouth and ligament](../img/xfem_face_selection.svg)
+
+The crack plane seen along its normal; the grid is the layer of nodes in that plane.
+
+1. The selected faces `XFEM_<name>`: the crack.
+2. The ligament: faces in the same plane that are not selected.
+3. The front: the edge of the selection that lies inside the solid.
+4. The mouth: an edge of the selection on an outer face (or a symmetry plane), not a
+   front.
+5. The normal of the crack surface: the largest component of the mean normal positive
+   (+y for a crack in the plane y = 0).
+
 Measured (BR-13, mesh of BR-09 with the crack as a selection): K_I −0.06 %, G −0.05 %,
 `POST_K1_K2_K3` +1.1 % relative to Tada, as BR-09 with `HALF_PLANE` (§7.4). Because
 the crack plane lies on a layer of nodes, the nodes in the plane get the value of one

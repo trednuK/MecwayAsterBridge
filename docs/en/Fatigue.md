@@ -237,6 +237,18 @@ SIGEQ / b): **> 1 means above the fatigue limit of the criterion** (finite life)
 infinite life according to the criterion. Code-Aster's `D_VAN_B`/`MATAKE_B` do not
 enter SIGEQ (measured: b = 2 and b = 100 give the same SIGEQ).
 
+![The Dang Van limit: shear amplitude on the critical plane against the largest hydrostatic stress](../img/fatigue_multiaxial_criterion.svg)
+
+Dang Van with the constants of the table above (a > 0 when τ₋₁/σ₋₁ > ½).
+
+1. τ_a = Δτ/2: the shear amplitude on the critical plane.
+2. P: the largest hydrostatic stress P_max during the cycle.
+3. The limit τ_a + a·P = b, slope −a.
+4. Pure alternating torsion at the limit: P = 0, τ_a = b = τ₋₁.
+5. Alternating tension-compression at the limit: P = σ₋₁/3, τ_a = σ₋₁/2.
+6. Above the limit: `fatigue_ratio` > 1, finite life.
+7. P < 0 counts as 0 (max(P, 0)): compression does not raise the limit.
+
 **Periodic or not** (`loading`):
 
 - `PERIODIC` (default): the whole history (signal, time steps or one block) is **one

@@ -157,6 +157,27 @@ van de bron liggen waar q is gezakt tot e⁻³ ≈ 5% van de piek van die helft.
 8. `diepte`: de richting het materiaal in, standaard (0, 0, −1); de bridge maakt die
    loodrecht op de baan.
 
+![De padsleutels van een lasbron in bovenaanzicht: een recht pad en een pad door knopen](img/weld_path_keys.svg)
+
+Boven: een recht pad op een symmetrievlak; onder: een pad door knopen (`pad`).
+
+1. `start`: het beginpunt van het pad.
+2. `richting`: de richting van het rechte pad.
+3. Het eind van het pad, `lengte` na `start`: de bron stopt op het vroegste moment van
+   t0 + `lengte`/v en `t1`. Zonder `lengte` loopt hij door tot `t1` of het eind van de
+   analyse.
+4. `lengte`.
+5. De automatische brongroep (zonder `groep` en zonder `LASNAAD_`-selecties; met
+   `geboorte` altijd, tenzij `groep` gegeven is): de volume-elementen waarvan het
+   middelpunt binnen 3 × max(af, ar, b, c) + de elementstraal van het pad ligt.
+6. `symmetrie=1`: een symmetrievlak door het pad en de diepterichting. Alleen de helft aan
+   de kant van het model is gemesht; de bron zelf verandert niet, alleen de
+   energiecontrole verwacht het halve vermogen.
+7. `pad`: de knopen van de selectie worden een keten, stuksgewijs recht; de assen van de
+   bron volgen elk segment (pijlen).
+8. Met `pad` kiest `start` alleen de eerste knoop: de keten begint bij de knoop die er het
+   dichtst bij ligt.
+
 ## 3. Hoe de bridge vertaalt
 
 - **Bronvorm** (Goldak e.a., 1984), met ξ langs de lasrichting t.o.v. de huidige
@@ -827,6 +848,21 @@ Met `geboorte` is `LASNAAD_` het toevoegmateriaal en niet de brongroep: de bron 
 dan op **alle volume-elementen bij de baan** (automatisch, binnen 3 × de grootste halve
 as; ook het basismateriaal en eerdere lagen, die zo opnieuw smelten), tenzij `groep=`
 gegeven is. De factoren van het stille materiaal (10⁻⁴; λ 10⁻⁸) zijn vast.
+
+![Toevoegmateriaal dat geboren wordt: doorsnede langs het pad met de bron, de voorloop en de geboren en stille elementen](img/weld_birth_lead.svg)
+
+Een doorsnede langs het pad; de bron beweegt naar rechts.
+
+1. Het middelpunt van de bron op het pad (boven op de rups), met snelheid v.
+2. `voorloop` (standaard 2 × `af`) voor het middelpunt uit.
+3. De hoekknoop met de kleinste booglengte van het volgende element, de kant waar de bron
+   vandaan komt: het element wordt geboren als het middelpunt op `voorloop` ervan is, en
+   leeft vanaf de eerste tijdstap na dat moment.
+4. Geboren elementen: hun gewone materiaal.
+5. Stille elementen voor de bron uit: ρ·c × 10⁻⁴, λ × 10⁻⁸, E × 10⁻⁴, en de bron werkt er
+   niet in.
+6. Het basismateriaal: altijd aanwezig.
+7. Een tweede laag met een eigen bron en `t0`: stil tot die bron langskomt.
 
 ### 11.3 Hoe de bridge vertaalt
 

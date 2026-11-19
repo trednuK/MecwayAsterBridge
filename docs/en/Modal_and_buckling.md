@@ -351,6 +351,16 @@ fields as in [`ASTER_lines_examples.md`](ASTER_lines_examples.md) §1):
   (WARNING).
 - The stiffness normalisation of the modes (RIGI_GENE) then uses K + Kg(constant).
 
+![Buckling with a constant and a variable load: the factor applies to the variable load only](../img/buckling_constant_variable.svg)
+
+1. The constant load P_d (`#ASTER-CONSTANT`): it is not multiplied.
+2. The variable load P, as entered (factor 1).
+3. λ_1·P: the factor times the variable load only. Buckling load k = P_d + λ_k·P; with
+   the same load pattern for both (as in BU-40) λ_k = (P_cr,k − P_d)/P.
+4. The next buckling load P_cr,2 with λ_2.
+5. The first critical load P_cr,1.
+6. The constant load alone at or above P_cr,1: the job stops with an ERROR (§4).
+
 ### 2.3 Normalisation
 
 | Normalisation | Meaning | Use |
@@ -1082,6 +1092,21 @@ cyclic symmetry (INFO or WARNING in the log).
    nodes and elements of all sectors in the model copy of `<solution>`, exactly like
    Mecway's own cyclic solution (below). If the wheel fails, the sector goes to Mecway
    (WARNING in the `.mess`, §7.6).
+
+![One sector of a cyclic model seen from the axis: the two cut faces, a node pair and the next sector](../img/cyclic_sector.svg)
+
+Seen from the +axis (here z, out of the paper); dashed: the neighbouring sectors.
+
+1. The symmetry axis through the origin; its nodes form the interface `AXE`. With an X or
+   Y axis the bridge permutes the coordinates so that this is Z (step 2 of the list
+   above).
+2. `DROITE`: the cut face at the lower angle.
+3. `GAUCHE`: the other cut face, 360°/N counter-clockwise from `DROITE`.
+4. A node pair: a node of `DROITE` and the node of `GAUCHE` at +360°/N. Which face is the
+   master in Mecway does not matter.
+5. The whole wheel: sector j is sector 0 rotated by +j·360°/N (counter-clockwise); the
+   `DROITE` face of sector 1 lies on the `GAUCHE` face of sector 0.
+6. The sector angle 360°/N.
 
 **Mecway's format of the whole wheel** (measured headless with Mecway 33 on CY-01,
 CY-04, CY-05, Mecway's Impeller and variants with two element sets, a loose node and

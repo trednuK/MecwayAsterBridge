@@ -418,6 +418,17 @@ uit (`Bron_luidspreker` werkt ook).
    minstens **10 lineaire** of **5 kwadratische** elementen per golflengte (§5.4); de
    bridge waarschuwt als het mesh grover is.
 
+![Een kanaal voor harmonische akoestiek: bronvlak, absorberend einde, microfoon en elementgrootte](img/acoustic_harmonic_setup.svg)
+
+1. `SOURCE_`-vlak: de normaalsnelheid is naar het fluïdum gericht (een duwende zuiger).
+2. `ABSORBING_`-vlak: impedantie ρc, geen reflectie van een vlakke golf die er loodrecht
+   op valt.
+3. `MICROPHONE_`-knoop.
+4. De andere vlakken: harde wanden (geen voorwaarde).
+5. h: de grootste elementrand; hoogstens λ/10 bij lineaire en λ/5 bij kwadratische
+   elementen.
+6. λ = c/f_max, de kortste golflengte.
+
 ### 5.2 In het hoofdvenster van de bridge
 
 1. **Actieve analyse:** `auto` kiest bij A30 met een bron (`BRON_`-selectie,

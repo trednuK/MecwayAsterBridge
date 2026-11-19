@@ -159,6 +159,27 @@ of the source are where q has dropped to e⁻³ ≈ 5% of the peak of that half.
 8. `diepte`: the direction into the material, default (0, 0, −1); the bridge makes it
    perpendicular to the path.
 
+![The path keys of a weld source in plan view: a straight path and a path through nodes](../img/weld_path_keys.svg)
+
+Top: a straight path on a symmetry plane; bottom: a path through nodes (`pad`).
+
+1. `start`: the start point of the path.
+2. `richting`: the direction of the straight path.
+3. The end of the path, `lengte` after `start`: the source stops at the earlier of
+   t0 + `lengte`/v and `t1`. Without `lengte` it runs on until `t1` or the end of the
+   analysis.
+4. `lengte`.
+5. The automatic source group (without `groep` and without `LASNAAD_` selections; with
+   `geboorte` (`birth`) always, unless `groep` is given): the solid elements whose centre
+   lies within 3 × max(af, ar, b, c) + the element radius of the path.
+6. `symmetrie=1`: a symmetry plane through the path and the depth direction. Only the
+   half on the model side is meshed; the source itself is unchanged, only the energy
+   check expects half the power.
+7. `pad`: the nodes of the selection become a chain, piecewise straight; the axes of the
+   source follow each segment (arrows).
+8. With `pad`, `start` only picks the first node: the chain starts at the node closest to
+   it.
+
 ## 3. How the bridge translates
 
 - **Source shape** (Goldak et al., 1984), with ξ along the weld direction relative to
@@ -830,6 +851,21 @@ With `birth` the `LASNAAD_` group is the filler material and not the source grou
 source then acts on **all solid elements near the path** (automatic, within 3 × the
 largest semi-axis; also the base material and earlier layers, which melt again), unless
 `group=` is given. The factors of the quiet material (10⁻⁴; λ 10⁻⁸) are fixed.
+
+![Filler material that is born: section along the path with the source, the lead and the born and quiet elements](../img/weld_birth_lead.svg)
+
+A section along the path; the source moves to the right.
+
+1. The centre of the source on the path (on top of the bead), moving at speed v.
+2. `lead` (default 2 × `af`) ahead of the centre.
+3. The corner node with the smallest arc length of the next element, the side facing the
+   approaching source: the element is born when the centre is at `lead` from it, alive
+   from the first time step after that moment.
+4. Born elements: their normal material.
+5. Quiet elements ahead of the source: ρ·c × 10⁻⁴, λ × 10⁻⁸, E × 10⁻⁴, and the source does
+   not act in them.
+6. The base material: always present.
+7. A second layer with its own source and `t0`: quiet until that source passes.
 
 ### 11.3 How the bridge translates
 
