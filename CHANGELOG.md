@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- **Very large models: faster preparation and a MUMPS memory setting.** Ideas from the
+  public fork larsmei/MecwayAsterBridge, written anew. The `.mail` is written in pieces
+  instead of as one joined text, and the free faces for the error estimator and the mesh
+  lines are built faster; the file stays byte-identical. On a generated block of 804,000
+  nodes (IronPython 2.7.9) writing the mesh took 26-28 s instead of 48-66 s and the peak
+  memory dropped by about 1 GB. New setting `mumps_memory` (all analyses, default `auto`,
+  which leaves every `.comm` unchanged): `low_rank` (`ACCELERATION='LR+'`,
+  `LOW_RANK_SEUIL=1.0e-9`, not in eigenvalue searches, harmonic solves and explicit
+  dynamics) and `out_of_core` (`GESTION_MEMOIRE='OUT_OF_CORE'`); also per model with
+  `#ASTER-OPTIE mumps_memory = ...`. Measured on 680,000 equations with `memory_limit` 2048:
+  `low_rank` 160 s instead of 240 s and 1.5 instead of 10.6 GB on disk, but peak memory 11.2
+  instead of 4.9 GB; results differ by less than 1e-13 relative. After a linear static run
+  (*Static*) the bridge now warns when MUMPS put its factorization on disk
+  because it did not fit in `memory_limit` (Code-Aster does that without a message).
+  Settings §2.6.
 - **Code-Aster element per component: `#ASTER-ELEMENT component: element`.** A line
   in the CCX *custom model definition* chooses the element of one Mecway component
   instead of the general setting `elem_hex8`/`elem_shell`/`elem_beam`: `3D`, `3D_SI`,

@@ -234,8 +234,9 @@ _LIN_CMD_RE = re.compile(r"^\s*(?:[A-Za-z_]\w*\s*=\s*)?MECA_STATIQUE\s*\(")
 _MODES_CMD_RE = re.compile(r"^\s*(?:[A-Za-z_]\w*\s*=\s*)?CALC_MODES\s*\(")
 _MODE_LINE_RE = re.compile(r"^BRIDGE_MODE\s+(\d+)\s+(.*)$")
 _LIN_END = u"# Fin commande"
-_LIN_TXT_KW_RE = re.compile(r"\b(METHODE|PRE_COND|POSTTRAITEMENTS)\s*=\s*"
-                            r"'(\w+)'")
+_LIN_TXT_KW_RE = re.compile(r"\b(METHODE|PRE_COND|POSTTRAITEMENTS|"
+                            r"GESTION_MEMOIRE|ACCELERATION)\s*=\s*"
+                            r"'([\w+]+)'")
 _LIN_NUM_KW_RE = re.compile(r"\b(RESI_RELA|NPREC|NMAX_ITER|NIVE_REMPLISSAGE)"
                             r"\s*=\s*([-+0-9.eE]+)")
 _LIN_DOF_RE = re.compile(u"système linéaire à résoudre a "
@@ -257,7 +258,12 @@ _LIN_ORDER_RE = re.compile(r"Ordering based on (\S+)")
 _LIN_FLOPS_RE = re.compile(r"RINFOG\(1\)\)?\s*=\s*([-+0-9.eEdD]+)")
 _LIN_INFOG_RE = re.compile(r"(?<![RA-Z])INFOG\s*\(\s*(\d+)\s*\)[^=]*="
                            r"\s*([-+0-9.eEdD]+)")
-_LIN_MEM_RE = re.compile(r"\(INFOG\((17|19|22)\)\):\s*(\d+)")
+_LIN_MEM_RE = re.compile(r"\(INFOG\((17|19|22|37)\)\):\s*(\d+)")
+# Effective out-of-core choice of a factorization (MUMPS 5.6.2 with INFO=2,
+# Code-Aster 17.4): " ICNTL(22) Out-of-core option   =   1". The request
+# line "ICNTL(22)  Out-of-core option (1=on, off otherwise)=  -999" does not
+# match (no "=" right after "option").
+_LIN_OOC_RE = re.compile(r"ICNTL\(22\) Out-of-core option\s*=\s*(-?\d+)")
 # Estimates from the analysis phase (known during the factorisation)
 _LIN_FLOPS_EST_RE = re.compile(r"RINFOG\(1\) Operations during elimination "
                                r"\(estim\)\s*=\s*(\S+)")
@@ -1155,8 +1161,12 @@ class ConvergenceParser(object):
         m = _LIN_MEM_RE.search(line)
         if m:
             key = {"17": "mem_est", "19": "mem_alloc",
-                   "22": "mem_used"}[m.group(1)]
+                   "22": "mem_used", "37": "mem_est_blr"}[m.group(1)]
             lin.mumps[key] = int(m.group(2))
+            return True
+        m = _LIN_OOC_RE.search(line)
+        if m:
+            lin.mumps["ooc"] = int(m.group(1))     # the last factorization
             return True
         m = _LIN_FLOPS_EST_RE.search(line)
         if m:

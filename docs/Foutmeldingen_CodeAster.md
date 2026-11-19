@@ -1410,7 +1410,7 @@ in de `.export` (*Tijdslimiet run_aster [s]*, *Geheugenlimiet run_aster [MB]*).
 - **Oorzaak**: *Lineaire oplosser* = GCPC bij een slecht geconditioneerd model (bijv.
   slanke balken van volume-elementen).
 - **Gezien**: NIET in een bewaarde run; genoemd in
-  [Instellingen §2.6](Instellingen_contact_en_nietlineair.md#26-lineaire-solver-solver_nprec-lin_solver-lin_solver_resi).
+  [Instellingen §2.6](Instellingen_contact_en_nietlineair.md#26-lineaire-solver-solver_nprec-mumps_memory-lin_solver-lin_solver_resi).
 - **Oplossing**: *Lineaire oplosser* = MUMPS.
 - **Status**: model / instelling.
 

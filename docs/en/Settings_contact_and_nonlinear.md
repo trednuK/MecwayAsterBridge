@@ -62,7 +62,7 @@ What the nonlinear analyses support:
 | Group (heading on the page) | Keys | Analyses |
 |---|---|---|
 | Code-Aster run | `time_limit`, `memory_limit` | all |
-| Solver | `solver_nprec`; `lin_solver`, `lin_solver_resi` | all; `lin_solver` static only, `lin_solver_resi` static and the static step of modal, buckling and the imperfection |
+| Solver | `solver_nprec`, `mumps_memory`; `lin_solver`, `lin_solver_resi` | all; `lin_solver` static only, `lin_solver_resi` static and the static step of modal, buckling and the imperfection |
 | Steps and convergence | `substeps_per_interval` (static), `newton_max_iter`, `newton_reac_iter`, `default_time_end`, `convergence_criterion`, `convergence_resi_rela`, `convergence_resi_maxi`, `line_search`, `auto_time_stepping` (static) | nonlinear static, dynamic implicit (Newton and convergence also thermal); `default_time_end` also explicit |
 | Contact | `contact_algo`, `contact_smoothing`, `contact_pene_maxi` | nonlinear static, dynamic implicit (`contact_algo` also explicit) |
 | Material and kinematics | `plastic_strain_definition`, `deformation` | nonlinear static, dynamic |
@@ -516,7 +516,7 @@ large displacements the β part therefore stays as large as in the elastic model
 tangent stiffness would reduce it). The bridge does not set the keyword and does not
 change the default (there is no setting or `#ASTER` line for `'TANGENTE'`).
 
-### 2.6 Linear solver: `solver_nprec`, `lin_solver`, `lin_solver_resi`
+### 2.6 Linear solver: `solver_nprec`, `mumps_memory`, `lin_solver`, `lin_solver_resi`
 
 `SOLVEUR=_F(METHODE='MUMPS', NPREC=...)`. NPREC is the number of digits that may be
 lost in the factorisation before Code-Aster calls the matrix singular.
@@ -572,6 +572,54 @@ solver statistics end up in the `.mess` (convergence window, §4.4). That is abo
   and has no PETSc (`FERMETUR_10`, seen in a test run; U4.50.01 §3.7). The bridge
   therefore does not offer it.
 
+**Large models: `mumps_memory` (MUMPS memory, all analyses).** MUMPS keeps the
+factorization in memory when it fits in the memory of the job (`memory_limit`, §2.7).
+When it does not fit, Code-Aster puts it on disk by itself (`GESTION_MEMOIRE='AUTO'`),
+without a message: slower, and a lot of disk space in the work folder of the job. After
+a linear static run (analysis *Static*) the bridge reports this (WARNING with the memory
+MUMPS needed).
+
+| Value | Code-Aster | Where |
+|---|---|---|
+| `auto` (default) | nothing: Code-Aster decides | |
+| `low_rank` | `ACCELERATION='LR+'`, `LOW_RANK_SEUIL=1.0e-9`: compressed factorization | `MECA_STATIQUE`, `STAT_NON_LINE`, implicit `DYNA_NON_LINE`, `THER_LINEAIRE`/`THER_NON_LINE`, `MACRO_ELAS_MULT`, `MODE_STATIQUE`; not in `CALC_MODES`, `INFO_MODE` (eigenvalues, Sturm count), harmonic `DYNA_VIBRA` and explicit dynamics |
+| `out_of_core` | `GESTION_MEMOIRE='OUT_OF_CORE'`: factorization always on disk | every MUMPS solve, also `FACTORISER` |
+
+Measured with Code-Aster 17.4 (MUMPS 5.6.2), `MECA_STATIQUE` on a hex8 block,
+`memory_limit` 2048 MB:
+
+| Model | Setting | Job | On disk (work folder) | Peak memory (VmPeak) |
+|---|---|---|---|---|
+| 217,000 eq. | `auto` (MUMPS wants 3.8 GB, goes to disk) | 59 s | 2.1 GB | 1.3 GB |
+| | `low_rank` (tries in memory first, then goes to disk) | 57 s | 0.4 GB | 2.9 GB |
+| | `out_of_core` | 87 s | 2.1 GB | 1.4 GB |
+| | `auto` with `memory_limit` 8192 (in memory) | 55 s | 0.3 GB | 3.3 GB |
+| 680,000 eq. | `auto` (MUMPS wants 18.8 GB, goes to disk) | 240 s | 10.6 GB | 4.9 GB |
+| | `low_rank` (also to disk) | 160 s | 1.5 GB | 11.2 GB |
+
+The peak memory went above `memory_limit`: `memory_limit` is what MUMPS plans with when
+it chooses between memory and disk, not a hard limit of the process (NOT verified). The
+results of `low_rank` differed from those of `auto` by less than 1e-13 relative: in
+`MECA_STATIQUE` MUMPS refines the solution down to the error bound `RESI_RELA`. In
+`STAT_NON_LINE`, implicit `DYNA_NON_LINE` and nonlinear thermal MUMPS does not check the
+error bound (`RESI_RELA` -1); there Newton's equilibrium (`convergence_resi_rela`)
+sets the accuracy, and `low_rank` can cost extra Newton iterations (NOT measured). Order
+for a large model:
+
+1. Raise `memory_limit` to what the PC has free (not more than the free RAM).
+2. If the PC has memory for the peak of `low_rank` (table: 11.2 GB at 680,000 eq.), but
+   not for the factorization in memory: `low_rank` (faster, much less disk space).
+3. `out_of_core` only when `memory_limit` is set above the memory that is really free
+   (`auto` then tries in memory and the PC starts swapping); otherwise `auto` already
+   goes to disk by itself when needed.
+
+On Windows Code-Aster always keeps complex matrices in memory (`factor.py` message 86):
+in harmonic analyses `out_of_core` has no effect on the harmonic solve (WARNING). With
+`lin_solver` GCPC there is no MUMPS (WARNING). Per model:
+`#ASTER-OPTIE mumps_memory = low_rank` ([ASTER lines](ASTER_lines_examples.md)).
+`glob.*` and `vola.*` in the work folder are Code-Aster's database (results and temporary
+objects), not the factorization; they stay about the same size with this setting.
+
 ### 2.7 Other
 
 `time_limit` (Time limit run_aster) [s] and `memory_limit` (Memory limit run_aster)
@@ -610,6 +658,9 @@ What happens at the limit:
   137).
 
 In every case raise `time_limit` to compute further.
+
+Too little `memory_limit`: MUMPS puts the factorization on disk, slower and with a lot
+of disk space (§2.6, *Large models*).
 
 `energy_balance` (Energy balance; implicit dynamics only, default off): see §4.4.
 

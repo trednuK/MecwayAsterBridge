@@ -77,7 +77,7 @@ import os
 from collections import OrderedDict
 
 from bridge_utils import (log, parse_and_convert, CONFIG_BRIDGE, tr,
-                          run_name)
+                          run_name, mumps_keywords)
 
 ANALYSIS = "vibroacoustic_modes_3d"
 
@@ -542,6 +542,7 @@ def _mode_search_block(model_data, analysis, n):
                "(spurious modes at 0 Hz); 0.1 Hz used."))
         fmin = 0.1
     nprec = int(analysis.get("solver_nprec", 8))
+    mumps = mumps_keywords(analysis, low_rank=False)    # Sturm count
     seuil = "%.10g" % float(analysis.get("modal_tolerance", 1.0e-6))
     log("INFO: CALC_MODES vibro-acoustic: the first {0} modes above {1} "
         "Hz (OPTION 'BANDE', band searched with INFO_MODE).".format(
@@ -557,8 +558,8 @@ def _mode_search_block(model_data, analysis, n):
         "def _bridge_count(_fhi):",
         "    _t = INFO_MODE(TYPE_MODE='DYNAMIQUE', MATR_RIGI=rigidite,",
         "                   MATR_MASS=masse, FREQ=(bridge_fmin, _fhi),",
-        "                   SOLVEUR=_F(METHODE='MUMPS', NPREC={0}))".format(
-            nprec),
+        "                   SOLVEUR=_F(METHODE='MUMPS', NPREC={0}{1}))".format(
+            nprec, mumps),
         "    return int(_t.EXTR_TABLE().values()['NB_MODE'][0])",
         "",
         "_lo, _hi = bridge_fmin, max(10.0 * bridge_fmin, 1.0)",
@@ -590,7 +591,7 @@ def _mode_search_block(model_data, analysis, n):
         "    CALC_FREQ=_F(FREQ=(bridge_fmin, _hi)),",
         "    SOLVEUR_MODAL=_F(COEF_DIM_ESPACE=4),",
         "    VERI_MODE=_F(SEUIL={0}, STOP_ERREUR='NON'),".format(seuil),
-        "    SOLVEUR=_F(METHODE='MUMPS', NPREC={0}),".format(nprec),
+        "    SOLVEUR=_F(METHODE='MUMPS', NPREC={0}{1}),".format(nprec, mumps),
         ")",
         "_tb = RECU_TABLE(CO=res_band, NOM_PARA=('FREQ', 'MASS_GENE'))"
         ".EXTR_TABLE().values()",

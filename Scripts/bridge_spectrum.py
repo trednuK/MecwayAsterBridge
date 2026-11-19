@@ -41,7 +41,7 @@ import os
 import re
 
 import bridge_to_aster as b2a
-from bridge_utils import log, tr, CONFIG_BRIDGE, run_name
+from bridge_utils import log, tr, CONFIG_BRIDGE, run_name, mumps_solveur
 
 
 _DIRS = ("X", "Y", "Z")
@@ -298,6 +298,7 @@ def _spectrum_block(spectra, custom, abscissa, analysis, alpha, beta, zeta,
         ] + (["    CARA_ELEM=cara,"] if cara_ref else []) + [
             "    PSEUDO_MODE=_F(AXE=({0},)),".format(
                 ", ".join("'{0}'".format(d) for d in dirs)),
+        ] + ([mumps_solveur(analysis)] if mumps_solveur(analysis) else []) + [
             ")",
             "{fields_ps}",
         ]
