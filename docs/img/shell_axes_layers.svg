@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 400" width="720" height="400">
+  <rect width="720" height="400" fill="#ffffff"/>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#333"/>
+    </marker>
+  </defs>
+  <!-- left: quad4 shell element (mid-surface), seen from the top side -->
+  <polygon points="90,320 370,320 450,200 170,200" fill="#d6e4f0" stroke="#333" stroke-width="2"/>
+  <!-- node order 1 -> 2 -> 3 -> 4 (counter-clockwise seen from +W) -->
+  <path d="M 190 292 L 330 292 L 380 222 L 225 222" fill="none" stroke="#666" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#ah)"/>
+  <!-- nodes: node 1 filled -->
+  <circle cx="90" cy="320" r="7" fill="#333" stroke="#333" stroke-width="2"/>
+  <circle cx="370" cy="320" r="7" fill="#ffffff" stroke="#333" stroke-width="2"/>
+  <circle cx="450" cy="200" r="7" fill="#ffffff" stroke="#333" stroke-width="2"/>
+  <circle cx="170" cy="200" r="7" fill="#ffffff" stroke="#333" stroke-width="2"/>
+  <!-- local axes at node 1 -->
+  <line x1="90" y1="320" x2="90" y2="150" stroke="#333" stroke-width="2.5" marker-end="url(#ah)"/>
+  <text x="100" y="160" font-family="sans-serif" font-style="italic" font-size="20" fill="#333">W</text>
+  <line x1="90" y1="320" x2="250" y2="320" stroke="#333" stroke-width="2.5" marker-end="url(#ah)"/>
+  <text x="240" y="346" font-family="sans-serif" font-style="italic" font-size="20" fill="#333">U</text>
+  <line x1="90" y1="320" x2="140" y2="245" stroke="#333" stroke-width="2.5" marker-end="url(#ah)"/>
+  <text x="112" y="244" font-family="sans-serif" font-style="italic" font-size="20" fill="#333">V</text>
+  <!-- right: section through the thickness, U to the right, W up -->
+  <rect x="540" y="130" width="70" height="140" fill="#d6e4f0" stroke="none"/>
+  <line x1="540" y1="130" x2="610" y2="130" stroke="#333" stroke-width="2.5"/>
+  <line x1="540" y1="200" x2="610" y2="200" stroke="#333" stroke-width="1.5" stroke-dasharray="8 5"/>
+  <line x1="540" y1="270" x2="610" y2="270" stroke="#333" stroke-width="2.5"/>
+  <line x1="610" y1="130" x2="610" y2="270" stroke="#333" stroke-width="1.5"/>
+  <line x1="540" y1="130" x2="540" y2="270" stroke="#333" stroke-width="1" stroke-dasharray="3 3"/>
+  <!-- momentu > 0: linear stress along U, tension on top -->
+  <g stroke="#333" stroke-width="1.8">
+    <line x1="610" y1="138" x2="666" y2="138" marker-end="url(#ah)"/>
+    <line x1="610" y1="169" x2="638" y2="169" marker-end="url(#ah)"/>
+    <line x1="610" y1="231" x2="584" y2="231" marker-end="url(#ah)"/>
+    <line x1="610" y1="262" x2="556" y2="262" marker-end="url(#ah)"/>
+    <line x1="670" y1="134" x2="550" y2="266" stroke-width="1" stroke-dasharray="4 3"/>
+  </g>
+  <!-- small axes of the section -->
+  <line x1="560" y1="350" x2="610" y2="350" stroke="#333" stroke-width="1.5" marker-end="url(#ah)"/>
+  <text x="614" y="356" font-family="sans-serif" font-style="italic" font-size="16" fill="#333">U</text>
+  <line x1="560" y1="350" x2="560" y2="305" stroke="#333" stroke-width="1.5" marker-end="url(#ah)"/>
+  <text x="568" y="312" font-family="sans-serif" font-style="italic" font-size="16" fill="#333">W</text>
+  <!-- markers -->
+  <g font-family="sans-serif" font-weight="bold" font-size="14" fill="#ffffff" text-anchor="middle">
+    <circle cx="62" cy="340" r="11" fill="#c0392b"/><text x="62" y="345">1</text>
+    <circle cx="300" cy="262" r="11" fill="#c0392b"/><text x="300" y="267">2</text>
+    <circle cx="66" cy="170" r="11" fill="#c0392b"/><text x="66" y="175">3</text>
+    <circle cx="200" cy="344" r="11" fill="#c0392b"/><text x="200" y="349">4</text>
+    <circle cx="150" cy="282" r="11" fill="#c0392b"/><text x="150" y="287">5</text>
+    <circle cx="515" cy="130" r="11" fill="#c0392b"/><text x="515" y="135">6</text>
+    <circle cx="515" cy="200" r="11" fill="#c0392b"/><text x="515" y="205">7</text>
+    <circle cx="515" cy="270" r="11" fill="#c0392b"/><text x="515" y="275">8</text>
+    <circle cx="690" cy="160" r="11" fill="#c0392b"/><text x="690" y="165">9</text>
+  </g>
+</svg>

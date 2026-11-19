@@ -507,6 +507,51 @@ vergeleken in [`Verificatie.md`](Verificatie.md) (LS-30 .. LS-32, NL-30). Grenze
   oplossing), dus alleen tegen de definitie (manual v34 par. 8.7) gecontroleerd;
   alleen het von Mises-criterium (Tsai-Wu e.a.: WARNING).
 
+**Assen en tekens van schalen en balken.** De twee figuren hieronder tonen de lokale
+assen, de oppervlakken en de tekens van de schaal- en balkresultaten uit de tabel
+hierboven, zoals de bridge ze schrijft; ze zijn gelijk aan die van Mecway's eigen
+oplossing (verificatie LS-30, LS-31, LS-31g met omgekeerde knoopvolgorde).
+
+![Schaalelement: lokale assen U, V, W en het boven-, midden- en onderoppervlak](img/shell_axes_layers.svg)
+
+1. Knoop 1, de eerste knoop van het element.
+2. De knoopvolgorde 1 → 2 → 3 → 4.
+3. W, de elementnormaal: rechtsdraaiend uit de knoopvolgorde (tegen de klok in gezien
+   vanaf de punt van W).
+4. U: de rand van knoop 1 naar knoop 2 (kwadratische schalen: knoop 1 naar knoop 3, de
+   volgende hoek), of de projectie op het element van de U-vector van *Element
+   properties* (`orientationu*`) of van een *Element orientation*-kaart.
+5. V = W × U.
+6. Bovenoppervlak, aan de kant van +W: achtervoegsel `u1` voor spanningen
+   (`stressxxu1`, `vonmisesu1`), `u` voor rekken (`lstrainxxu`); in Code-Aster `SUP`.
+7. Middenvlak: `m1` voor spanningen, `m` voor rekken; in Code-Aster `MOY`.
+8. Onderoppervlak, aan de kant van −W: `b1` voor spanningen, `b` voor rekken; in
+   Code-Aster `INF`.
+9. `momentu` > 0: de spanning langs U uit dit moment is trek aan de bovenkant en druk aan
+   de onderkant, lineair over de dikte.
+
+Dit geldt voor schalen in 3D. Axisymmetrische schalen (line3) bepalen hun bovenkant
+anders: [`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md#142-axisymmetrische-schalen-line3-coque_axis) §1.4.2.
+
+![Balkelement: lokale assen U, V, W en de zes snedekrachten](img/beam_section_forces.svg)
+
+1. Knoop 1, de eerste knoop van het balkelement.
+2. Knoop 2; het deel van de balk naar knoop 2 toe (gestreept) is weggesneden.
+3. Het snedevlak van het deel naar knoop 1 toe. De zes snedekrachten zijn de componenten
+   langs U, V en W van de kracht (bovenste tekening) en het moment (onderste tekening)
+   die het deel naar knoop 2 toe op dit vlak uitoefent.
+4. `tensileforce` langs +U, U van knoop 1 naar knoop 2: positief is trek.
+5. `sheary` langs +V, Mecway's V-as van de balk.
+6. `shearz` langs +W, W = U × V.
+7. `torsion` om +U (rechterhandregel).
+8. `bendingmomv` om +V.
+9. `bendingmomw` om +W.
+
+In Code-Aster zijn dit `N`, `VY`, `VZ`, `MT`, `MFY`, `MFZ` met de lokale y-as = V en
+z = W. Tegen Mecway geverifieerd voor `POU_D_E` (LS-30); `POU_D_T` geeft dezelfde
+componenten, de tekens NIET tegen Mecway geverifieerd; met `elem_beam` = `POU_D_T_GD`
+komen de waarden uit `SIEF_*` en zijn de tekens NIET geverifieerd.
+
 **Controle van massa en reacties** (lineair en niet-lineair statisch). Na de run staat
 in de log (INFO) en het statusvak een regel als
 
@@ -768,6 +813,24 @@ pad ingekort, §1), `<run-id>` de datum en tijd van de start, bijv.
 `ProfielBuigen_20261006_101500.mess`. Zo staan ze bij elkaar en overschrijft een
 volgende run niets. In meldingen staat de echte naam. De werkmap is de map uit het veld *Werkmap*, of met *Werkmap naast het model* de submap `<model>_aster` naast het open model (§3).
 
+![De bestanden van één run, van het model tot de resultaten in Mecway](img/run_files_flow.svg)
+
+1. Het model in Mecway, `<model>.liml`.
+2. De kopie van het model die de run leest, `<model>_<run-id>_model.liml` (Mecway 36 of
+   later, §2 stap 4); verwijderd na een run zonder fouten waarvan de resultaten zijn
+   geladen. Met eerdere Mecway-versies slaat de bridge de `.liml` op en leest die.
+3. De bridge.
+4. De mesh `<model>_<run-id>.mail` en de Code-Aster-invoer `.comm` en `.export`.
+5. Code-Aster, in een eigen venster.
+6. `<model>_<run-id>.mess`, `_console.txt` en de samenvatting `_aster_summary.txt`
+   (§5.2; niet met de instelling uit).
+7. `<model>_<run-id>_results.xml`: de resultaten in Mecway's eigen formaat.
+8. Alleen als je ze kiest: `.rmed` en `.pvd`/`.vtu` voor ParaView en AsterStudy (§5.1).
+9. De bridge zet de resultaten in de `.liml` en opent het model opnieuw.
+10. De vorige versie van de `.liml`: `<model>.liml.bak`.
+11. Later, met "Resultaten...": de resultaten uit de `.liml` halen of opnieuw laden uit
+    `_results.xml` (§5.1).
+
 | Bestand | Inhoud |
 |---|---|
 | `<model>_<run-id>_bridge_log.txt` | log van de bridge (INFO/WARNING/ERROR per stap); `bridge_log.txt`: alleen meldingen buiten een run (bijv. *Resultaten...*) |
@@ -950,8 +1013,10 @@ van de standaardwaarden, staat in
   niet getest (WARNING, [`Na_een_update.md`](Na_een_update.md)).
 - **Aanname:** met *Configuratie* = `auto` is de enige configuratie of die zonder
   onderdrukte items de bedoelde (§4); de API kan de actieve configuratie niet lezen.
-- **Aanname:** de bovenkant van een schaal in Code-Aster (`SUP`, kant van de positieve
-  elementnormaal) is Mecway's `vonmisesu1`; NIET geverifieerd.
+- De bovenkant van een schaal in Code-Aster (`SUP`, kant van de positieve
+  elementnormaal) is Mecway's bovenkant (`vonmisesu1`, achtervoegsel `u1`): nagelopen
+  tegen Mecway's eigen oplossing (verificatie LS-31; met omgedraaide W het teken van
+  `momentu` in LS-31g; §4.1).
 - **Aanname:** een formule in t wordt bemonsterd zoals Mecway dat voor CCX doet (§4).
 - Het niet-modale hoofdvenster en de knoppen zijn NIET voor alle handelingen in Mecway
   geverifieerd (KNOWN_BUGS 38).

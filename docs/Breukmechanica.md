@@ -105,6 +105,22 @@ R_INF en R_SUP zijn de binnen- en buitenstraal van de ring rond het front waarov
 in Mecway's custom input, bijv. `#ASTER-OPTIE fracture_r_inf = 0.002` en `#ASTER-OPTIE fracture_r_sup = 0.004`
 ([`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md) voorbeeld 16).
 
+De figuur hieronder is een doorsnede loodrecht op het front. De scheur is voor de
+duidelijkheid open getekend; in de mesh liggen de twee lippen op dezelfde plaats (§1.2).
+
+![Doorsnede dwars op het scheurfront: de twee lippen, het front, het ligament en de ring tussen R_INF en R_SUP](img/fracture_lips_ring.svg)
+
+1. De ene lip, `CRACK_LIP_UPPER`: de elementvlakken van die lip.
+2. De andere lip, `CRACK_LIP_LOWER`: de knopen liggen op dezelfde plaats als die van de
+   eerste lip, maar zijn er niet mee verbonden.
+3. Het front, `CRACK_FRONT`: hier één knoop; het front loopt het papier in.
+4. Het ligament: het niet-gescheurde deel van het scheurvlak, knopen die beide kanten
+   delen.
+5. R_INF, de binnenstraal van de ring (`fracture_r_inf`).
+6. R_SUP, de buitenstraal (`fracture_r_sup`).
+7. De ring tussen R_INF en R_SUP, waar θ van 1 naar 0 zakt, waarover `CALC_G`
+   integreert.
+
 ### 1.5 Starten en resultaten
 
 Klik *Starten*. Na afloop staat in de log en het statusvak bijvoorbeeld (verificatie

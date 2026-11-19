@@ -60,6 +60,22 @@ cyclus 600/−500 MPa geeft N(550 MPa)). Een curve met Δσ (bijv. Eurocode 3
 detailcategorieën) deel je dus eerst door 2: Δσ_C = 80 MPa bij 2·10⁶ wordt
 `S = 40 MPa, N = 2e6, m = 3`.
 
+![Een belastingcyclus met amplitude S en bereik, en een Wöhler-curve in tabelvorm](img/fatigue_amplitude_sn.svg)
+
+1. σ_max, de grootste spanning van de cyclus.
+2. σ_min, de kleinste spanning van de cyclus.
+3. Het gemiddelde σ_m = (σ_max + σ_min)/2. Met `correctie` = `GEEN` (standaard) telt
+   alleen S; met `GOODMAN` of `GERBER` geeft het gemiddelde de equivalente amplitude
+   S_eq; een criterium (§1.7) gebruikt het gemiddelde zelf.
+4. De amplitude S = σ_a = (σ_max − σ_min)/2: de S van `#ASTER-WOHLER`.
+5. Het bereik Δσ = σ_max − σ_min = 2 S.
+6. De punten (S, N) van de tabelvorm, op logaritmische assen.
+7. Tussen de punten: rechte lijnen in log-log (`INTERPOL = LOG`, standaard).
+8. Onder de eerste (kleinste) S van de tabel: geen schade, N oneindig
+   (`PROL_GAUCHE = EXCLU`, standaard).
+9. Boven de laatste (grootste) S: het laatste segment verlengd
+   (`PROL_DROITE = LINEAIRE`, standaard, met een WARNING), tot N = 1.
+
 Vier vormen:
 
 | Vorm | Sleutels | N(S) |
@@ -259,7 +275,8 @@ spanning van `POST_CHAMP EXTR_COQUE` (zoals voor von Mises) als `SIEQ_NOEU`:
 `spanning = VMIS_SG` gebruikt de component `VMIS_SG`, `PRIN` de `PRIN_i` met de
 grootste absolute waarde. Dat zijn invarianten, dus het lokale assenstelsel van de
 schaal speelt geen rol. Bij buiging hebben boven en onder hetzelfde bereik maar een
-tegengesteld gemiddelde: met Goodman verschilt de schade (VM-10).
+tegengesteld gemiddelde: met Goodman verschilt de schade (VM-10). Welke kant de bovenzijde is (de
+elementnormaal uit de knoopvolgorde) staat in de figuur in [`Handleiding.md` §4.1](Handleiding.md#41-resultaatvelden).
 
 Niet bij schalen: een rekcurve en een multiaxiaal criterium (WARNING, schalen
 overgeslagen). Balken, staven en veren: geen schade.

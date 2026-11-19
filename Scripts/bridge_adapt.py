@@ -573,11 +573,10 @@ def after_run(history, settings, model_data, fragment_path, error_summary):
                                          _fmt(rec["rel"]), _fmt(target)))
     if not errors:
         return stop(tr(u"Adaptieve verfijning gestopt: geen fout per element "
-                       u"in het resultaatbestand (veld errorestimate; "
-                       u"resultaatroute 'liml' nodig).",
+                       u"in het resultaatbestand (veld errorestimate).",
                        u"Adaptive refinement stopped: no error per element "
-                       u"in the result file (field errorestimate; result "
-                       u"route 'liml' needed)."), "WARNING")
+                       u"in the result file (field errorestimate)."),
+                "WARNING")
     chosen = select_elements(errors, settings["adapt_select"],
                              float(settings["adapt_fraction"]))
     # Optionally a buffer layer (add_neighbours; thin elements).

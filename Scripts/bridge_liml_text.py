@@ -23,8 +23,8 @@
 # caller saves the model as before (Mecway 33-35).
 #
 # Users: MecwayAsterBridgeMain (a run: the snapshot is the model the run
-# reads, also model_data["liml_path"] for the job; route 'liml' saves the
-# user's file only right before the results go into it; Show section: a
+# reads, also model_data["liml_path"] for the job; the run saves the user's
+# file only right before the results go into it; Show section: a
 # temporary snapshot). The decisions of a run are the pure functions
 # saved_path, wants_snapshot, save_problem, same_text and clean_end.
 

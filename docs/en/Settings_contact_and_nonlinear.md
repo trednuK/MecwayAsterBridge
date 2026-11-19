@@ -119,6 +119,21 @@ this happens more often, because of the step guard (`gd_step_limit`, §2.9): the
 of NK-05 shows 137 times in Mecway instead of 101. Not with Mecway's *Automatic time
 stepping*: `ARCHIVAGE` then keeps only the output times.
 
+![Solver times of a nonlinear static analysis with Mecway's Time step size](../img/nonlin_time_steps.svg)
+
+The figure shows a nonlinear static analysis with Mecway's *Time step size* and without
+*Automatic time stepping*: every solver time is stored and goes to Mecway. λ is the
+value of a load table.
+
+1. Mecway's step dt: solver times dt, 2 dt, ... up to the period.
+2. A kink of a load table between two steps: an extra solver time, also stored.
+3. The period T: the last solver time.
+4. Points of the load table after the period: dropped (INFO in the log).
+5. A step that does not converge (`EVENEMENT='ERREUR'`) is cut into 4 equal steps
+   (`SUBD_PAS=4`, see "Implicit dynamic" below); they are all stored, so Mecway gets
+   extra times.
+6. A cut step that again does not converge is cut into 4 again.
+
 **Implicit dynamic.** The bridge creates a `DEFI_LIST_INST` with:
 
 ```
@@ -819,6 +834,19 @@ slave (U2.04.04, "Sharp angles"). With convergence problems, especially with
 plasticity, swapping the roles can help (U2.04.04 §2.2.3). Many master nodes inside
 the slave face after the analysis: mesh too coarse or too large a difference in
 fineness (U2.04.04 §2.2.5).
+
+![Master and slave: a stiff, coarse master body, a fine slave body, outward normals and a master corner in the slave face](../img/contact_master_slave.svg)
+
+1. Master: the stiff body with the coarse mesh (`GROUP_MA_MAIT`).
+2. Slave: the body with the fine mesh (`GROUP_MA_ESCL`).
+3. Outward normal of the master face.
+4. Outward normal of the slave face. On faces of solid elements the bridge orients both
+   outward with `MODI_MAILLAGE ORIE_PEAU` (§3.3).
+5. A slave node: Code-Aster keeps it out of the master body; here it lies on the master
+   face.
+6. A master node, the sharp corner: Code-Aster does not keep it out of the slave body, so
+   it can enter the slave face between two slave nodes. That is why a face with a sharp
+   corner becomes slave.
 
 ### 3.3 Normals
 

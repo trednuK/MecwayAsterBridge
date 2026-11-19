@@ -60,6 +60,22 @@ the 600/−500 MPa cycle gives N(550 MPa)). A curve in Δσ (e.g. Eurocode 3 det
 categories) must therefore be divided by 2 first: Δσ_C = 80 MPa at 2·10⁶ becomes
 `S = 40 MPa, N = 2e6, m = 3`.
 
+![A load cycle with amplitude S and range, and a Wöhler curve in table form](../img/fatigue_amplitude_sn.svg)
+
+1. σ_max, the largest stress of the cycle.
+2. σ_min, the smallest stress of the cycle.
+3. The mean σ_m = (σ_max + σ_min)/2. With `correctie` = `GEEN` (default) only S counts;
+   with `GOODMAN` or `GERBER` the mean gives the equivalent amplitude S_eq; a criterion
+   (§1.7) uses the mean itself.
+4. The amplitude S = σ_a = (σ_max − σ_min)/2: the S of `#ASTER-WOHLER`.
+5. The range Δσ = σ_max − σ_min = 2 S.
+6. The points (S, N) of the table form, on logarithmic axes.
+7. Between the points: straight lines in log-log (`INTERPOL = LOG`, default).
+8. Below the first (smallest) S of the table: no damage, N infinite
+   (`PROL_GAUCHE = EXCLU`, default).
+9. Above the last (largest) S: the last segment extended (`PROL_DROITE = LINEAIRE`,
+   default, with a WARNING), down to N = 1.
+
 Four forms:
 
 | Form | Keys | N(S) |
@@ -260,7 +276,8 @@ positive element normal, Code-Aster `NIVE_COUCHE='SUP'`, in Mecway the same side
 component `VMIS_SG`, `PRIN` the `PRIN_i` with the largest absolute value. These are
 invariants, so the local coordinate system of the shell plays no role. In bending, top
 and bottom have the same range but an opposite mean: with Goodman the damage differs
-(VM-10).
+(VM-10). Which side is the top (the element normal from the node order) is shown in
+the figure in [`UserGuide.md` §4.1](UserGuide.md#41-result-fields).
 
 Not for shells: a strain curve and a multiaxial criterion (WARNING, shells skipped).
 Beams, trusses and springs: no damage.

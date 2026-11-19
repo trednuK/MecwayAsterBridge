@@ -178,6 +178,25 @@ toe).
     gecontroleerd, NIET in het Mecway-venster; dat Mecway het kenmerk bij opslaan houdt,
     is buiten de bridge gemeten (Mecway 35).
 
+![Bezwijken van één element over de opgeslagen stappen: plastische rek, spanning, de variabele failed en het verborgen element](img/failure_flag_steps.svg)
+
+De figuur volgt één element dat bezwijkt bij de derde opgeslagen stap, in een
+niet-lineaire statische analyse (met bezwijken wordt elke rekenstap opgeslagen).
+
+1. De grens van de plastische rek p (§1).
+2. Het bezwijktijdstip: de eerste gecontroleerde stap (elke stap van de tijdlijst, geen
+   geknipte deelstap) waarin p de grens overschrijdt. De resultaten van deze stap tonen
+   nog de berekende toestand waardoor het element bezweek.
+3. De plastische rek blijft na het bezwijken behouden.
+4. Vanaf de volgende stap is de spanning van het element ongeveer 0 (zacht materiaal,
+   spanning naar nul, §3).
+5. De element-knoopvariabele `failed`: 0 tot en met het bezwijktijdstip, 1 vanaf de
+   volgende opgeslagen stap.
+6. Met *Bezweken elementen verbergen* aan verdwijnt het element uit Mecway's
+   resultaatweergave vanaf de stap waarin `failed` 1 wordt (samengevouwen op zijn
+   zwaartepunt van de stap ervoor). Een element dat bij de laatste opgeslagen stap
+   bezwijkt, blijft zichtbaar.
+
 ## 5. Testmodellen
 
 In `TestFiles/`. Alle getallen hieronder komen uit runs met Code-Aster 17.4 en de

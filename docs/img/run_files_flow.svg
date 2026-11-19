@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 360" width="720" height="360">
+  <rect width="720" height="360" fill="#ffffff"/>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#333"/>
+    </marker>
+  </defs>
+  <!-- files of one run: model, model copy, bridge, mesh/.comm/.export, Code-Aster,
+       .mess, _results.xml, .rmed/.pvd (optional), back into the .liml (.bak kept),
+       Results... remove / load again (dashed) -->
+  <path d="M40 50 H74 L86 62 V108 H40 Z" fill="#ffffff" stroke="#333" stroke-width="1.8"/>
+  <path d="M74 50 V62 H86" fill="none" stroke="#333" stroke-width="1.2"/>
+  <polygon points="48,100 63,100 55,84" fill="#d6e4f0" stroke="#2c5d8a" stroke-width="1"/>
+  <polygon points="63,100 70,84 55,84" fill="#d6e4f0" stroke="#2c5d8a" stroke-width="1"/>
+  <polygon points="63,100 78,100 70,84" fill="#d6e4f0" stroke="#2c5d8a" stroke-width="1"/>
+  <polygon points="55,84 70,84 62,70" fill="#d6e4f0" stroke="#2c5d8a" stroke-width="1"/>
+  <path d="M150 50 H184 L196 62 V108 H150 Z" fill="#ffffff" stroke="#333" stroke-width="1.8"/>
+  <path d="M184 50 V62 H196" fill="none" stroke="#333" stroke-width="1.2"/>
+  <line x1="158" y1="74" x2="186" y2="74" stroke="#999" stroke-width="1.5"/>
+  <line x1="158" y1="84" x2="186" y2="84" stroke="#999" stroke-width="1.5"/>
+  <line x1="158" y1="94" x2="186" y2="94" stroke="#999" stroke-width="1.5"/>
+  <rect x="262" y="45" width="76" height="68" rx="12" fill="#d6e4f0" stroke="#333" stroke-width="1.8"/>
+  <polygon points="320.0,79.0 319.6,82.9 313.7,84.7 312.3,87.2 314.1,93.1 311.1,95.6 305.7,92.7 302.9,93.5 300.0,99.0 296.1,98.6 294.3,92.7 291.8,91.3 285.9,93.1 283.4,90.1 286.3,84.7 285.5,81.9 280.0,79.0 280.4,75.1 286.3,73.3 287.7,70.8 285.9,64.9 288.9,62.4 294.3,65.3 297.1,64.5 300.0,59.0 303.9,59.4 305.7,65.3 308.2,66.7 314.1,64.9 316.6,67.9 313.7,73.3 314.5,76.1" fill="#2c5d8a" stroke="#2c5d8a" stroke-width="1"/>
+  <circle cx="300" cy="79" r="6.4" fill="#d6e4f0"/>
+  <path d="M405 44 H439 L451 56 V102 H405 Z" fill="#ffffff" stroke="#333" stroke-width="1.8"/>
+  <path d="M439 44 V56 H451" fill="none" stroke="#333" stroke-width="1.2"/>
+  <line x1="413" y1="68" x2="441" y2="68" stroke="#999" stroke-width="1.5"/>
+  <line x1="413" y1="78" x2="441" y2="78" stroke="#999" stroke-width="1.5"/>
+  <line x1="413" y1="88" x2="441" y2="88" stroke="#999" stroke-width="1.5"/>
+  <path d="M413 52 H447 L459 64 V110 H413 Z" fill="#ffffff" stroke="#333" stroke-width="1.8"/>
+  <path d="M447 52 V64 H459" fill="none" stroke="#333" stroke-width="1.2"/>
+  <line x1="421" y1="76" x2="449" y2="76" stroke="#999" stroke-width="1.5"/>
+  <line x1="421" y1="86" x2="449" y2="86" stroke="#999" stroke-width="1.5"/>
+  <line x1="421" y1="96" x2="449" y2="96" stroke="#999" stroke-width="1.5"/>
+  <path d="M421 60 H455 L467 72 V118 H421 Z" fill="#ffffff" stroke="#333" stroke-width="1.8"/>
+  <path d="M455 60 V72 H467" fill="none" stroke="#333" stroke-width="1.2"/>
+  <line x1="429" y1="84" x2="457" y2="84" stroke="#999" stroke-width="1.5"/>
+  <line x1="429" y1="94" x2="457" y2="94" stroke="#999" stroke-width="1.5"/>
+  <line x1="429" y1="104" x2="457" y2="104" stroke="#999" stroke-width="1.5"/>
+  <rect x="552" y="45" width="76" height="68" rx="12" fill="#d6e4f0" stroke="#333" stroke-width="1.8"/>
+  <polygon points="614.0,79.0 613.7,82.8 606.9,84.5 605.8,87.1 609.4,93.1 607.0,96.0 600.4,93.4 598.1,94.8 597.4,101.8 593.8,102.7 590.0,96.8 587.2,96.5 582.6,101.8 579.1,100.4 579.6,93.4 577.4,91.6 570.6,93.1 568.6,89.9 573.1,84.5 572.5,81.8 566.0,79.0 566.3,75.2 573.1,73.5 574.2,70.9 570.6,64.9 573.0,62.0 579.6,64.6 581.9,63.2 582.6,56.2 586.2,55.3 590.0,61.2 592.8,61.5 597.4,56.2 600.9,57.6 600.4,64.6 602.6,66.4 609.4,64.9 611.4,68.1 606.9,73.5 607.5,76.2" fill="#2c5d8a" stroke="#2c5d8a" stroke-width="1"/>
+  <circle cx="590" cy="79" r="7.7" fill="#d6e4f0"/>
+  <path d="M 90 79 H 144" fill="none" stroke="#333" stroke-width="2" marker-end="url(#ah)"/>
+  <path d="M 200 79 H 258" fill="none" stroke="#333" stroke-width="2" marker-end="url(#ah)"/>
+  <path d="M 342 79 H 399" fill="none" stroke="#333" stroke-width="2" marker-end="url(#ah)"/>
+  <path d="M 472 85 H 548" fill="none" stroke="#333" stroke-width="2" marker-end="url(#ah)"/>
+  <line x1="590" y1="113" x2="590" y2="150" stroke="#333" stroke-width="2"/>
+  <path d="M610 210 H644 L656 222 V268 H610 Z" fill="#ffffff" stroke="#333" stroke-width="1.8"/>
+  <path d="M644 210 V222 H656" fill="none" stroke="#333" stroke-width="1.2"/>
+  <line x1="618" y1="234" x2="646" y2="234" stroke="#999" stroke-width="1.5"/>
+  <line x1="618" y1="244" x2="646" y2="244" stroke="#999" stroke-width="1.5"/>
+  <line x1="618" y1="254" x2="646" y2="254" stroke="#999" stroke-width="1.5"/>
+  <path d="M490 210 H524 L536 222 V268 H490 Z" fill="#d6e4f0" stroke="#333" stroke-width="1.8"/>
+  <path d="M524 210 V222 H536" fill="none" stroke="#333" stroke-width="1.2"/>
+  <line x1="498" y1="234" x2="526" y2="234" stroke="#999" stroke-width="1.5"/>
+  <line x1="498" y1="244" x2="526" y2="244" stroke="#999" stroke-width="1.5"/>
+  <line x1="498" y1="254" x2="526" y2="254" stroke="#999" stroke-width="1.5"/>
+  <path d="M370 210 H404 L416 222 V268 H370 Z" fill="#ffffff" stroke="#333" stroke-width="1.8" stroke-dasharray="5 4"/>
+  <path d="M404 210 V222 H416" fill="none" stroke="#333" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <line x1="378" y1="234" x2="406" y2="234" stroke="#999" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <line x1="378" y1="244" x2="406" y2="244" stroke="#999" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <line x1="378" y1="254" x2="406" y2="254" stroke="#999" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <path d="M 590 150 H 518 V 204" fill="none" stroke="#333" stroke-width="2" marker-end="url(#ah)"/>
+  <path d="M 590 150 H 398 V 204" fill="none" stroke="#333" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#ah)"/>
+  <path d="M 590 150 H 638 V 204" fill="none" stroke="#333" stroke-width="2" marker-end="url(#ah)"/>
+  <path d="M 505 268 V 300 H 63 V 114" fill="none" stroke="#333" stroke-width="2" marker-end="url(#ah)"/>
+  <path d="M150 150 H184 L196 162 V208 H150 Z" fill="#ffffff" stroke="#333" stroke-width="1.8"/>
+  <path d="M184 150 V162 H196" fill="none" stroke="#333" stroke-width="1.2"/>
+  <line x1="158" y1="174" x2="186" y2="174" stroke="#999" stroke-width="1.5"/>
+  <line x1="158" y1="184" x2="186" y2="184" stroke="#999" stroke-width="1.5"/>
+  <line x1="158" y1="194" x2="186" y2="194" stroke="#999" stroke-width="1.5"/>
+  <path d="M 90 100 Q 120 130 146 165" fill="none" stroke="#333" stroke-width="2" marker-end="url(#ah)"/>
+  <path d="M 521 274 V 328 H 40 V 112" fill="none" stroke="#333" stroke-width="2" stroke-dasharray="7 5" marker-start="url(#ah)" marker-end="url(#ah)"/>
+  <g font-family="sans-serif" font-weight="bold" font-size="14" fill="#ffffff" text-anchor="middle">
+    <circle cx="30" cy="40" r="11" fill="#c0392b"/><text x="30" y="45">1</text>
+    <circle cx="162" cy="36" r="11" fill="#c0392b"/><text x="162" y="41">2</text>
+    <circle cx="300" cy="30" r="11" fill="#c0392b"/><text x="300" y="35">3</text>
+    <circle cx="446" cy="30" r="11" fill="#c0392b"/><text x="446" y="35">4</text>
+    <circle cx="590" cy="28" r="11" fill="#c0392b"/><text x="590" y="33">5</text>
+    <circle cx="660" cy="290" r="11" fill="#c0392b"/><text x="660" y="295">6</text>
+    <circle cx="555" cy="240" r="11" fill="#c0392b"/><text x="555" y="245">7</text>
+    <circle cx="356" cy="240" r="11" fill="#c0392b"/><text x="356" y="245">8</text>
+    <circle cx="230" cy="286" r="11" fill="#c0392b"/><text x="230" y="291">9</text>
+    <circle cx="178" cy="222" r="11" fill="#c0392b"/><text x="178" y="227">10</text>
+    <circle cx="230" cy="342" r="11" fill="#c0392b"/><text x="230" y="347">11</text>
+  </g>
+</svg>

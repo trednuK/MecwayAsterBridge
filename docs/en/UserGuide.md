@@ -509,6 +509,51 @@ in [`Verification.md`](Verification.md) (LS-30 .. LS-32, NL-30). Limits:
   solution), so it was only checked against the definition (manual v34 sec. 8.7); only
   the von Mises criterion (Tsai-Wu etc.: WARNING).
 
+**Axes and signs of shells and beams.** The two figures below show the local axes, the
+surfaces and the signs of the shell and beam results in the table above, as the bridge
+writes them; they equal those of Mecway's own solution (verification LS-30, LS-31,
+LS-31g with the node order reversed).
+
+![Shell element: local axes U, V, W and the top, middle and bottom surface](../img/shell_axes_layers.svg)
+
+1. Node 1, the first node of the element.
+2. The node order 1 → 2 → 3 → 4.
+3. W, the element normal: right-handed from the node order (counter-clockwise seen from
+   the tip of W).
+4. U: the edge from node 1 to node 2 (quadratic shells: node 1 to node 3, the next
+   corner), or the projection on the element of the U vector of *Element properties*
+   (`orientationu*`) or of an *Element orientation* card.
+5. V = W × U.
+6. Top surface, on the side of +W: suffix `u1` for stresses (`stressxxu1`, `vonmisesu1`),
+   `u` for strains (`lstrainxxu`); in Code-Aster `SUP`.
+7. Middle surface: `m1` for stresses, `m` for strains; in Code-Aster `MOY`.
+8. Bottom surface, on the side of −W: `b1` for stresses, `b` for strains; in Code-Aster
+   `INF`.
+9. `momentu` > 0: the stress along U from this moment is tension on the top surface and
+   compression on the bottom surface, linear over the thickness.
+
+This applies to shells in 3D. Axisymmetric shells (line3) define their top side
+differently: [`2D_and_axisymmetric.md`](2D_and_axisymmetric.md#142-axisymmetric-shells-line3-coque_axis) §1.4.2.
+
+![Beam element: local axes U, V, W and the six section forces](../img/beam_section_forces.svg)
+
+1. Node 1, the first node of the beam element.
+2. Node 2; the part of the beam towards node 2 (dashed) is cut away.
+3. The cut face of the part towards node 1. The six section forces are the components
+   along U, V and W of the force (top drawing) and the moment (bottom drawing) that the
+   part towards node 2 exerts on this face.
+4. `tensileforce` along +U, U from node 1 to node 2: positive is tension.
+5. `sheary` along +V, Mecway's V axis of the beam.
+6. `shearz` along +W, W = U × V.
+7. `torsion` about +U (right-hand rule).
+8. `bendingmomv` about +V.
+9. `bendingmomw` about +W.
+
+In Code-Aster these are `N`, `VY`, `VZ`, `MT`, `MFY`, `MFZ` with the local y axis = V
+and z = W. Verified against Mecway for `POU_D_E` (LS-30); `POU_D_T` gives the same
+components, its signs NOT verified against Mecway; with `elem_beam` = `POU_D_T_GD` the
+values come from `SIEF_*` and the signs are NOT verified.
+
 **Check of mass and reactions** (linear and nonlinear static). After the run the log
 (INFO) and the status box show a line such as
 
@@ -766,6 +811,24 @@ if the path is too long, §1), `<run-id>` the date and time of the start, e.g.
 `ProfielBuigen_20261006_101500.mess`. So they can be found together and a next run
 overwrites nothing. Messages show the real name. The working directory is the folder from the "Work folder" field, or with "Work folder next to the model" the subfolder `<model>_aster` next to the open model (§3).
 
+![The files of one run, from the model to the results in Mecway](../img/run_files_flow.svg)
+
+1. The model in Mecway, `<model>.liml`.
+2. The copy of the model that the run reads, `<model>_<run-id>_model.liml` (Mecway 36 or
+   later, §2 step 4); removed after a run without errors whose results were loaded. With
+   earlier Mecway versions the bridge saves the `.liml` and reads that.
+3. The bridge.
+4. The mesh `<model>_<run-id>.mail` and the Code-Aster input `.comm` and `.export`.
+5. Code-Aster, in its own window.
+6. `<model>_<run-id>.mess`, `_console.txt` and the summary `_aster_summary.txt` (§5.2;
+   not with the setting off).
+7. `<model>_<run-id>_results.xml`: the results in Mecway's format.
+8. Only when chosen: `.rmed` and `.pvd`/`.vtu` for ParaView and AsterStudy (§5.1).
+9. The bridge puts the results into the `.liml` and reopens the model.
+10. The previous version of the `.liml`: `<model>.liml.bak`.
+11. Later, with "Results...": take the results out of the `.liml` or load them again
+    from `_results.xml` (§5.1).
+
 | File | Contents |
 |---|---|
 | `<model>_<run-id>_bridge_log.txt` | log of the bridge (INFO/WARNING/ERROR per step); `bridge_log.txt`: only messages outside a run (e.g. Results...) |
@@ -941,8 +1004,9 @@ is in [`Default_settings_and_assumptions.md`](Default_settings_and_assumptions.m
 - **Assumption:** with *Configuration* = `auto`, the only configuration or the one
   without suppressed items is the intended one (§4); the API cannot read the active
   configuration.
-- **Assumption:** the top of a shell in Code-Aster (`SUP`, side of the positive
-  element normal) is Mecway's `vonmisesu1`; NOT verified.
+- The top of a shell in Code-Aster (`SUP`, side of the positive element normal) is
+  Mecway's top (`vonmisesu1`, suffix `u1`): checked against Mecway's own solution
+  (verification LS-31; with W flipped, the sign of `momentu` in LS-31g; §4.1).
 - **Assumption:** a formula in t is sampled the way Mecway does for CCX (§4).
 - The non-modal main window and its buttons have NOT been verified in Mecway for all
   actions (KNOWN_BUGS 38).

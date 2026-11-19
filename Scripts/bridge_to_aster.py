@@ -2277,7 +2277,7 @@ def _static_check_block(model_data):
     mass and centre of gravity (POST_ELEM MASS_INER) and the sum of
     REAC_NODA over all nodes in the last archived step, as BRIDGE_STATCHECK
     / BRIDGE_STATREAC lines in the .mess (aster_results_export.
-    print_static_check). Both result routes; after CALC_CHAMP (REAC_NODA).
+    print_static_check). After CALC_CHAMP (REAC_NODA).
     Only information for a hand check: no comparison with the loads.
     Never stops the run: an element that cannot compute the option (e.g.
     POU_D_T_GD, POST_ELEM MASS_INER gives CALCUL_37, Code-Aster 17.4) only

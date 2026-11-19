@@ -8,11 +8,11 @@
 # Responsibility: a readable summary of a Code-Aster run (GitHub issue #7),
 # built from the .mess (and the console output), so that the output of the
 # run can be read after the Code-Aster windows have been closed:
-#   - always (setting aster_summary, every run, both result routes, also
+#   - always (setting aster_summary, every run, also
 #     failed or stopped runs) as the file <model>_<run_id>_aster_summary.txt
 #     in the work folder (write_summary; opened with the buttons in the
 #     Results window and the convergence window, ensure_summary);
-#   - optionally (setting save_monitor_liml, off by default, route liml) in
+#   - optionally (setting save_monitor_liml, off by default) in
 #     the .liml as Mecway's "Saved monitor" item;
 #     bridge_results_liml.splice_results writes it.
 #

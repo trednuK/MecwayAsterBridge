@@ -119,6 +119,22 @@ Met balken `POU_D_T_GD` gebeurt dat vaker, door de stapbewaking (`gd_step_limit`
 §2.9): de kolom van NK-05 geeft in Mecway 137 tijdstippen in plaats van 101. Met
 Mecway's *Automatic time stepping* niet: `ARCHIVAGE` houdt dan alleen de uitvoertijden.
 
+![Rekentijden van een niet-lineaire statische analyse met Mecway's Time step size](img/nonlin_time_steps.svg)
+
+De figuur toont een niet-lineaire statische analyse met Mecway's *Time step size* en
+zonder *Automatic time stepping*: elk rekentijdstip wordt opgeslagen en gaat naar
+Mecway. λ is de waarde van een belastingtabel.
+
+1. Mecway's stap dt: rekentijden dt, 2 dt, ... tot de periode.
+2. Een knik van een belastingtabel tussen twee stappen: een extra rekentijdstip, ook
+   opgeslagen.
+3. De periode T: het laatste rekentijdstip.
+4. Punten van de belastingtabel na de periode: vervallen (INFO in de log).
+5. Een stap die niet convergeert (`EVENEMENT='ERREUR'`) wordt in 4 gelijke stappen
+   geknipt (`SUBD_PAS=4`, zie "Impliciet dynamisch" hieronder); die worden allemaal
+   opgeslagen, dus Mecway krijgt extra tijdstippen.
+6. Een geknipte stap die opnieuw niet convergeert wordt weer in 4 geknipt.
+
 **Impliciet dynamisch.** De bridge maakt een `DEFI_LIST_INST` met:
 
 ```
@@ -832,6 +848,19 @@ vlak met die hoek wordt slave (U2.04.04, "Sharp angles"). Bij convergentieproble
 vooral met plasticiteit, kan het helpen de rollen om te draaien (U2.04.04 §2.2.3).
 Veel master-knopen in het slave-vlak na de berekening: mesh te grof of te groot
 verschil in fijnheid (U2.04.04 §2.2.5).
+
+![Master en slave: een stijf, grof master-lichaam, een fijn slave-lichaam, normalen naar buiten en een master-hoek in het slave-vlak](img/contact_master_slave.svg)
+
+1. Master: het stijve lichaam met de grove mesh (`GROUP_MA_MAIT`).
+2. Slave: het lichaam met de fijne mesh (`GROUP_MA_ESCL`).
+3. Normaal van het master-vlak, naar buiten.
+4. Normaal van het slave-vlak, naar buiten. Op vlakken van volume-elementen richt de
+   bridge beide naar buiten met `MODI_MAILLAGE ORIE_PEAU` (§3.3).
+5. Een slave-knoop: Code-Aster houdt hem buiten het master-lichaam; hier ligt hij op het
+   master-vlak.
+6. Een master-knoop, de scherpe hoek: Code-Aster houdt hem niet buiten het
+   slave-lichaam, dus hij kan tussen twee slave-knopen door het slave-vlak in. Daarom
+   wordt een vlak met een scherpe hoek slave.
 
 ### 3.3 Normalen
 

@@ -171,6 +171,24 @@ Code-Aster allows nothing else with an explicit scheme).
     offline, NOT in the Mecway window; that Mecway keeps the marker on a save was measured
     outside the bridge (Mecway 35).
 
+![Failure of one element over the stored steps: plastic strain, stress, the variable failed and the hidden element](../img/failure_flag_steps.svg)
+
+The figure follows one element that fails at the third stored step, in a nonlinear
+static analysis (with element failure every solver step is stored).
+
+1. The limit of the plastic strain p (§1).
+2. The failure time: the first checked step (each step of the time list, not a cut
+   sub-step) in which p exceeds the limit. The results of this step still show the
+   computed state that made the element fail.
+3. The plastic strain is kept after the failure.
+4. From the next step on the stress of the element is about 0 (soft material, stress to
+   zero, §3).
+5. The element-node variable `failed`: 0 up to and including the failure time, 1 from
+   the next stored step.
+6. With "Hide failed elements" on, the element disappears from Mecway's result view
+   from the step where `failed` becomes 1 (collapsed onto its centroid of the step
+   before). An element that fails at the last stored step stays visible.
+
 ## 5. Test models
 
 In `TestFiles/`. All numbers below come from runs with Code-Aster 17.4 and the default
