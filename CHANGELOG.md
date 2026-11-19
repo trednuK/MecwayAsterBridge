@@ -25,7 +25,9 @@
   saved first. A read-only model or a folder that is gone still stops the run
   before Code-Aster. The copy is removed after a run without errors whose results were
   loaded, and stays otherwise (the `.comm` reads it when run again by hand). Unsaved changes
-  stay unsaved during the run: save the model yourself before a long run. *Show section* no
+  stay unsaved during the run: save the model yourself before a long run. After a run that
+  left the file as it was, Mecway asks "Save changes?" when another model is opened (Mecway
+  does that after every script); "No" is safe if you edited nothing. *Show section* no
   longer saves either. Older Mecway versions (no `mw.liml_text()`) behave as before.
   Verified in the Mecway 36 window (36.0.9815).
 

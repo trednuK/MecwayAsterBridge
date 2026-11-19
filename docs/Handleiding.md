@@ -82,7 +82,12 @@ Verwante documenten:
    *Samenvatting ook als Saved monitor in de .liml* aan wordt hij voor de monitor wel
    opgeslagen, ook als het model al resultaten heeft). Wijzigingen die je nog niet hebt
    opgeslagen, blijven tijdens de run dus onopgeslagen: loopt Mecway vast, dan ben je ze
-   kwijt. Een model dat nog nooit is opgeslagen, slaat hij wel eerst op. Zonder
+   kwijt. Een model dat nog nooit is opgeslagen, slaat hij wel eerst op. Na een run die het
+   bestand liet zoals het was, vraagt Mecway "Save changes?" als je een ander model opent:
+   dat doet Mecway na elk script, ook na een script dat niets verandert; alleen een run
+   waarvan de resultaten in het model gingen, opent het opnieuw, en dan vraagt hij het
+   niet. Heb je niets gewijzigd, dan is *No* veilig: het bestand is zoals je het het laatst
+   opsloeg. Heb je wel iets gewijzigd, dan slaat *Yes* dat op en gooit *No* het weg. Zonder
    `mw.liml_text()` (eerdere Mecway-versies) slaat hij het model eerst op (`mw.save()`).
    Een alleen-lezen model of een verdwenen map stopt de run meteen. Daarna leest
    hij de `.liml`, schrijft het mesh, `<model>_<run-id>.comm` en `.export` in de werkmap
