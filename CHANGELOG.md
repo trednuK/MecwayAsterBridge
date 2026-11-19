@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Nonlinear static without *Quasi-static*: load tables up to t = 1 s, like Mecway
+  (results change).** Without `<timesteps>` Mecway computes one step and takes every table
+  (force, imposed displacement, temperature) at t = 1 s, also when the table runs further
+  (Mecway 36 with CCX, measured headless). The bridge computed up to the last table point;
+  it now stops at t = 1 s with a WARNING, and a constant temperature ramps up to 1 s too.
+  Turn on *Quasi-static* to follow the whole table. Verification NL-75b..d.
 - **Result route `tabel` removed.** The results now always go through the `.liml`:
   Code-Aster writes Mecway's own results and the bridge puts them into the model (all time
   steps or modes, values per element, every analysis type). The old table route (POST_RELEVE_T
@@ -68,8 +74,8 @@
 - **Option: close bonded gaps like CCX** (*Bonded contact: close gaps like CCX*, page
   General, off by default). On: the tied slave nodes of a solid-on-solid bonded contact are
   moved onto the master in the mesh for Code-Aster, as CCX does; the `.liml` stays as it is.
-  Only with a flat master face and a move up to 0.1 × the shortest neighbouring edge, in
-  linear and nonlinear static, modal and buckling analyses, not for nodes in another
+  Only with a flat master face and a move up to 0.1 × the shortest distance to another node
+  of an element at the node, in linear and nonlinear static, modal and buckling analyses, not for nodes in another
   contact, coupling, equation, support or load. LS-07o (0.2 mm gap) now equals Mecway.
 - **`#ASTER` contact lines are checked, and `#ASTER-BONDED` is new.** `#ASTER-ZONE`,
   `#ASTER-CONTACT` and the new `#ASTER-BONDED` (extra keywords for the `LIAISON_MAIL` of

@@ -84,7 +84,7 @@ when you omit the keyword (catalogue 17.4).
 
 | Key (label) | Analysis | What it does | Bridge | CA |
 |---|---|---|---|---|
-| `substeps_per_interval` (Substeps per time interval) | static | Only for a model without Mecway's *Time step size*: solver steps per interval between the time points of the time-dependent loads (`DEFI_LIST_REEL`, `NOMBRE`); without a time load 0 to `default_time_end`. With a step size the bridge computes Mecway's steps plus the kinks of the load tables (§2.1). | 10 | - |
+| `substeps_per_interval` (Substeps per time interval) | static | Only for a model without Mecway's *Time step size*: solver steps per interval between the time points of the time-dependent loads (`DEFI_LIST_REEL`, `NOMBRE`); without a time load 0 to `default_time_end`. Without *Quasi-static* (no `<timesteps>`) only up to t = 1 s: Mecway takes every load table there (WARNING when a table runs further). With a step size the bridge computes Mecway's steps plus the kinks of the load tables (§2.1). | 10 | - |
 | `auto_time_stepping` (Follow Mecway's Automatic time stepping) | static | Only with Mecway's *Automatic time stepping*: on = `DEFI_LIST_INST METHODE='AUTO'` between Mecway's output times, results at those times (§2.1); off = fixed steps. | on | - |
 | `substeps_per_output` (Solver steps per Mecway time step) | implicit | Solver steps per Mecway time step: with Dynamic Response (D30, D20, DA0) and D31 per *Time step size*, also with *Generate solution every n time steps* > 1 (then n × this value per output interval; results only at the output times); otherwise (`timepointsincrement`) per output interval. Kinks of load functions are added as extra time points. | 1 | - |
 | `default_time_end` (End time without time load) [s] | all | End time when the model has no time load (static) or no `<timesteps>` (dynamic). | 1.0 | - |
@@ -903,8 +903,8 @@ are active. Tolerance: 1e-6 × the smallest edge (U2.04.04 §4.4.1).
   With the setting *Bonded contact: close gaps like CCX* (`bonded_close_gap`, page General,
   off by default) the bridge moves the tied slave nodes onto the master in the mesh for
   Code-Aster (the `.liml` is not changed), as CCX does: only solid on solid, with a flat
-  master face and a move up to 0.1 × the shortest neighbouring edge (the shortest distance
-  to another node of an element at the node; a bridge rule, not CCX's), in linear and
+  master face and a move up to 0.1 × the shortest distance to another node of an element
+  at the node or the shortest edge of its slave face (a bridge rule, not CCX's), in linear and
   nonlinear static, modal and buckling analyses (not in the thermal chain and the other
   analyses); not for nodes that are also in another contact, a coupling, a constraint
   equation, a support or a load, not with cyclic symmetry, in 2D or with adaptive refinement, and

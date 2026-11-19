@@ -83,7 +83,7 @@ Code-Aster-standaard als je het sleutelwoord weglaat (catalogus 17.4).
 
 | Sleutel (label) | Analyse | Wat het doet | Bridge | CA |
 |---|---|---|---|---|
-| `substeps_per_interval` (Substappen per tijdsinterval) | statisch | Alleen voor een model zonder Mecway's *Time step size*: rekenstappen per interval tussen de tijdspunten van de tijdsafhankelijke lasten (`DEFI_LIST_REEL`, `NOMBRE`); zonder tijdslast 0 tot `default_time_end`. Met een stapgrootte rekent de bridge Mecway's stappen plus de knikken van de lasttabellen (§2.1). | 10 | - |
+| `substeps_per_interval` (Substappen per tijdsinterval) | statisch | Alleen voor een model zonder Mecway's *Time step size*: rekenstappen per interval tussen de tijdspunten van de tijdsafhankelijke lasten (`DEFI_LIST_REEL`, `NOMBRE`); zonder tijdslast 0 tot `default_time_end`. Zonder *Quasi-static* (geen `<timesteps>`) alleen tot t = 1 s: Mecway neemt elke lasttabel daar (WARNING als een tabel verder loopt). Met een stapgrootte rekent de bridge Mecway's stappen plus de knikken van de lasttabellen (§2.1). | 10 | - |
 | `auto_time_stepping` (Mecway's Automatic time stepping volgen) | statisch | Alleen met Mecway's *Automatic time stepping*: aan = `DEFI_LIST_INST METHODE='AUTO'` tussen Mecway's uitvoertijden, resultaten op die tijden (§2.1); uit = vaste stappen. | aan | - |
 | `substeps_per_output` (Rekenstappen per Mecway-tijdstap) | impliciet | Rekenstappen per tijdstap van Mecway: bij Dynamic Response (D30, D20, DA0) en D31 per *Time step size*, ook met *Generate solution every n time steps* > 1 (dan n × deze waarde per uitvoerinterval; resultaten alleen op de uitvoertijden); anders (`timepointsincrement`) per uitvoerinterval. Knikpunten van lastfuncties komen er als extra tijdspunt bij. | 1 | - |
 | `default_time_end` (Eindtijd zonder tijdsbelasting) [s] | alle | Eindtijd als het model geen tijdslast (statisch) of geen `<timesteps>` (dynamisch) heeft. | 1.0 | - |
@@ -919,9 +919,9 @@ penetratie actief. Tolerantie: 1e-6 × de kleinste ribbe (U2.04.04 §4.4.1).
   Met de instelling *Verlijmd contact: spleet sluiten zoals CCX* (`bonded_close_gap`,
   pagina Algemeen, standaard uit) schuift de bridge de gekoppelde slave-knopen in het mesh
   voor Code-Aster op de master (de `.liml` blijft gelijk), zoals CCX doet: alleen volume op
-  volume, met een vlak mastervlak en een verschuiving tot 0,1 × de kortste aangrenzende
-  rand (de kortste afstand tot een andere knoop van een element bij de knoop; een regel van
-  de bridge, niet van CCX), in
+  volume, met een vlak mastervlak en een verschuiving tot 0,1 × de kortste afstand tot
+  een andere knoop van een element bij de knoop of de kortste rand van zijn slave-vlak (een
+  regel van de bridge, niet van CCX), in
   lineair en niet-lineair statisch, modaal en knik (niet in de thermische keten en de
   andere analyses); niet voor knopen die ook in een
   ander contact, een koppeling, een vergelijking, een oplegging of een belasting zitten,

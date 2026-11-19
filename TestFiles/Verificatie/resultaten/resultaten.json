@@ -34783,7 +34783,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 2.6,
+  "seconds": 2.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -34887,7 +34887,7 @@
   "series": null,
   "h": null,
   "note": "Formule bemonsterd over 0..2 s (timeperiod), zoals Mecway.",
-  "seconds": 2.6,
+  "seconds": 2.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -34963,7 +34963,7 @@
   "series": null,
   "h": null,
   "note": "Mecway 34 met CCX: 1,2e-4 m vanaf de eerste stap (t = 0,25 s); de bridge rekent met Mecway's stap 0,25 s.",
-  "seconds": 2.5,
+  "seconds": 2.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -35025,7 +35025,7 @@
   "series": null,
   "h": null,
   "note": "Zonder <timesteps> laat Mecway lasten oplopen en toont alleen de eindtoestand (manual par. 6.2.2).",
-  "seconds": 2.6,
+  "seconds": 3.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -35087,7 +35087,7 @@
   "series": null,
   "h": null,
   "note": "Node temperature (constant) vanaf de eerste stap, samen met een tabel in hetzelfde EVOL_THER.",
-  "seconds": 2.6,
+  "seconds": 2.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -35135,7 +35135,7 @@
   "series": null,
   "h": null,
   "note": "Mecway 34 met CCX: 1,2e-4 m (dT = 100 K op t = 1 s), niet de waarde op het laatste tabelpunt (50 K).",
-  "seconds": 2.6,
+  "seconds": 2.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -61370,6 +61370,192 @@
   "n_elem": 40,
   "settings": {
    "theta": 1.0
+  },
+  "general": {}
+ },
+ "NL-75b": {
+  "id": "NL-75b",
+  "group": "Niet-lineair statisch",
+  "title": "Vrije staaf, constante temperatuur en krachttabel tot 2 s zonder quasi-static (alles op t = 1 s)",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Zonder Quasi-static rekent Mecway een stap en neemt elke tabel op t = 1 s (Mecway 36 met CCX); de bridge rekent tot 1 s.",
+  "seconds": 3.1,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u_x(L) op t = 1 s",
+    "fem": 0.0001250000000000001,
+    "ref": 0.00012500000000000003,
+    "rel": 6.505213034913025e-16,
+    "dev": 8.131516293641283e-20,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.001,
+    "tol_abs": null,
+    "source": "alpha dT L + F(1 s) L/(EA), F(1 s) = 1050 N (puntkrachten op de hoekknopen: 1e-3)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "u_x(L) t.o.v. Mecway (CCX)",
+    "fem": 0.0001250000000000001,
+    "ref": 0.000124994,
+    "rel": 4.800230411156997e-05,
+    "dev": 6.0000000001215765e-09,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.0001,
+    "tol_abs": null,
+    "source": "Mecway 36 met CCX, headless",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "laatste rekentijd",
+    "fem": 1.0,
+    "ref": 1.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "s",
+    "tol": 1e-09,
+    "tol_abs": null,
+    "source": "Mecway zonder quasi-static: een stap tot t = 1 s (ook als de krachttabel tot 2 s loopt)",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 20,
+  "n_elem": 4,
+  "settings": {
+   "deformation": "PETIT"
+  },
+  "general": {}
+ },
+ "NL-75c": {
+  "id": "NL-75c",
+  "group": "Niet-lineair statisch",
+  "title": "Vrije staaf, temperatuurtabel en krachttabel tot 2 s zonder quasi-static",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Zonder Quasi-static rekent Mecway een stap en neemt elke tabel op t = 1 s (Mecway 36 met CCX); de bridge rekent tot 1 s.",
+  "seconds": 2.8,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u_x(L) op t = 1 s",
+    "fem": 0.00012500000000000008,
+    "ref": 0.00012500000000000003,
+    "rel": 4.3368086899420167e-16,
+    "dev": 5.421010862427522e-20,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.001,
+    "tol_abs": null,
+    "source": "alpha dT L + F(1 s) L/(EA), F(1 s) = 1050 N (puntkrachten op de hoekknopen: 1e-3)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "u_x(L) t.o.v. Mecway (CCX)",
+    "fem": 0.00012500000000000008,
+    "ref": 0.000124994,
+    "rel": 4.8002304111353123e-05,
+    "dev": 6.0000000000944714e-09,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.0001,
+    "tol_abs": null,
+    "source": "Mecway 36 met CCX, headless",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "laatste rekentijd",
+    "fem": 1.0,
+    "ref": 1.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "s",
+    "tol": 1e-09,
+    "tol_abs": null,
+    "source": "Mecway zonder quasi-static: een stap tot t = 1 s (ook als de krachttabel tot 2 s loopt)",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 20,
+  "n_elem": 4,
+  "settings": {
+   "deformation": "PETIT"
+  },
+  "general": {}
+ },
+ "NL-75d": {
+  "id": "NL-75d",
+  "group": "Niet-lineair statisch",
+  "title": "Vrije staaf, alleen krachttabel tot 2 s zonder quasi-static",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Zonder Quasi-static rekent Mecway een stap en neemt elke tabel op t = 1 s (Mecway 36 met CCX); de bridge rekent tot 1 s.",
+  "seconds": 2.8,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u_x(L) op t = 1 s",
+    "fem": 5.0000000000000665e-06,
+    "ref": 5e-06,
+    "rel": 1.3213713977167084e-14,
+    "dev": 6.606856988583543e-20,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.001,
+    "tol_abs": null,
+    "source": "alpha dT L + F(1 s) L/(EA), F(1 s) = 1050 N (puntkrachten op de hoekknopen: 1e-3)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "u_x(L) t.o.v. Mecway (CCX)",
+    "fem": 5.0000000000000665e-06,
+    "ref": 4.99963e-06,
+    "rel": 7.400547641856319e-05,
+    "dev": 3.7000000006654106e-10,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.0001,
+    "tol_abs": null,
+    "source": "Mecway 36 met CCX, headless",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "laatste rekentijd",
+    "fem": 1.0,
+    "ref": 1.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "s",
+    "tol": 1e-09,
+    "tol_abs": null,
+    "source": "Mecway zonder quasi-static: een stap tot t = 1 s (ook als de krachttabel tot 2 s loopt)",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 20,
+  "n_elem": 4,
+  "settings": {
+   "deformation": "PETIT"
   },
   "general": {}
  }

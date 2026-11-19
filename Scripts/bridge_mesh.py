@@ -3644,8 +3644,10 @@ def _close_bonded_gap(model_data, c, label, kinds, slave_faces, tied,
                             "support or load"),
                  "curved": tr("gebogen mastervlak", "curved master face"),
                  "large": tr("verschuiving groter dan 0,1 x de kortste "
-                             "aangrenzende rand", "move larger than 0.1 x "
-                             "the shortest neighbouring edge"),
+                             "afstand tot een andere knoop van een element bij "
+                             "de knoop", "move larger than 0.1 x the "
+                             "shortest distance to another node of an "
+                             "element at the node"),
                  "face": tr("een ander knooppunt van hun vlak kon niet mee",
                             "another node of their face could not move")}
         log(tr("WARNING: {0}: {1} slave-knopen niet verschoven ({2}); daar "

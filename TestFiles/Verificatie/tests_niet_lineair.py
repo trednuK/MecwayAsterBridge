@@ -866,6 +866,43 @@ def _ux7(t, dt, src, mw=None):
     return checks
 
 
+# NL-75b..d: zonder <timesteps> neemt Mecway elke tabel op t = 1 s, ook een
+# krachttabel die verder loopt (Mecway 36.0.9815 met CCX, headless, 19 nov
+# 2026: tabel (0 s; 0 N), (2 s; 2100 N) op de eindknopen gaf u_x(L) =
+# 4,99963e-6 m = F(1 s) L/(EA) met F(1 s) = 1050 N; met +100 K erbij
+# 1,24994e-4 m). Een opgelegde verplaatsing (0; 0), (2 s; 2e-5 m) gaf
+# 1,0e-5 m.
+F7 = [(0.0, 0.0), (2.0, 2100.0)]
+NOTE75 = ("Zonder Quasi-static rekent Mecway een stap en neemt elke tabel op "
+          "t = 1 s (Mecway 36 met CCX); de bridge rekent tot 1 s.")
+
+
+def _with_force7(build):
+    def b():
+        m = build()
+        m.add('<force selection="XL">%s<y>0 N</y><z>0 N</z></force>'
+              % _history("x", F7, "N"))
+        return m
+    return b
+
+
+def _ux_force7(dt, mw):
+    ref = ALPHA7 * dt * L7 + 1050.0 * L7 / (E7 * B7 * B7)
+    return [Check("u_x(L) op t = 1 s", lambda r: r.at("displx", (L7, 0, 0),
+                                                      _t(r, 1.0)),
+                  ref=ref, tol=1e-3, unit="m",
+                  source="alpha dT L + F(1 s) L/(EA), F(1 s) = 1050 N "
+                         "(puntkrachten op de hoekknopen: 1e-3)"),
+            Check("u_x(L) t.o.v. Mecway (CCX)",
+                  lambda r: r.at("displx", (L7, 0, 0), _t(r, 1.0)),
+                  ref=mw, tol=1e-4, unit="m",
+                  source="Mecway 36 met CCX, headless", in_series=False),
+            Check("laatste rekentijd", lambda r: r.times()[-1], ref=1.0,
+                  tol=1e-9, unit="s",
+                  source="Mecway zonder quasi-static: een stap tot t = 1 s "
+                         "(ook als de krachttabel tot 2 s loopt)")]
+
+
 def _sxx7(t, mw):
     dt = _dt7(t)
     return [Check("sigma_xx op t = %g s" % t,
@@ -953,6 +990,21 @@ TESTS += [
          settings=PETIT7,
          note="Mecway 34 met CCX: 1,2e-4 m (dT = 100 K op t = 1 s), niet de "
               "waarde op het laatste tabelpunt (50 K)."),
+    Case("NL-75b", GROUP, "Vrije staaf, constante temperatuur en krachttabel "
+         "tot 2 s zonder quasi-static (alles op t = 1 s)", "nonlin_static_3d",
+         _with_force7(build_nl70("<value>%.12g K</value>" % (TREF7 + 100.0),
+                                 timesteps=None)),
+         _ux_force7(100.0, 1.24994e-4), settings=PETIT7,
+         note=NOTE75),
+    Case("NL-75c", GROUP, "Vrije staaf, temperatuurtabel en krachttabel "
+         "tot 2 s zonder quasi-static", "nonlin_static_3d",
+         _with_force7(build_nl70(TAB7_XML, timesteps=None)),
+         _ux_force7(100.0, 1.24994e-4), settings=PETIT7, note=NOTE75),
+    Case("NL-75d", GROUP, "Vrije staaf, alleen krachttabel tot 2 s zonder "
+         "quasi-static", "nonlin_static_3d",
+         _with_force7(build_nl70("<value>%.12g K</value>" % TREF7,
+                                 timesteps=None)),
+         _ux_force7(0.0, 4.99963e-6), settings=PETIT7, note=NOTE75),
 ]
 
 

@@ -2193,7 +2193,12 @@ samples) plus the kinks of the load tables (NL-20).
   `GROT_GDEP` the thermal strain counts as Green-Lagrange strain (0.03–0.06% less
   elongation than Mecway/CCX, NL-70b). Without *Quasi-static* Mecway/CCX takes the table
   value at t = 1 s (the step time), also when the table runs further; the bridge then
-  computes up to t = 1 s (NL-75: 1.2e-4 m, exact and equal to Mecway/CCX).
+  computes up to t = 1 s (NL-75: 1.2e-4 m, exact and equal to Mecway/CCX). NL-75b..d: a
+  force table (0 s; 0 N), (2 s; 2100 N) on the end nodes without *Quasi-static*, with
+  +100 K (b), with the temperature table (c) or alone (d): Mecway 36 with CCX takes it at
+  t = 1 s too (headless: 1.24994e-4 / 1.24994e-4 / 4.99963e-6 m; an imposed displacement
+  table likewise); the bridge computes up to t = 1 s with a WARNING (1.2500e-4 / 1.2500e-4 /
+  5.0000e-6 m, = α·ΔT·L + F(1 s)·L/(EA)).
 ### NL-40 Formula in y and t
 
 - **Purpose**: a formula in x, y, z and t in `STAT_NON_LINE` (`FORMULE` of Y and

@@ -1044,6 +1044,14 @@ Code-Aster value per node) and logs the largest difference per variable.
    saved). Status: open; a
    check in the Mecway window with a script that does nothing would settle it.
 
+155\. **Load tables past the period with *time points* but without a step size** (question,
+   `bridge_to_aster._build_listinst_block`). A model with `<timesteps>` (period) but
+   without `stepsize` (CCX *time points*) and with `auto_time_stepping` off computes every
+   point of the load tables, also after the period; `_mecway_static_times` (with a step
+   size) drops them, as Mecway does. Whether Mecway with CCX time points also stops at the
+   period is NOT verified (19 Nov 2026). Without `<timesteps>` the tables are cut at 1 s
+   like Mecway (NL-75b..d).
+
 ## Not translated (the bridge reports it at the end of the run)
 
 4\. **Loads and boundary conditions the bridge does not know** (confirmed). Supported
