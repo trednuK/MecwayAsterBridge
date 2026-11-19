@@ -697,7 +697,7 @@ contact = DEFI_CONTACT(
     With `NEWMARK` the impact of NL-03m completes too (19 Nov 2026). Explicit dynamics:
     Code-Aster 17.4 cannot compute contact (`MECANONLINE5_22`, with `STANDARD` and with
     `PENALISATION`); the bridge stops before the run with an ERROR that advises an
-    implicit scheme (KNOWN_BUGS 153). A start
+    implicit scheme (KNOWN_BUGS 154). A start
     screen saved before V2026.15 keeps its explicit `STANDARD` for dynamics too: choose
     `auto` once on the page of the dynamic analysis.
   - `STANDARD` (CA default): augmented Lagrangian (EDF R&D, U4.44.11), with
@@ -781,7 +781,7 @@ contact = DEFI_CONTACT(
   (now they complete). Implicit dynamics sticks rigidly the same way since V2026.15 (NL-03l;
   the creep bound counts per solver step, including substeps and automatic step cuts).
   2D (with `PENALISATION` chosen) still writes kt (not measured; explicit dynamics has no
-  contact in Code-Aster, KNOWN_BUGS 153); if
+  contact in Code-Aster, KNOWN_BUGS 154); if
   such a run stops, give the zone your own `#ASTER-ZONE COEF_PENA_FROT=...` (1/m, e.g.
   1/(1e-8 × the diagonal of the contact faces in m)); it takes precedence.
 

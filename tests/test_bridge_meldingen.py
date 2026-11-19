@@ -579,7 +579,7 @@ def test_no_resistance():
 
 
 def test_explicit_contact():
-    """KNOWN_BUGS 153: contact in explicit dynamics -> ERROR (False);
+    """KNOWN_BUGS 154: contact in explicit dynamics -> ERROR (False);
     implicit dynamics, static and a model without contact pass."""
     import bridge_to_aster as b
     saved = b.log

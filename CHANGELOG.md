@@ -27,7 +27,12 @@
   loaded, and stays otherwise (the `.comm` reads it when run again by hand). Unsaved changes
   stay unsaved during the run: save the model yourself before a long run. *Show section* no
   longer saves either. Older Mecway versions (no `mw.liml_text()`) behave as before.
-  Verified headless in Mecway 36, not yet in the Mecway window.
+  Verified in the Mecway 36 window (36.0.9815).
+
+- **Start screen: the mouse wheel over a closed choice list scrolls the page** and no longer
+  changes the setting (it did when the pointer was over a list while scrolling the page, e.g.
+  *Active analysis*; KNOWN_BUGS 152). An open list scrolls as before; the arrow keys still
+  change the focused list.
 
 - **CCX keyword modifications** (Mecway's *CCX keyword*, e.g. `ADJUST` on `*CONTACT PAIR`)
   are CalculiX input: the bridge now reports them, a WARNING per active modification and one
@@ -90,7 +95,7 @@
   where Lagrange and CCX stopped (verification NL-03j/k/l/m). Explicit dynamics has no
   contact in Code-Aster (below). A saved start screen keeps its `STANDARD` for dynamics: choose `auto` once.
 - **Contact in explicit dynamics stops with a clear ERROR before the run**: Code-Aster
-  cannot compute it (`MECANONLINE5_22`, KNOWN_BUGS 153); choose an implicit scheme.
+  cannot compute it (`MECANONLINE5_22`, KNOWN_BUGS 154); choose an implicit scheme.
 - **Friction with tangential stiffness 0** now sticks rigidly like kt > 0 (KNOWN_BUGS 150;
   Lagrange friction stopped AssemblyWithContact *Friction*; Mecway/CCX gives no usable
   result with kt = 0; verification NL-03n).

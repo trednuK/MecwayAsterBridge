@@ -6236,7 +6236,7 @@ def _rigid_friction_coef(size):
 def _penalty_args(c, algo, friction, rigid_size=False, note=True):
     """Extra zone arguments for ALGO_CONT='PENALISATION' (or "").
     rigid_size: False = COEF_PENA_FROT = Mecway's kt (2D, not measured
-    with the rigid rule; explicit dynamics has no contact, KNOWN_BUGS 153);
+    with the rigid rule; explicit dynamics has no contact, KNOWN_BUGS 154);
     else the
     diagonal of the zone's contact faces (m) or None: rigid stick
     (_rigid_friction_coef). note: log the friction INFO (False when the

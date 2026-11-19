@@ -707,7 +707,7 @@ contact = DEFI_CONTACT(
     Met `NEWMARK` rekent de botsing van NL-03m ook door (19 nov 2026). Expliciete
     dynamica: Code-Aster 17.4 kan geen contact rekenen (`MECANONLINE5_22`, met `STANDARD`
     en met `PENALISATION`); de bridge stopt voor de run met een ERROR die een impliciet
-    tijdschema aanraadt (KNOWN_BUGS 153). Een
+    tijdschema aanraadt (KNOWN_BUGS 154). Een
     startscherm dat voor V2026.15 is opgeslagen, houdt ook voor dynamica zijn expliciete
     `STANDARD`: kies eenmalig `auto` op de pagina van de dynamische analyse.
   - `STANDARD` (CA-standaard): augmented-Lagrangiaan (EDF R&D, U4.44.11),
@@ -794,7 +794,7 @@ contact = DEFI_CONTACT(
   ze door). Impliciete dynamica plakt sinds V2026.15 op dezelfde manier star (NL-03l; de
   grens voor de kruip telt per rekenstap, ook tussenstappen en automatische halveringen).
   2D (met `PENALISATION` gekozen) schrijft nog kt (niet gemeten; expliciete dynamica kent
-  in Code-Aster geen contact, KNOWN_BUGS 153);
+  in Code-Aster geen contact, KNOWN_BUGS 154);
   stopt zo'n run, geef de zone dan een eigen `#ASTER-ZONE COEF_PENA_FROT=...` (1/m, bijv.
   1/(1e-8 × de diagonaal van de contactvlakken in m)); die gaat voor.
 
