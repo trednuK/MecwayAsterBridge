@@ -9868,9 +9868,12 @@ def _low_rank_effect(work_dir, analysis):
         with io.open(os.path.join(work_dir, run_name(".comm")),
                      encoding="utf-8", errors="replace") as f:
             text = f.read()
-    except (IOError, OSError):
+    except Exception:                 # advisory only, never fails a run
         return
-    if u"ACCELERATION='LR+'" in text:
+    # Low rank present, or no MUMPS solve at all (lin_solver GCPC: its own
+    # WARNING in bridge_utils.mumps_memory_note)
+    if (mumps_keywords(analysis).lstrip(", ") in text or
+            u"METHODE='MUMPS'" not in text):
         return
     log(tr("WARNING: mumps_memory low_rank heeft in deze analyse geen "
            "effect: alle oplossingen zijn eigenwaarden, harmonisch of "

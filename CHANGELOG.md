@@ -20,7 +20,7 @@
   harmonic or explicit solves). Reading the model is faster too (configurations and
   elements: 36 instead of 54 s on the same block). When the preparation or the loading of
   the results takes longer than 2 s, a small window "Please wait" shows the step; Mecway
-  responds again when it is done. Settings §2.6.
+  is busy and does not respond while it is open. Settings §2.6.
 - **Code-Aster element per component: `#ASTER-ELEMENT component: element`.** A line
   in the CCX *custom model definition* chooses the element of one Mecway component
   instead of the general setting `elem_hex8`/`elem_shell`/`elem_beam`: `3D`, `3D_SI`,

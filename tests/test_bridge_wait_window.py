@@ -9,7 +9,7 @@
 #   - enabled=False and close without open: nothing;
 #   - closed within the delay: no window, the thread has ended;
 #   - a busy main thread (3 s): the window appears after the delay and
-#     keeps refreshing on its own thread; the step text follows wait_step;
+#     keeps refreshing on its own thread; wait_step changes the state;
 #   - close (also twice) ends the thread within the join time;
 #   - open while one is open closes the first one.
 # Under CPython it only starts the IronPython run (or skips without Mecway).
@@ -71,10 +71,10 @@ def tests():
     ticks = state["ticks"]
     g.wait_step(u"Writing the mesh (.mail)")
     busy(1.0)
-    check("busy main thread: the window appeared", state["shown"], state)
+    check("busy main thread: the window was shown (Shown event)", state["shown"], state)
     check("busy main thread: it keeps refreshing on its own thread",
           state["ticks"] > ticks >= 1, (ticks, state["ticks"]))
-    check("wait_step: new text in the state",
+    check("wait_step: the state holds the new text",
           state["step"] == u"Writing the mesh (.mail)")
     g.wait_open(u"second")             # closes the first one
     check("open while open: the first thread ended", not thread.IsAlive)

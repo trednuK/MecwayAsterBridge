@@ -92,8 +92,9 @@ Verwante documenten:
    Een alleen-lezen model of een verdwenen map stopt de run meteen. Daarna leest
    hij de `.liml`, schrijft het mesh, `<model>_<run-id>.comm` en `.export` in de werkmap
    (§5) en start Code-Aster in een **apart venster**. Duurt dat langer dan 2 s (een groot
-   model), dan toont een klein venster "Even geduld" welke stap bezig is; Mecway reageert
-   pas weer als die klaar is. Hetzelfde venster verschijnt bij het laden van de resultaten.
+   model), dan toont een klein venster "Even geduld" welke stap bezig is (alleen met het
+   startscherm). Mecway is dan bezig en reageert niet zolang het venster open is. Hetzelfde
+   venster verschijnt bij het laden van de resultaten.
 5. Het **statusvenster** "Code-Aster-run" verschijnt (instelling *Wachten op Code-Aster* =
    `auto`, standaard). Het toont de verstreken tijd (met de tijdslimiet van de `.export`),
    wat Code-Aster op dat moment doet (niet-lineair: bereikt tijdstip, poging, niveau en

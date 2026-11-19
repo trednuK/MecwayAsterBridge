@@ -351,13 +351,6 @@ def _run(settings):
                    "WARNING: {0} There is no comparison with "
                    "Mecway.").format(empty))
 
-        # Wait window until Code-Aster starts (bridge_gui.wait_open: only
-        # after 2 s, and only with the start screen: otherwise messages
-        # are mw.message dialogs)
-        wait_open(tr(u"Model opslaan of kopiëren",
-                     u"Saving or copying the model"),
-                  settings.get("gui") == "winforms")
-
         # --- Step 2: A copy of the model, or save ---
         # With mw.liml_text() (Mecway 36) the run reads a model-only copy
         # in the work folder (bridge_liml_text), which is also the job's
@@ -391,7 +384,12 @@ def _run(settings):
         version_notes["mecway"] = bridge_version.check_mecway(model_liml)[1]
 
         # --- Step 3: Read model_data from the .liml file ---
-        wait_step(tr(u"Model lezen", u"Reading the model"))
+        # Wait window until Code-Aster starts (bridge_gui.wait_open: only
+        # after 2 s, and only with the start screen: otherwise messages
+        # are mw.message dialogs). Not before step 2: mw.save() may show
+        # Mecway's Save As dialog, and the window would cover it.
+        wait_open(tr(u"Model lezen", u"Reading the model"),
+                  settings.get("gui") == "winforms")
         mark = log_size()
         model_data = extract_aster_data_from_liml(model_liml)
         _LAST["model_data"] = model_data      # adaptive refinement

@@ -149,6 +149,9 @@ def test_comm(tmp):
                                {"mumps_memory": "low_rank",
                                 "lin_solver": "GCPC"}))
     check("static GCPC: no MUMPS line", lines == [], lines)
+    check("static GCPC: no 'no effect' WARNING (the GCPC one says it)",
+          u"has no effect in this analysis" not in _LAST_LOG[0] and
+          u"with lin_solver GCPC it has no effect" in _LAST_LOG[0])
     # #ASTER-OPTIE: generate_AsterSolver_files passes the analysis through
     # bridge_custom.apply_options before the builders
     override = u.mumps_keywords(__import__("bridge_custom").apply_options(

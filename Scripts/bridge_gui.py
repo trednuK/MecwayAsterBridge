@@ -2964,10 +2964,10 @@ def wait_open(step, enabled=True):
             # must never be covered
             form.ShowInTaskbar = True
             bar = look.header(form, tr(u"Even geduld", u"Please wait"),
-                              tr(u"Mecway reageert weer als deze stap "
-                                 u"klaar is.",
-                                 u"Mecway responds again when this step "
-                                 u"is done."))
+                              tr(u"Mecway is bezig en reageert niet zolang "
+                                 u"dit venster open is.",
+                                 u"Mecway is busy and does not respond "
+                                 u"while this window is open."))
             line = Label()
             line.Font = look.section
             line.AutoSize = False
@@ -2981,22 +2981,42 @@ def wait_open(step, enabled=True):
             clock.Location = Point(16, line.Bottom + 6)
             clock.Size = Size(440, look.line_height() + 4)
             form.Controls.Add(clock)
-            form.ClientSize = Size(472, clock.Bottom + 16)
+            # as wide as the subtitle (display scale)
+            form.ClientSize = Size(
+                max(472, bar.Controls[1].PreferredWidth + 40),
+                clock.Bottom + 16)
 
             def refresh(sender=None, args=None):
-                if state["close"]:
-                    form.Close()
-                    return
-                line.Text = state["step"] or u""
-                state["ticks"] += 1
-                clock.Text = tr(u"{0} s bezig", u"{0} s running").format(
-                    int(time.time() - state["t0"]))
+                # A Tick handler: an exception here would go to WinForms'
+                # own dialog, not to the try around this thread
+                try:
+                    if state["close"] and form.IsHandleCreated:
+                        form.Close()
+                        return
+                    text = state["step"] or u""
+                    if line.Text != text:
+                        line.Text = text
+                        # wider for a long step or a larger display scale
+                        need = look.text_size(text, look.section).Width + 8
+                        if need > line.Width:
+                            line.Width = clock.Width = need
+                            form.ClientSize = Size(
+                                max(form.ClientSize.Width, need + 32),
+                                form.ClientSize.Height)
+                    state["ticks"] += 1
+                    clock.Text = tr(u"{0} s bezig", u"{0} s running").format(
+                        int(time.time() - state["t0"]))
+                except Exception:
+                    pass
+
+            def on_shown(sender, args):
+                state["shown"] = True
+            form.Shown += on_shown
             timer = Timer()
             timer.Interval = 250
             timer.Tick += refresh
             refresh()
             timer.Start()
-            state["shown"] = True
             try:
                 Application.Run(form)
             finally:
