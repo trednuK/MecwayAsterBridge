@@ -48,8 +48,9 @@ daarom begint de regel met het commentaarteken van die solver:
 |---|---|
 | `#ASTER <code>` | Code-Aster-code, letterlijk na de lasten van de bridge (`load_1`, ...) en vóór de solve (zie de tabel hieronder). De ene spatie na `#ASTER` valt weg, de rest van de regel blijft staan. |
 | `#ASTER-EXCIT naam, naam2` | Zet `_F(CHARGE=naam)` in `EXCIT` van de solve. Alleen `CHARGE`: geen `FONC_MULT` of `TYPE_CHARGE` (tijdsafhankelijk: voorbeeld 4). |
-| `#ASTER-CONTACT K=V, ...` | Extra regel in `DEFI_CONTACT` (globale sleutelwoorden). Alleen als het model Mecway-contact (`contact2`) heeft; anders vervalt de regel zonder melding. |
-| `#ASTER-ZONE K=V, ...` | Wordt achter **elke** contactzone (`ZONE=_F(...)`) gezet; één zone apart instellen kan niet. Een eigen `SANS_GROUP_NO` vervangt die van de bridge (vastgezette slave-knopen), een eigen `INTEGRATION` die van de bridge (`NCOTES` bij kwadratische slave-vlakken). |
+| `#ASTER-CONTACT K=V, ...` | Extra regel in `DEFI_CONTACT` (globale sleutelwoorden). Alleen als de run Mecway's unilaterale contact (`contact2`) in een niet-lineaire analyse heeft; anders wordt de regel niet gebruikt (INFO in het log; met alleen *Compression only* een WARNING). |
+| `#ASTER-ZONE K=V, ...` | Wordt achter **elke** contactzone (`ZONE=_F(...)`) gezet; één zone apart instellen kan niet. Gebruikt onder dezelfde voorwaarde als `#ASTER-CONTACT`. Een eigen `SANS_GROUP_NO` vervangt die van de bridge (vastgezette slave-knopen), een eigen `INTEGRATION` die van de bridge (`NCOTES` bij kwadratische slave-vlakken). |
+| `#ASTER-BONDED K=V, ...` | Wordt achter **elke** `LIAISON_MAIL` van verlijmd contact gezet (mechanisch), bijv. `DISTANCE_MAX=0.001` (de koppeling begrenzen; vervangt die van de bridge), `DISTANCE_ALARME=0.002` (geen alarm `CALCULEL5_48` onder die afstand), `ELIM_MULT='NON'`. Niet toegepast (WARNING) waar de bridge de koppeling zelf als `LIAISON_DDL` schrijft (een kwadratische, scheve of gebogen schaalmaster) en in een thermische analyse. |
 | `#ASTER-OPTIE sleutel = waarde` | Geen Code-Aster-code: overschrijft een instelling van de actieve analyse (de sleutels van `CONFIG_BRIDGE["analyses"]`, zie [Instellingen §2](Instellingen_contact_en_nietlineair.md#2-instellingen)), alleen voor dit model en deze run. |
 | `#ASTER-POST <code>` | Code-Aster-code na de `CALC_CHAMP`-aanroepen van de bridge, vóór de resultaatexport naar Mecway en `IMPR_RESU`. |
 | `#ASTER-BEZWIJKEN materiaal = rek` | Geen Code-Aster-code: elementen van dit Mecway-materiaal bezwijken bij deze vergelijkingsplastische rek (`*` = alle plastische materialen; ook `#ASTER-FAILURE`). Alleen niet-lineair statisch en dynamisch: [`Bezwijken.md`](Bezwijken.md). |
@@ -67,7 +68,26 @@ daarom begint de regel met het commentaarteken van die solver:
 | `#ASTER-RAND selectie = CILINDER x, y, z, ax, ay, az, r` | Geen Code-Aster-code: bij adaptieve verfijning met HOMARD (`adapt_homard`, thermisch en niet-lineair) de vorm van een gekromde vlakselectie voor het randvolgen (`FRONTIERE_ANALYTIQUE`); ook `BOL x, y, z, r` en `GEEN` (niet volgen), Engels `#ASTER-BOUNDARY` met `CYLINDER`/`SPHERE`/`NONE`. Zonder regel herkent de bridge cilinders en bollen zelf. Voorbeeld 37, [`Foutschatter.md`](Foutschatter.md) §7.4. |
 | `#ASTER-PLANE C_PLAN` | Geen Code-Aster-code: een Static 3D- (S30) of Nonlinear Static-model (L30) van vlakke shell-elementen in het XY-vlak wordt gerekend als `C_PLAN` (vlakke spanning), `D_PLAN` (vlakke rek) of `AXIS` (axisymmetrisch) in plaats van als shells (ook `#ASTER-VLAK`; in het CCX-veld `**ASTER-PLANE`). In Thermal Steady State/Transient (T30/T31) maakt `AXIS` van de vlakke shells een axisymmetrisch thermisch model (`C_PLAN`/`D_PLAN` zijn daar niet nodig: vlakke shells zijn al 2D). Met `AXIS` worden line3-elementen axisymmetrische schalen (`COQUE_AXIS`). [`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md) §1.4, §1.4.1, §1.4.2. |
 | `#ASTER-SHELL Staal: EPAIS=5 mm` | Geen Code-Aster-code: de dikte van de axisymmetrische schalen (line3-elementen met `#ASTER-PLANE AXIS`) van een Mecway-materiaal, in m of met `mm`, `cm`, `m`; eventueel `, A_CIS=0.9` (afschuifcoëfficiënt). De materiaalnaam is alles voor de laatste dubbele punt; de laatste regel van een materiaal telt; hij gaat voor de dikte *Shell/membrane* van het materiaal en een *RectBar* (WARNING als ze verschillen). Ook `#ASTER-SCHAAL`; in het CCX-veld `**ASTER-SHELL`. [`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md) §1.4.2. |
-| `<<Mecway-selectie>>` | In `#ASTER`, `-POST`, `-ZONE` en `-CONTACT`: wordt de Code-Aster-groepsnaam van die selectie (§3). |
+| `<<Mecway-selectie>>` | In `#ASTER`, `-POST`, `-ZONE`, `-CONTACT` en `-BONDED`: wordt de Code-Aster-groepsnaam van die selectie (§3). |
+
+**Controle van de contactregels** (`#ASTER-ZONE`, `#ASTER-CONTACT`, `#ASTER-BONDED`;
+alleen waar de run ze gebruikt). De bridge stopt met een ERROR bij een sleutelwoord dat hij
+zelf schrijft (`GROUP_MA_MAIT`, `GROUP_MA_ESCL`, `COULOMB` in een zone; `MODELE`,
+`FORMULATION`, `FROTTEMENT`, `ZONE` in `DEFI_CONTACT`; `GROUP_MA_MAIT`, `GROUP_MA_ESCL`,
+`GROUP_NO_ESCL`, `TYPE_RACCORD`, `DDL`, `EPAIS`, `CHAM_NORMALE` in `LIAISON_MAIL`), bij
+een sleutelwoord dat twee keer voorkomt over de regels van één soort, en bij een deel
+zonder `sleutel=waarde`. Een sleutelwoord dat op die plaats niet in de catalogus van
+Code-Aster 17.4 staat, geeft een WARNING (Code-Aster weigert het dan). Een eigen
+`ALGO_CONT`, `COEF_PENA_*`, `ALGO_FROT`, `SEUIL_INIT`, `INTEGRATION`, `SANS_GROUP_NO`
+(zone), `LISSAGE` (globaal) en `DISTANCE_MAX` (verlijmd) vervangen die van de bridge.
+Voorbeeld in het CCX-veld (*Custom model definition*), met wrijving in het model
+(`SEUIL_INIT` hoort bij wrijving):
+
+```
+**ASTER-ZONE CONTACT_INIT='OUI', SEUIL_INIT=1.0E5
+**ASTER-CONTACT ALGO_RESO_GEOM='NEWTON'
+**ASTER-BONDED DISTANCE_ALARME=0.001
+```
 
 - De soort (`-EXCIT`, `-POST`, ...) mag in hoofd- of kleine letters. Een onbekende soort
   (bijv. `#ASTER-FOO`) geeft `ERROR: Onbekende regel '#ASTER-FOO' wordt overgeslagen`.
@@ -140,8 +160,10 @@ geeft `ERROR: #ASTER: selectie 'X' bestaat niet in het mesh.` in
   Voorbeeld 1 zonder `#ASTER-EXCIT`: de balk hangt los, `FACTOR_11` of `FACTOR_42`
   (*Statisch*, afhankelijk van het model; met `solver_nprec` -1 ook `FACTOR_57`) of `MECANONLINE9_4` (*Niet-lineair statisch*). Bij *Modaal* en *Knik* geldt hetzelfde:
   zonder `#ASTER-EXCIT` ontbreekt de verbinding in de matrices (`ALGELINE3_81`).
-- **Niets herhalen wat de bridge schrijft**: bijv. `FROTTEMENT` via `#ASTER-CONTACT`.
-  Python stopt dan met `SyntaxError: keyword argument repeated: ...`. Zo'n fout staat
+- **Niets herhalen wat de bridge schrijft**: in `#ASTER-ZONE`, `#ASTER-CONTACT` en
+  `#ASTER-BONDED` stopt de bridge eerst met een ERROR (de controle hierboven, bijv.
+  `FROTTEMENT` via `#ASTER-CONTACT`). In gewone `#ASTER`-code laat een herhaald
+  sleutelwoord Python stoppen met `SyntaxError: keyword argument repeated: ...`. Zo'n fout staat
   alleen in het Code-Aster-venster en in `<model>_<run-id>_console.txt`, niet in de
   `.mess` (die eindigt zonder `<FIN>`, met `DIAGNOSTIC JOB : OK`). De bridge leest de
   console-uitvoer en meldt de Python-fout met de foutregel.
@@ -413,7 +435,8 @@ met *normal stiffness* 100000 GPa/m (= 1e14 Pa/m) in Mecway geeft dezelfde 42,36
 
 Valkuilen:
 - `ALGO_RESO_GEOM`/`ALGO_RESO_CONT` horen bij `DEFI_CONTACT` (`#ASTER-CONTACT`),
-  `ALGO_CONT`/`COEF_PENA_CONT`/`CONTACT_INIT`/`INTEGRATION` bij `ZONE` (`#ASTER-ZONE`).
+  `ALGO_CONT`/`COEF_PENA_CONT`/`CONTACT_INIT`/`INTEGRATION` bij `ZONE` (`#ASTER-ZONE`);
+  de bridge controleert dat (§1, controle van de contactregels).
 - Een eigen `ALGO_CONT` gaat voor *Contactmethode*: de bridge schrijft dan zelf geen
   penalty-argumenten; een eigen `COEF_PENA_*` of `ALGO_FROT` vervangt alleen het
   argument van de bridge met dezelfde naam (sinds V2026.15; daarvoor gaf `ALGO_CONT`

@@ -48,8 +48,9 @@ the line starts with that solver's comment character:
 |---|---|
 | `#ASTER <code>` | Code-Aster code, literally after the bridge's loads (`load_1`, ...) and before the solve (see the table below). The single space after `#ASTER` is dropped, the rest of the line is kept. |
 | `#ASTER-EXCIT name, name2` | Puts `_F(CHARGE=name)` in `EXCIT` of the solve. Only `CHARGE`: no `FONC_MULT` or `TYPE_CHARGE` (time-dependent: example 4). |
-| `#ASTER-CONTACT K=V, ...` | Extra line in `DEFI_CONTACT` (global keywords). Only if the model has Mecway contact (`contact2`); otherwise the line is dropped without a message. |
-| `#ASTER-ZONE K=V, ...` | Appended to **every** contact zone (`ZONE=_F(...)`); setting one zone separately is not possible. Your own `SANS_GROUP_NO` replaces the bridge's (fixed slave nodes), your own `INTEGRATION` replaces the bridge's (`NCOTES` for quadratic slave faces). |
+| `#ASTER-CONTACT K=V, ...` | Extra line in `DEFI_CONTACT` (global keywords). Only if the run has Mecway unilateral contact (`contact2`) in a nonlinear analysis; otherwise the line is not used (INFO in the log; with only *Compression only* a WARNING). |
+| `#ASTER-ZONE K=V, ...` | Appended to **every** contact zone (`ZONE=_F(...)`); setting one zone separately is not possible. Used under the same condition as `#ASTER-CONTACT`. Your own `SANS_GROUP_NO` replaces the bridge's (fixed slave nodes), your own `INTEGRATION` replaces the bridge's (`NCOTES` for quadratic slave faces). |
+| `#ASTER-BONDED K=V, ...` | Appended to **every** `LIAISON_MAIL` of a bonded contact (mechanical), e.g. `DISTANCE_MAX=0.001` (limit the tie; replaces the bridge's), `DISTANCE_ALARME=0.002` (no alarm `CALCULEL5_48` below that distance), `ELIM_MULT='NON'`. Not applied (WARNING) where the bridge writes the tie itself as `LIAISON_DDL` (a shell master that is quadratic, skewed or curved) and in a thermal analysis. |
 | `#ASTER-OPTIE key = value` | Not Code-Aster code: overrides a setting of the active analysis (the keys of `CONFIG_BRIDGE["analyses"]`, see [Settings §2](Settings_contact_and_nonlinear.md#2-settings)), only for this model and this run. |
 | `#ASTER-POST <code>` | Code-Aster code after the bridge's `CALC_CHAMP` calls, before the result export to Mecway and `IMPR_RESU`. |
 | `#ASTER-BEZWIJKEN material = strain` | Not Code-Aster code: elements of this Mecway material fail at this equivalent plastic strain (`*` = all plastic materials; also `#ASTER-FAILURE`). Only nonlinear static and dynamic: [`Failure.md`](Failure.md). |
@@ -67,7 +68,25 @@ the line starts with that solver's comment character:
 | `#ASTER-RAND selection = CILINDER x, y, z, ax, ay, az, r` | No Code-Aster code: with adaptive refinement with HOMARD (`adapt_homard`, thermal and nonlinear) the shape of a curved face selection for boundary following (`FRONTIERE_ANALYTIQUE`); also `BOL x, y, z, r` and `GEEN` (do not follow), English `#ASTER-BOUNDARY` with `CYLINDER`/`SPHERE`/`NONE`. Without a line the bridge recognises cylinders and spheres itself. Example 37, [`Error_estimator.md`](Error_estimator.md) §7.4. |
 | `#ASTER-PLANE C_PLAN` | Not Code-Aster code: a Static 3D (S30) or Nonlinear Static (L30) model of plane shell elements in the XY plane is computed as `C_PLAN` (plane stress), `D_PLAN` (plane strain) or `AXIS` (axisymmetric) instead of as shells (also `#ASTER-VLAK`; in the CCX field `**ASTER-PLANE`). In Thermal Steady State/Transient (T30/T31) `AXIS` makes the plane shells an axisymmetric thermal model (`C_PLAN`/`D_PLAN` are not needed there: plane shells are 2D already). With `AXIS`, line3 elements become axisymmetric shells (`COQUE_AXIS`). [`2D_and_axisymmetric.md`](2D_and_axisymmetric.md) §1.4, §1.4.1, §1.4.2. |
 | `#ASTER-SHELL Staal: EPAIS=5 mm` | Not Code-Aster code: the thickness of the axisymmetric shells (line3 elements with `#ASTER-PLANE AXIS`) of a Mecway material, in m or with `mm`, `cm`, `m`; optionally `, A_CIS=0.9` (shear coefficient). The material name is everything before the last colon; the last line of a material counts; it wins over the material's *Shell/membrane* thickness and a *RectBar* (WARNING when they differ). Also `#ASTER-SCHAAL`; in the CCX field `**ASTER-SHELL`. [`2D_and_axisymmetric.md`](2D_and_axisymmetric.md) §1.4.2. |
-| `<<Mecway selection>>` | In `#ASTER`, `-POST`, `-ZONE` and `-CONTACT`: becomes the Code-Aster group name of that selection (§3). |
+| `<<Mecway selection>>` | In `#ASTER`, `-POST`, `-ZONE`, `-CONTACT` and `-BONDED`: becomes the Code-Aster group name of that selection (§3). |
+
+**Checks of the contact lines** (`#ASTER-ZONE`, `#ASTER-CONTACT`, `#ASTER-BONDED`; only
+where the run uses them). The bridge stops with an ERROR for a keyword it writes itself
+(`GROUP_MA_MAIT`, `GROUP_MA_ESCL`, `COULOMB` in a zone; `MODELE`, `FORMULATION`,
+`FROTTEMENT`, `ZONE` in `DEFI_CONTACT`; `GROUP_MA_MAIT`, `GROUP_MA_ESCL`, `GROUP_NO_ESCL`,
+`TYPE_RACCORD`, `DDL`, `EPAIS`, `CHAM_NORMALE` in `LIAISON_MAIL`), for a keyword that
+appears twice over the lines of one kind, and for a piece without `key=value`. A keyword
+that is not in the Code-Aster 17.4 catalogue at that place gives a WARNING (Code-Aster then
+refuses it). Your own `ALGO_CONT`, `COEF_PENA_*`, `ALGO_FROT`, `SEUIL_INIT`, `INTEGRATION`,
+`SANS_GROUP_NO` (zone), `LISSAGE` (global) and `DISTANCE_MAX` (bonded) replace the
+bridge's. Example in the CCX field (*Custom model definition*), with friction in the
+model (`SEUIL_INIT` belongs to friction):
+
+```
+**ASTER-ZONE CONTACT_INIT='OUI', SEUIL_INIT=1.0E5
+**ASTER-CONTACT ALGO_RESO_GEOM='NEWTON'
+**ASTER-BONDED DISTANCE_ALARME=0.001
+```
 
 - The kind (`-EXCIT`, `-POST`, ...) may be upper or lower case. An unknown kind (e.g.
   `#ASTER-FOO`) gives `ERROR: Unknown line '#ASTER-FOO' is skipped`.
@@ -139,8 +158,10 @@ A solid face named in `#ASTER` code is added to the model as a boundary element
   without `#ASTER-EXCIT`: the beam is loose, `FACTOR_11` or `FACTOR_42` (*Static*,
   depending on the model; with `solver_nprec` -1 also `FACTOR_57`) or `MECANONLINE9_4` (*Nonlinear static*). The same applies to *Modal* and *Buckling*: without
   `#ASTER-EXCIT` the connection is missing from the matrices (`ALGELINE3_81`).
-- **Do not repeat what the bridge writes**: e.g. `FROTTEMENT` via `#ASTER-CONTACT`.
-  Python then stops with `SyntaxError: keyword argument repeated: ...`. Such an error is
+- **Do not repeat what the bridge writes**: in `#ASTER-ZONE`, `#ASTER-CONTACT` and
+  `#ASTER-BONDED` the bridge stops first with an ERROR (the checks above, e.g. `FROTTEMENT`
+  via `#ASTER-CONTACT`). In plain `#ASTER` code a repeated keyword makes Python stop
+  with `SyntaxError: keyword argument repeated: ...`. Such an error is
   only shown in the Code-Aster window and in `<model>_<run-id>_console.txt`, not in the
   `.mess` (which ends without `<FIN>`, with `DIAGNOSTIC JOB : OK`). The bridge reads the
   console output and reports the Python error with the error line.
@@ -409,7 +430,8 @@ contact spring 1e14 Pa/m × 4·10⁻⁴ m² = 4·10¹⁰ N/m in series with the 
 
 Pitfalls:
 - `ALGO_RESO_GEOM`/`ALGO_RESO_CONT` belong to `DEFI_CONTACT` (`#ASTER-CONTACT`),
-  `ALGO_CONT`/`COEF_PENA_CONT`/`CONTACT_INIT`/`INTEGRATION` to `ZONE` (`#ASTER-ZONE`).
+  `ALGO_CONT`/`COEF_PENA_CONT`/`CONTACT_INIT`/`INTEGRATION` to `ZONE` (`#ASTER-ZONE`);
+  the bridge checks this (§1, checks of the contact lines).
 - Your own `ALGO_CONT` takes precedence over *Contact method*: the bridge then writes no
   penalty arguments of its own; your `COEF_PENA_*` or `ALGO_FROT` replace only the
   bridge's argument of the same name (since V2026.15; before, `ALGO_CONT` together with

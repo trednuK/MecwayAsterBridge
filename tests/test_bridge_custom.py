@@ -11,6 +11,7 @@
 from __future__ import print_function
 
 import os
+import io
 import sys
 
 _HERE = os.path.dirname(os.path.abspath(globals().get("__file__",
@@ -99,6 +100,78 @@ check("onbekende soort", any("Onbekende regel '#ASTER-FOO'" in l
                              for l in errors))
 check("niets overgenomen", not out["excit"] and not out["options"]
       and not out["spectrum"])
+
+# Contact keyword lines: split, keys, ownership, catalogue (KNOWN user
+# keys from the docs and verification as a regression)
+check("split: commas inside (), quotes and <<..>> stay",
+      bridge_custom.split_pieces(
+          "SANS_GROUP_NO=('<<a, b>>', 'X'), CONTACT_INIT='OUI', D=1") ==
+      ["SANS_GROUP_NO=('<<a, b>>', 'X')", "CONTACT_INIT='OUI'", "D=1"])
+check("line keys, piece without '=' is None",
+      bridge_custom.line_keys("algo_cont='PENALISATION', x") ==
+      ["ALGO_CONT", None])
+for kind, line in (("zone", "CONTACT_INIT='OUI'"),
+                   ("zone", "ALGO_CONT='PENALISATION', COEF_PENA_CONT=1.0E14"),
+                   ("zone", "INTEGRATION='NCOTES'"),
+                   ("zone", "SANS_GROUP_NO='<<Vast>>'"),
+                   ("contact", "ALGO_RESO_GEOM='NEWTON'"),
+                   ("contact", "ALGO_RESO_CONT='POINT_FIXE', ITER_CONT_MAXI=50"),
+                   ("contact", "LISSAGE='OUI'"),
+                   ("bonded", "DISTANCE_MAX=0.001, DISTANCE_ALARME=0.002"),
+                   ("bonded", "ELIM_MULT='NON'")):
+    e, w = bridge_custom.check_lines(kind, [line])
+    check("documented {0} line accepted: {1}".format(kind, line),
+          not e and not w)
+e, w = bridge_custom.check_lines("zone", ["GROUP_MA_ESCL='X'", "COULOMB=0.3"])
+check("owned zone keys: two ERRORs", len(e) == 2 and not w)
+e, w = bridge_custom.check_lines("zone", ["CONTACT_INIT='OUI'",
+                                          "CONTACT_INIT='NON'"])
+check("duplicate key over two lines: ERROR", len(e) == 1)
+e, w = bridge_custom.check_lines("contact", ["ALGO_RESO_GOEM='NEWTON'"])
+check("typo: WARNING, no ERROR", not e and len(w) == 1)
+e, w = bridge_custom.check_lines("zone", ["CONTACT_INIT='OUI',,DIST_MAXI=1"])
+check("empty piece: ERROR", len(e) == 1)
+e, w = bridge_custom.check_lines("zone", ["'A=b'"])
+check("quoted key: ERROR (not a keyword)", len(e) == 1)
+check("stray ')' does not stop the split",
+      bridge_custom.split_pieces("A=1), B=2") == ["A=1)", "B=2"])
+e, w = bridge_custom.check_lines("bonded", ["TYPE_RACCORD='MASSIF'"])
+check("bonded: TYPE_RACCORD is the bridge's", len(e) == 1)
+del LOG[:]
+out = bridge_custom.parse([u"#ASTER-BONDED DISTANCE_MAX=0.001"])
+check("#ASTER-BONDED parsed", out["bonded"] == ["DISTANCE_MAX=0.001"] and
+      not [l for l in LOG if l.startswith("ERROR")])
+# the lists against the installed Code-Aster 17.4 catalogue (skip without it)
+import re as _re
+cata = os.path.join(os.environ.get("LOCALAPPDATA", ""), "code_aster", "v2025",
+                    "17.4", "lib", "aster", "code_aster", "Cata", "Commands")
+if os.path.isfile(os.path.join(cata, "defi_contact.py")):
+    def _facts(text, name):
+        out = []
+        for m in _re.finditer(name + r"\s*=\s*FACT\(", text):
+            i, depth = m.end(), 1
+            while depth:
+                depth += (text[i] == "(") - (text[i] == ")")
+                i += 1
+            out.append(text[m.end():i])
+        return out
+    simp = r"\b([A-Z][A-Z0-9_]*)\s*=\s*SIMP\("
+    dc = io.open(os.path.join(cata, "defi_contact.py"), encoding="utf-8",
+                 errors="replace").read()
+    zone = set()
+    for r in _facts(dc, "ZONE"):
+        zone |= set(_re.findall(simp, r))
+    check("zone keys = catalogue 17.4",
+          zone == set(bridge_custom.CONTACT_ZONE_KEYS))
+    check("global keys = catalogue 17.4", set(_re.findall(simp, dc)) - zone ==
+          set(bridge_custom.CONTACT_GLOBAL_KEYS))
+    acm = io.open(os.path.join(cata, "affe_char_meca.py"), encoding="utf-8",
+                  errors="replace").read()
+    check("LIAISON_MAIL keys = catalogue 17.4",
+          set(_re.findall(simp, _facts(acm, "LIAISON_MAIL")[0])) ==
+          set(bridge_custom.LIAISON_MAIL_KEYS))
+else:
+    print("SKIP: Code-Aster 17.4 catalogue not found")
 
 if check.failed:
     sys.exit(1)

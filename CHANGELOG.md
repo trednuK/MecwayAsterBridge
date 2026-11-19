@@ -59,6 +59,11 @@
   Only with a flat master face and a move up to 0.1 × the shortest neighbouring edge, in
   linear and nonlinear static, modal and buckling analyses, not for nodes in another
   contact, coupling, equation, support or load. LS-07o (0.2 mm gap) now equals Mecway.
+- **`#ASTER` contact lines are checked, and `#ASTER-BONDED` is new.** `#ASTER-ZONE`,
+  `#ASTER-CONTACT` and the new `#ASTER-BONDED` (extra keywords for the `LIAISON_MAIL` of
+  bonded contact, e.g. `DISTANCE_MAX`, `DISTANCE_ALARME`) are checked against the Code-Aster
+  17.4 catalogue: a keyword the bridge writes itself, a keyword twice or a piece without
+  `key=value` stops the run with an ERROR; an unknown keyword gives a WARNING.
 - **Friction with parts held only by contact** no longer stops in the first step: zones
   with friction get `SEUIL_INIT` (initial friction threshold; the result does not depend
   on its value). Known: the tangential stiffness kt has almost no effect in Code-Aster,

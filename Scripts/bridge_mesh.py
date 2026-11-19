@@ -4476,7 +4476,7 @@ def _warn_friction_held_slaves(model_data, c, slave, group_integrals,
     fit with friction, S44b; 3D NOT verified). The bridge does not exclude
     them itself: the user decides (an **ASTER-ZONE SANS_GROUP_NO)."""
     zones = (model_data.get("aster_custom") or {}).get("zone") or []
-    if any("SANS_GROUP_NO" in z.upper() for z in zones):
+    if any("SANS_GROUP_NO" in bridge_custom.line_keys(z) for z in zones):
         # The user has followed the advice (or excludes nodes anyway)
         return
     node_groups = model_data.get("node_groups", {})

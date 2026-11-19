@@ -169,7 +169,8 @@ _KINDS = ("", "-EXCIT", "-CONTACT", "-ZONE", "-OPTIE", "-POST",
           "-WOHLER", "-VERMOEIING", "-FATIGUE", "-BLOK", "-BLOCK",
           "-SIGNAAL", "-SIGNAL", "-METALLURGIE", "-METALLURGY",
           "-XFEM", "-CONSTANT", "-SECTIE", "-SECTION",
-          "-RAND", "-BOUNDARY", "-PLANE", "-VLAK", "-SHELL", "-SCHAAL")
+          "-RAND", "-BOUNDARY", "-PLANE", "-VLAK", "-SHELL", "-SCHAAL",
+          "-BONDED")
 # Fatigue (bridge_fatigue.py): kind -> key in out["fatigue"]
 _FATIGUE_KINDS = {"-WOHLER": "wohler", "-VERMOEIING": "options",
                   "-FATIGUE": "options", "-BLOK": "block", "-BLOCK": "block",
@@ -179,10 +180,147 @@ _SECTION_LINE_KEYS = ("section_shapes", "section_directions")
 # Largest angle between a beam and a SECTIE-RICHTING line that passes, degrees
 DIRECTION_TOL = 1.0
 
+# Keywords of the contact lines (#ASTER-ZONE, #ASTER-CONTACT) and of the
+# bonded LIAISON_MAIL (#ASTER-BONDED), from the Code-Aster 17.4 catalogue
+# (Cata/Commands/defi_contact.py: the SIMP keywords inside ZONE=FACT and
+# the others; affe_char_meca.py: LIAISON_MAIL). Lenient: all formulations,
+# so it catches typos, not every keyword that CONTINUE refuses.
+# tests/test_bridge_custom.py compares them with the installed catalogue.
+CONTACT_ZONE_KEYS = frozenset((
+    "ADAPTATION", "ALARME_JEU", "ALGO_CONT", "ALGO_FROT", "APPARIEMENT",
+    "CARA_ELEM", "COEF_CONT", "COEF_FROT", "COEF_IMPO", "COEF_MATR_FROT",
+    "COEF_MULT", "COEF_PENA", "COEF_PENA_CONT", "COEF_PENA_FROT",
+    "CONTACT_INIT", "COULOMB", "DIRE_APPA", "DIRE_EXCL_FROT", "DIST_APPA",
+    "DIST_COQUE", "DIST_ESCL", "DIST_MAIT", "DIST_MAXI", "DIST_POUTRE",
+    "ESCL_FIXE", "ESCL_VECT_Y", "E_N", "E_T", "GLISSIERE", "GLIS_MAXI",
+    "GRAND_GLIS", "GROUP_MA", "GROUP_MA_ESCL", "GROUP_MA_MAIT", "GROUP_NO",
+    "INTEGRATION", "MAIT_FIXE", "MAIT_VECT_Y", "NOM_CMP", "NORMALE",
+    "ORDRE_INT", "PENE_MAXI", "RESI_APPA", "RESOLUTION", "SANS_GROUP_MA",
+    "SANS_GROUP_NO", "SANS_GROUP_NO_FR", "SEUIL_INIT", "TOLE_INTERP",
+    "TOLE_PROJ_EXT", "TYPE_APPA", "TYPE_JACOBIEN", "TYPE_PROJECTION",
+    "VECT_ESCL", "VECT_MAIT"))
+CONTACT_GLOBAL_KEYS = frozenset((
+    "ALGO_RESO_CONT", "ALGO_RESO_FROT", "ALGO_RESO_GEOM", "COEF_RESI",
+    "CONT_STAT_ELAS", "FORMULATION", "FROTTEMENT", "INFO", "ITER_CONT_MAXI",
+    "ITER_CONT_MULT", "ITER_CONT_TYPE", "ITER_FROT_MAXI", "ITER_GCP_MAXI",
+    "ITER_GEOM_MAXI", "ITER_PRE_MAXI", "LISSAGE", "MODELE", "NB_ITER_GEOM",
+    "NB_RESOL", "PRE_COND", "REAC_GEOM", "RECH_LINEAIRE", "RESI_ABSO",
+    "RESI_CONT", "RESI_FROT", "RESI_GEOM", "STOP_INTERP", "STOP_SINGULIER",
+    "VERI_NORM"))
+LIAISON_MAIL_KEYS = frozenset((
+    "ANGL_NAUT", "CENTRE", "CHAM_NORMALE", "DDL", "DISTANCE_ALARME",
+    "DISTANCE_MAX", "ELIM_MULT", "EPAIS", "GROUP_MA_ESCL", "GROUP_MA_MAIT",
+    "GROUP_NO_ESCL", "TRAN", "TRANSF_GEOM_ESCL", "TRANSF_GEOM_MAIT",
+    "TYPE_RACCORD"))
+# Keywords the bridge always writes itself (an ERROR in the user's line)
+OWNED_KEYS = {
+    "zone": frozenset(("GROUP_MA_MAIT", "GROUP_MA_ESCL", "COULOMB")),
+    "contact": frozenset(("MODELE", "FORMULATION", "FROTTEMENT", "ZONE")),
+    "bonded": frozenset(("GROUP_MA_MAIT", "GROUP_MA_ESCL", "GROUP_NO_ESCL",
+                         "TYPE_RACCORD", "DDL", "EPAIS", "CHAM_NORMALE")),
+}
+_ALLOWED_KEYS = {"zone": CONTACT_ZONE_KEYS, "contact": CONTACT_GLOBAL_KEYS,
+                 "bonded": LIAISON_MAIL_KEYS}
+_KIND_LABEL = {"zone": "#ASTER-ZONE", "contact": "#ASTER-CONTACT",
+               "bonded": "#ASTER-BONDED"}
+
+
+_EMPTY_PIECE_RE = re.compile(r"^\s*,|,\s*,")
+_IDENT_RE = re.compile(r"^[A-Z_][A-Z0-9_]*$")
+
+
+def split_pieces(text):
+    """'K=V, K=(a, b), K=<<x, y>>' -> ['K=V', 'K=(a, b)', 'K=<<x, y>>']:
+    split at commas outside (), [], quotes and <<..>>."""
+    out, cur, depth, quote, i = [], [], 0, None, 0
+    text = text or ""
+    while i < len(text):
+        ch = text[i]
+        if quote:
+            if ch == quote:
+                quote = None
+        elif ch in "'\"":
+            quote = ch
+        elif text.startswith("<<", i):
+            j = text.find(">>", i + 2)
+            j = len(text) if j < 0 else j + 2
+            cur.append(text[i:j])
+            i = j
+            continue
+        elif ch in "([":
+            depth += 1
+        elif ch in ")]":
+            depth = max(0, depth - 1)
+        elif ch == "," and depth == 0:
+            out.append("".join(cur).strip())
+            cur = []
+            i += 1
+            continue
+        cur.append(ch)
+        i += 1
+    if "".join(cur).strip():
+        out.append("".join(cur).strip())
+    return [p for p in out if p]
+
+
+def line_keys(text):
+    """Upper-case keywords of the pieces of a line (None for a piece
+    without '=')."""
+    keys = []
+    for p in split_pieces(text):
+        k = p.split("=", 1)[0].strip() if "=" in p else None
+        keys.append(k.upper() if k else None)
+    return keys
+
+
+def check_lines(kind, lines):
+    """(errors, warnings) for the user's lines of one kind ('zone',
+    'contact', 'bonded'): a piece without '=', a keyword twice, or one the
+    bridge writes itself is an error (the .comm would stop with a Python
+    error or the line would fight the bridge); a keyword that is not in the
+    Code-Aster 17.4 catalogue a warning (Code-Aster then refuses it)."""
+    errors, warnings, seen = [], [], set()
+    label = _KIND_LABEL[kind]
+    for line in lines:
+        if _EMPTY_PIECE_RE.search(line):
+            errors.append(tr(u"{0} {1}: een leeg deel (twee komma's)",
+                             u"{0} {1}: an empty piece (two commas)")
+                          .format(label, line))
+        for k in line_keys(line):
+            if k is None:
+                errors.append(tr(u"{0} {1}: een deel zonder 'sleutel=waarde'",
+                                 u"{0} {1}: a piece without 'key=value'")
+                              .format(label, line))
+                continue
+            if not _IDENT_RE.match(k):
+                errors.append(tr(u"{0}: '{1}' is geen sleutelwoord",
+                                 u"{0}: '{1}' is not a keyword").format(
+                                     label, k))
+                continue
+            if k in OWNED_KEYS[kind]:
+                errors.append(tr(u"{0}: {1} schrijft de bridge zelf (uit het "
+                                 u"Mecway-model); haal het uit de regel",
+                                 u"{0}: {1} is written by the bridge itself "
+                                 u"(from the Mecway model); remove it from the "
+                                 u"line").format(label, k))
+            elif k in seen:
+                errors.append(tr(u"{0}: {1} staat er twee keer",
+                                 u"{0}: {1} appears twice").format(label, k))
+            elif k not in _ALLOWED_KEYS[kind]:
+                warnings.append(tr(u"{0}: {1} is geen sleutelwoord van "
+                                   u"Code-Aster 17.4 op deze plaats; "
+                                   u"Code-Aster zal het weigeren",
+                                   u"{0}: {1} is not a Code-Aster 17.4 keyword "
+                                   u"at this place; Code-Aster will refuse "
+                                   u"it").format(label, k))
+            seen.add(k)
+    return errors, warnings
+
 
 def empty():
     """Empty structure as parse() returns it."""
     return {"code": [], "excit": [], "contact": [], "zone": [],
+            "bonded": [],
             "options": {}, "post": [], "failure": {}, "spectrum": {},
             "sources": [], "welding": [],
             "phases": [], "hyst": [], "materials": [],
@@ -257,6 +395,9 @@ def parse(texts):
             elif kind == "-ZONE":
                 if body.strip():
                     out["zone"].append(body.strip().rstrip(","))
+            elif kind == "-BONDED":
+                if body.strip():
+                    out["bonded"].append(body.strip().rstrip(","))
             elif kind in ("-BEZWIJKEN", "-FAILURE"):
                 _parse_failure(body, out["failure"])
             elif kind in ("-SPECTRE", "-SPECTRUM"):

@@ -813,7 +813,9 @@ penetratie actief. Tolerantie: 1e-6 × de kleinste ribbe (U2.04.04 §4.4.1).
   elementgrootte van de master (hoogstens die halve dikte) en de pijlhoogte van een gebogen
   master; meestal verschijnt dan ook het Code-Aster-alarm `CALCULEL5_48`. Niet
   gecontroleerd met een *Element offset* of een schaal zonder dikte (INFO). Sluit de
-  spleet in het mesh of zet de instelling hieronder aan (KNOWN_BUGS 146). Mecway's
+  spleet in het mesh of zet de instelling hieronder aan (KNOWN_BUGS 146); een echte,
+  gewenste afstand: `#ASTER-BONDED DISTANCE_ALARME=...` zet het alarm uit,
+  `DISTANCE_MAX=...` begrenst de koppeling (§3.9). Mecway's
   *CCX keyword*-wijzigingen zoals `ADJUST` op `*CONTACT PAIR` veranderen alleen de
   CalculiX-invoer; de bridge meldt ze en gebruikt ze alleen om te zien of `ADJUST` uit
   staat (dan sluit hij de spleet ook niet).
@@ -908,7 +910,9 @@ De bridge zet deze opties (behalve `LIAISON_MAIL`) niet zelf. Je kunt ze meegeve
 Voor wat Mecway niet kan invoeren, zet je `#ASTER`-regels in een vrij tekstveld
 van Mecway (OpenRadioss: `#ASTER`, Mystran: `$ASTER`, CCX: `**ASTER`). Syntax,
 selectienamen (`<<Mecway-selectie>>`), valkuilen en doorgerekende voorbeelden
-(o.a. `#ASTER-CONTACT`, `#ASTER-ZONE` en `#ASTER-OPTIE` bij contact) staan in
+(o.a. `#ASTER-CONTACT`, `#ASTER-ZONE`, `#ASTER-BONDED` voor de `LIAISON_MAIL` van
+verlijmd contact en `#ASTER-OPTIE` bij contact; de bridge controleert de contactregels
+tegen de catalogus van Code-Aster 17.4) staan in
 [`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md).
 
 ### 3.10 Voorbeeld: platen verlijmen (bonded contact tussen schalen)

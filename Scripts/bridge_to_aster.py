@@ -4755,6 +4755,8 @@ def _render_mpcs(model_data):
         out.setdefault("LIAISON_DDL", []).append(_liaison_ddl(
             ce, "{0!r}".format(ce["constant"])))
     normals = OrderedDict()
+    user = bonded_extra(model_data)
+    user_keys = set(k for k in bridge_custom.line_keys(", ".join(user)) if k)
     for b in model_data.get("bonded", []):
         if "relations" in b:
             # Shell as master, quadratic or skewed/curved: the relations
@@ -4770,9 +4772,26 @@ def _render_mpcs(model_data):
                             # under nl-NL), as in bridge_mesh._real
                             _fmt_seq(["%.15g" % c for c in coef])))
             if not b.get("ddl"):
+                if user:
+                    log(tr("WARNING: #ASTER-BONDED niet toegepast op verlijmd "
+                           "contact '{0}': de bridge schrijft de koppeling "
+                           "daar zelf als LIAISON_DDL (geen LIAISON_MAIL).",
+                           "WARNING: #ASTER-BONDED not applied to bonded "
+                           "contact '{0}': the bridge writes the tie there "
+                           "itself as LIAISON_DDL (no LIAISON_MAIL).").format(
+                               "' / '".join(b.get("selections", ("?",)))))
                 continue
             # quadratic master perpendicular to a global axis: the rotations
             # do use LIAISON_MAIL (DDL only rotations)
+            if user:
+                log(tr("WARNING: #ASTER-BONDED op verlijmd contact '{0}' "
+                       "alleen voor de rotaties (LIAISON_MAIL); de "
+                       "verplaatsingen schrijft de bridge zelf als "
+                       "LIAISON_DDL.",
+                       "WARNING: #ASTER-BONDED on bonded contact '{0}' only "
+                       "for the rotations (LIAISON_MAIL); the bridge writes "
+                       "the translations itself as LIAISON_DDL.").format(
+                           "' / '".join(b.get("selections", ("?",)))))
         parts = ["GROUP_MA_MAIT='{0}'".format(b["master"]),
                  "GROUP_NO_ESCL='{0}'".format(b["slave"]),
                  "TYPE_RACCORD='{0}'".format(b["raccord"])]
@@ -4797,8 +4816,12 @@ def _render_mpcs(model_data):
             # COQUE: without the drilling rotation (bridge_mesh._coque_ddl)
             parts.append("DDL=({0})".format(", ".join(
                 "'{0}'".format(d) for d in b["ddl"])))
-        if b.get("distance", 0.0) > 0.0:
+        if b.get("distance", 0.0) > 0.0 and "DISTANCE_MAX" not in user_keys:
             parts.append("DISTANCE_MAX={0!r}".format(b["distance"]))
+        elif b.get("distance", 0.0) > 0.0:
+            log("INFO: LIAISON_MAIL: DISTANCE_MAX from #ASTER-BONDED instead "
+                "of the bridge's {0} m.".format("%.3g" % b["distance"]))
+        parts += user
         out.setdefault("LIAISON_MAIL", []).append(
             "_F({0})".format(", ".join(parts)))
     return out
@@ -6354,14 +6377,6 @@ def _quadratic_slave(model_data, group):
 # Initial friction threshold (Pa) for zones with friction (see
 # _build_contact_block); only a start value for the first iteration.
 _SEUIL_INIT = 1.0e6
-_ZONE_KEY_RE = re.compile(r"(?:^|,)\s*([A-Za-z_][A-Za-z0-9_]*)\s*=")
-
-
-def _zone_keys(zone_extra):
-    """Upper-case keyword names in the #ASTER-ZONE text (', K=V, ...')."""
-    return set(k.upper() for k in _ZONE_KEY_RE.findall(zone_extra or ""))
-
-
 def _drop_keys(args, keys):
     """args (', K=V, K=V') without the pieces whose keyword is in keys."""
     if not args or not keys:
@@ -6369,6 +6384,18 @@ def _drop_keys(args, keys):
     pieces = [p for p in args.split(", ") if p]
     kept = [p for p in pieces if p.split("=")[0].strip().upper() not in keys]
     return "".join(", " + p for p in kept)
+
+
+def bonded_extra(model_data):
+    """The pieces of the user's #ASTER-BONDED lines for every bonded
+    LIAISON_MAIL, with <<name>> substituted (bridge_custom.substitute)."""
+    out = []
+    for line in (model_data.get("aster_custom") or {}).get("bonded", []):
+        text = bridge_custom.substitute(
+            line, model_data.get("group_renames", {}),
+            model_data.get("mesh_group_names", set()))
+        out += bridge_custom.split_pieces(text)
+    return out
 
 
 def moved_nodes_arg(model_data):
@@ -6533,6 +6560,11 @@ def _build_contact_block(model_data, analysis=None):
         c, model_data.get("group_renames", {}),
         model_data.get("mesh_group_names", set())))
         for c in custom.get("contact", []))
+    # keywords of the user's raw lines (before <<name>> substitution)
+    zone_user = set(k for z in custom.get("zone", [])
+                    for k in bridge_custom.line_keys(z) if k)
+    glob_user = set(k for g in custom.get("contact", [])
+                    for k in bridge_custom.line_keys(g) if k)
     zones = []
     for c in pairs:
         z = "_F(GROUP_MA_MAIT='{0}', GROUP_MA_ESCL='{1}'".format(
@@ -6551,7 +6583,7 @@ def _build_contact_block(model_data, analysis=None):
         # A key of the user's #ASTER-ZONE wins; the bridge leaves out its
         # own argument (the same keyword twice is a Python error in the
         # .comm). ALGO_CONT from the user: no penalty arguments at all.
-        user_keys = _zone_keys(zone_extra)
+        user_keys = zone_user
         if "ALGO_CONT" in user_keys:
             log("INFO: Contact '{0}': ALGO_CONT from #ASTER-ZONE; the "
                 "bridge writes no penalty arguments.".format(c["slave"]))
@@ -6572,8 +6604,8 @@ def _build_contact_block(model_data, analysis=None):
             # then shear, mu 0.5); with it the run converged and the result
             # did not depend on the value (1e3, 1e6 and 1e9 Pa identical).
             z += ", SEUIL_INIT={0!r}".format(_SEUIL_INIT)
-        sans = bool(c.get("sans_groups")) or "SANS_GROUP_NO" in zone_extra
-        if sans and "INTEGRATION" not in zone_extra and _quadratic_slave(
+        sans = bool(c.get("sans_groups")) or "SANS_GROUP_NO" in zone_user
+        if sans and "INTEGRATION" not in zone_user and _quadratic_slave(
                 model_data, c["slave"]):
             # SANS_GROUP_NO needs INTEGRATION='AUTO' in the continuous
             # formulation (<EXCEPTION> CONTACT_97, Code-Aster 17.4, seen in a
@@ -6583,7 +6615,7 @@ def _build_contact_block(model_data, analysis=None):
                 "(CONTACT_97), not NCOTES on the quadratic slave (less "
                 "accurate, KNOWN_BUGS 141).".format(
                     c["slave"]))
-        elif "INTEGRATION" not in zone_extra and _quadratic_slave(
+        elif "INTEGRATION" not in zone_user and _quadratic_slave(
                 model_data, c["slave"]):
             # Quadratic slave face: INTEGRATION 'AUTO' (= SIMPSON here)
             # did not pass the contact patch test (hex20, non-matching
@@ -6595,7 +6627,7 @@ def _build_contact_block(model_data, analysis=None):
         # Slave nodes with a fixed condition (bridge_mesh.
         # _exclude_fixed_slaves); a user #ASTER-ZONE SANS_GROUP_NO takes
         # precedence (the same keyword twice is a Python error).
-        if c.get("sans_groups") and "SANS_GROUP_NO" not in zone_extra:
+        if c.get("sans_groups") and "SANS_GROUP_NO" not in zone_user:
             z += ", SANS_GROUP_NO={0}".format(_fmt_groups(c["sans_groups"]))
         zones.append(z + zone_extra + ")")
     # Normal smoothing (S28): LISSAGE is a global keyword of DEFI_CONTACT
@@ -6603,7 +6635,7 @@ def _build_contact_block(model_data, analysis=None):
     # catalogue defi_contact.py 17.4): normals averaged at the nodes of
     # the contact surfaces. A user #ASTER-CONTACT LISSAGE takes precedence.
     if analysis.get("contact_smoothing", False) and \
-            "LISSAGE" not in glob_extra:
+            "LISSAGE" not in glob_user:
         glob_extra = "    LISSAGE='OUI',\n" + glob_extra
         log("INFO: DEFI_CONTACT LISSAGE='OUI' (normalen gemiddeld in de "
             "knopen; contact_smoothing).")
@@ -9488,6 +9520,8 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
     _check_formula_fields(model_data, analysis)
     if not _check_lost_contacts(model_data, solver_cmd):
         return None
+    if not _check_aster_contact_lines(model_data, solver_cmd):
+        return None
     if mechanical:
         if not _check_gd_beams(model_data, analysis):
             return None
@@ -9548,6 +9582,62 @@ def _write_axis_paraview(work_dir, model_data):
     except (IOError, OSError) as e:
         log("INFO: ParaView script for the revolved view not written "
             "({0}); the ParaView button opens the section flat.".format(e))
+
+
+def _check_aster_contact_lines(model_data, solver_cmd):
+    """
+    The user's #ASTER-ZONE / #ASTER-CONTACT / #ASTER-BONDED lines, only where
+    the bridge writes them (bridge_custom.check_lines): ERROR (False) for a
+    keyword the bridge writes itself, a keyword twice or a piece without
+    '='; WARNING for a keyword outside the Code-Aster 17.4 catalogue and for
+    lines that this run does not use (compression only via LIAISON_UNIL,
+    thermal, no bonded contact).
+    """
+    custom = model_data.get("aster_custom") or {}
+    zone, glob = custom.get("zone") or [], custom.get("contact") or []
+    bonded = custom.get("bonded") or []
+    unil = any(bc.get("unil_zones") for bc in model_data.get("bcs", []))
+    contact_run = bool(model_data.get("contacts")) and solver_cmd in (
+        "STAT_NON_LINE", "DYNA_NON_LINE")
+    errors, warnings = [], []
+    if (zone or glob) and contact_run:
+        # with compression only next to contact the zones are still
+        # written (_build_contact_block drops the compression only)
+        for kind, lines in (("zone", zone), ("contact", glob)):
+            e, w = bridge_custom.check_lines(kind, lines)
+            errors += e
+            warnings += w
+    elif (zone or glob) and unil and solver_cmd in ("STAT_NON_LINE",
+                                                    "DYNA_NON_LINE"):
+        warnings.append(tr(u"#ASTER-ZONE/#ASTER-CONTACT niet toegepast: "
+                           u"compression only (LIAISON_UNIL)",
+                           u"#ASTER-ZONE/#ASTER-CONTACT not applied: "
+                           u"compression only (LIAISON_UNIL)"))
+    elif zone or glob:
+        log("INFO: #ASTER-ZONE/#ASTER-CONTACT not used in this run (no "
+            "unilateral contact in a nonlinear analysis).")
+    if bonded:
+        if not model_data.get("bonded"):
+            log("INFO: #ASTER-BONDED dropped: the model has no bonded "
+                "contact.")
+        elif model_data.get("thermal_data") is not None and \
+                not model_data.get("thermo_mech"):
+            warnings.append(tr(u"#ASTER-BONDED niet toegepast in een "
+                               u"thermische analyse",
+                               u"#ASTER-BONDED not applied in a thermal "
+                               u"analysis"))
+        elif all("relations" in b and not b.get("ddl")
+                 for b in model_data.get("bonded", [])):
+            pass            # no LIAISON_MAIL: _render_mpcs gives the WARNING
+        else:
+            e, w = bridge_custom.check_lines("bonded", bonded)
+            errors += e
+            warnings += w
+    for w in warnings:
+        log(u"WARNING: " + w)
+    for e in errors:
+        log(u"ERROR: " + e)
+    return not errors
 
 
 def _check_lost_contacts(model_data, solver_cmd):

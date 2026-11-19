@@ -488,8 +488,10 @@ def test_zone_keys():
     """#ASTER-ZONE keys win over the bridge's penalty arguments (no
     'keyword argument repeated')."""
     import bridge_to_aster as b
-    keys = b._zone_keys(", algo_frot='PENALISATION', COEF_PENA_FROT=1e9, "
-                        "SANS_GROUP_NO=('A', 'B')")
+    import bridge_custom
+    keys = set(k for k in bridge_custom.line_keys(
+        "algo_frot='PENALISATION', COEF_PENA_FROT=1e9, "
+        "SANS_GROUP_NO=('A', 'B')") if k)
     check(keys == set(["ALGO_FROT", "COEF_PENA_FROT", "SANS_GROUP_NO"]),
           "zone keys: {0}".format(sorted(keys)))
     args = (", ALGO_CONT='PENALISATION', COEF_PENA_CONT=1e13, "

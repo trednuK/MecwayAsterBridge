@@ -801,7 +801,9 @@ are active. Tolerance: 1e-6 × the smallest edge (U2.04.04 §4.4.1).
   half-thickness) and the sagitta of a curved master; Code-Aster's alarm `CALCULEL5_48`
   then usually appears too. Not checked with an *Element offset* or a shell without a
   thickness (INFO). Close the gap in
-  the mesh or turn on the setting below (KNOWN_BUGS 146). Mecway's *CCX keyword* modifications such as `ADJUST` on
+  the mesh or turn on the setting below (KNOWN_BUGS 146); a real, wanted distance:
+  `#ASTER-BONDED DISTANCE_ALARME=...` silences the alarm, `DISTANCE_MAX=...` limits the
+  tie (§3.9). Mecway's *CCX keyword* modifications such as `ADJUST` on
   `*CONTACT PAIR` only change the CalculiX input; the bridge reports them and uses them
   only to see whether `ADJUST` is turned off (then it does not close the gap either).
   With the setting *Bonded contact: close gaps like CCX* (`bonded_close_gap`, page General,
@@ -891,7 +893,8 @@ with `#ASTER` lines (§3.9), for example `#ASTER-ZONE ALGO_CONT='PENALISATION'`.
 For what Mecway cannot enter, put `#ASTER` lines in a free text field of Mecway
 (OpenRadioss: `#ASTER`, Mystran: `$ASTER`, CCX: `**ASTER`). Syntax, selection names
 (`<<Mecway selection>>`), pitfalls and worked examples (including `#ASTER-CONTACT`,
-`#ASTER-ZONE` and `#ASTER-OPTIE` for contact) are in
+`#ASTER-ZONE`, `#ASTER-BONDED` for the bonded `LIAISON_MAIL`, and `#ASTER-OPTIE` for
+contact; the bridge checks the contact lines against the Code-Aster 17.4 catalogue) are in
 [`ASTER_lines_examples.md`](ASTER_lines_examples.md).
 
 ### 3.10 Example: bonding plates (bonded contact between shells)
