@@ -86,6 +86,9 @@ tegen `CONFIG_BRIDGE`, en of de Nederlandse en Engelse pagina's dezelfde opbouw 
 - Het celveld van bezweken elementen in de `.vtu`-bestanden (*VTU/PVD-bestanden voor
   ParaView*) heet nu `failed` in plaats van `BEZWEKEN`: pas een bewaarde ParaView-state die
   op `BEZWEKEN` filtert (*Threshold*) aan.
+- Vanaf V2026.15 bestaat de resultaatroute `tabel` niet meer: de resultaten gaan altijd via
+  de `.liml`. Een bewaard `bridge_utils.py` met `"result_route": "tabel"` geeft een
+  WARNING en de run gaat via de `.liml`; haal die regel weg.
 
 ## 4. Een andere Code-Aster-versie kiezen
 
@@ -172,9 +175,7 @@ het laatst is nagelopen:
 | Bezwijken van elementen (`#ASTER-BEZWIJKEN`) in 2D en axisymmetrisch met `**ASTER-PLANE` in L30, WARNING voor KNOWN_BUGS 144 (V2026.14) | NIET nagelopen | NIET nagelopen in het Mecway-venster: headless gemeten met Code-Aster 17.4 (PL-70 … PL-74 tegen gesloten oplossingen) | NIET nagelopen in het Mecway-venster (headless runs hangen niet af van de Mecway-versie) |
 | De thermomechanische keten (T31 met *Thermal stress*) met `**ASTER-PLANE C_PLAN` of `D_PLAN`, en met plasticiteit in `AXIS` (V2026.14) | NIET nagelopen | NIET nagelopen in het Mecway-venster: headless gemeten met Code-Aster 17.4 (PL-75 … PL-80 tegen gesloten oplossingen) | NIET nagelopen in het Mecway-venster (headless runs hangen niet af van de Mecway-versie) |
 | Gaps met een eigen U-as (*Element orientation*-kaart), geen zijdelingse stijfheid van een gesloten gap, KNOWN_BUGS 23 (V2026.14) | NIET nagelopen | Mecway 35 (35.0.9802) headless: NL-92e … NL-92l gelijk aan Mecway's eigen oplossing; NL-92m tegen de handberekening | NIET nagelopen (Mecway's eigen gap niet op Mecway 36 opnieuw gemeten) |
-| Route `tabel` zonder Mecway-oplossing: duidelijke melding en stop vóór Code-Aster (V2026.14) | NIET nagelopen | NIET nagelopen in het Mecway-venster: offline tests | NIET nagelopen in het Mecway-venster (route `tabel` met een gewone oplossing wel, 18 nov 2026) |
-| Het model als tekst via `mw.liml_text()`: een run en *Doorsnede tonen* lezen een kopie van het open model; route `liml` slaat pas op als de resultaten erin gaan, route `tabel` niet (V2026.15) | n.v.t. (geen `mw.liml_text()`: het model wordt opgeslagen zoals eerder) | n.v.t. (geen `mw.liml_text()`: het model wordt opgeslagen zoals eerder) | headless nagelopen (36.0.9815, 18 nov 2026: route `tabel` en *Doorsnede tonen* in een verborgen Mecway, het modelbestand ongewijzigd, dezelfde `.comm`, hetzelfde mesh en dezelfde vermoeiingsuitkomst als met opslaan; 19 nov 2026: route `liml` op VM-01a en LS-20a, dezelfde resultaten en hetzelfde modelbestand als met opslaan vooraf, een mislukte run laat het bestand ongewijzigd); NIET nagelopen in het Mecway-venster |
-| Route `tabel`: waarden per element-knoop (spanningen, rekken, von Mises, schaallagen) vervangen door de knoopwaarden van Code-Aster via `solution.set_element_node_variable()`, KNOWN_BUGS 7 (V2026.15) | n.v.t. (geen `set_element_node_variable()`: Mecway's eigen waarden blijven, met een WARNING; NIET nagelopen) | n.v.t. (geen `set_element_node_variable()`: Mecway's eigen waarden blijven, met een WARNING; NIET nagelopen) | headless nagelopen (36.0.9815, 18 nov 2026: VM-01a en een volume met een schaalhuid en een balk in een verborgen Mecway, waarden per element-knoop gelijk aan de knoopwaarden; zonder de functie de WARNING); NIET nagelopen in het Mecway-venster; Mecway's afgeleide variabelen (hoofdspanningen, Tresca) na de vervanging NIET nagelopen |
+| Het model als tekst via `mw.liml_text()`: een run en *Doorsnede tonen* lezen een kopie van het open model; het model wordt pas opgeslagen als de resultaten erin gaan (V2026.15) | n.v.t. (geen `mw.liml_text()`: het model wordt opgeslagen zoals eerder) | n.v.t. (geen `mw.liml_text()`: het model wordt opgeslagen zoals eerder) | headless nagelopen (36.0.9815, 18 nov 2026: de toenmalige route `tabel` en *Doorsnede tonen* in een verborgen Mecway, het modelbestand ongewijzigd, dezelfde `.comm`, hetzelfde mesh en dezelfde vermoeiingsuitkomst als met opslaan; 19 nov 2026: een run op VM-01a en LS-20a, dezelfde resultaten en hetzelfde modelbestand als met opslaan vooraf, een mislukte run laat het bestand ongewijzigd); NIET nagelopen in het Mecway-venster |
 | Contact (V2026.15): contactmethode `auto`, `SEUIL_INIT` bij wrijving, dubbele opleggingen op verlijmde slave-knopen (KNOWN_BUGS 147), `bonded_close_gap`, star plakken bij wrijving (KNOWN_BUGS 149) | NIET nagelopen | NIET nagelopen | headless nagelopen (36.0.9815, 18-19 nov 2026: NL-03g/h/i en LS-07n tegen de eigen CCX-solve van Mecway 36, LS-07o tegen de Mecway 34-referentie van LS-07m); NIET nagelopen in het Mecway-venster |
 
 "Nagelopen" betekent de verificatie van §2 en een run in Mecway met die versie. Vergelijkingen
@@ -221,6 +222,6 @@ route `liml` (`Voorbeeld_A.liml` met de regels van voorbeeld 1 van
 zwarte vlakken); configuraties (LS-20a); de Saved monitor; bezweken elementen verbergen
 (`BezwijkenTrekstaaf`); de doorsnede tonen en verbergen (LS-97a); het statusvenster en het
 convergentiescherm; de knoppen ParaView en AsterStudy; `mw.face_nodes` (PL-07, LS-92a); route
-`tabel` (een uitkragende balk, tipverplaatsing −35,3 mm). Alle tien zoals verwacht (zie de tabel, waar een rij bestaat). De
+`tabel` (een uitkragende balk, tipverplaatsing −35,3 mm; die route bestaat sinds V2026.15 niet meer). Alle tien zoals verwacht (zie de tabel, waar een rij bestaat). De
 versiecontrole vergelijkt alleen het hoofdnummer, dus 36 dekt ook de definitieve build van
 Mecway 36: draai §2 met `--mecway-opslaan` opnieuw op die build.

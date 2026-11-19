@@ -86,9 +86,7 @@ superposition*): [`Mode_superposition.md`](Mode_superposition.md).
 
 1. **"Active analysis (auto = follow Mecway)":** `auto` picks `modal_3d` for V30 and `buckling_3d` for B30; or choose the
    analysis yourself.
-2. **"Results to Mecway"** must be `liml` (General page); with
-   `tabel` the bridge stops before the run with a message.
-3. **"Modal"** or **"Buckling"** page (change only when needed):
+2. **"Modal"** or **"Buckling"** page (change only when needed):
 
 | Setting (label) | Default | When to change |
 |---|---|---|
@@ -102,7 +100,7 @@ superposition*): [`Mode_superposition.md`](Mode_superposition.md).
 | "Result fields to Mecway" (modal only) | `displacements` | tick `stresses` and/or `vonmises` for **stresses per mode** (§1.4): where a mode shape gives the largest stress, e.g. to place a sensor or find a fatigue-sensitive spot. Other fields (reactions, ...) are ignored (INFO). Buckling: shapes only |
 | Time limit / memory limit run_aster, MUMPS NPREC | 900 s, 2048 MB, 8 | large models |
 
-4. The element choices on the **"Elements"** page apply here too. Hex8 with
+3. The element choices on the **"Elements"** page apply here too. Hex8 with
    `3D` is too stiff in bending (KNOWN_BUGS 1): frequencies and buckling factors become
    too high. Use `LINE_QUAD` or quadratic elements (hex20) in Mecway. Measured with the
    bridge (cantilever 1 x 0.1 x 0.1 m, 20x2x2 hex8, Euler-Bernoulli f1 = 83.55 Hz):
@@ -628,7 +626,6 @@ U4.42.01 §9.4.3, test case ssll103a). Mecway has no choice for this element.
 | No RX/RY/RZ after the modes; in the `.mess`: `aster_results_export: WARNING: effective mass of the rotations not ...` | the own computation failed or did not match Code-Aster's values for the translations (e.g. an unknown kind of degree of freedom) | frequencies, shapes and translations are fine; report the model as a bug (KNOWN_BUGS). You can then request a rotational effective mass in Mecway itself (*modal effective mass*, internal solver) |
 | RX/RY/RZ fractions look like the translations | the model lies far from the origin: a rotation about the origin is then mostly a translation | put the origin at the point about which you want the rotation (§1.5) |
 | INFO: Modes: ... ignored: reactions (or another field) | for modes only shapes and stresses go to Mecway | normal; reactions do not belong to a mode |
-| The result route 'tabel' does not work ... | modes only via `liml` | set "Results to Mecway" to `liml` |
 
 ## 5. Nonlinear buckling
 
@@ -1032,7 +1029,7 @@ wheel** (setting `cyclic_full_wheel`, on by default; off = only the sector).
    there are then rigid body modes at ~0 Hz in ND 0 and 1.
 5. **Loads** give, as in §2.5, a prestressed modal analysis (e.g. *Centrifugal
    force* about the symmetry axis: stress stiffening and spin softening).
-6. **Main window**: `auto` (or `modal_3d`), result route `liml`. *Start*.
+6. **Main window**: `auto` (or `modal_3d`). *Start*.
 
 | Setting (label) | Key | Default | When to change |
 |---|---|---|---|

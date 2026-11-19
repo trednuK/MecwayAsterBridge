@@ -93,8 +93,8 @@ when you omit the keyword (catalogue 17.4).
 **Static (`STAT_NON_LINE`).** As for implicit dynamics the bridge creates a
 `DEFI_LIST_INST` with automatic cutting (see below); with only a `DEFI_LIST_REEL`,
 Code-Aster would not reduce the step (EDF R&D, U4.51.03; message `SUBDIVISE_3`). Sent to
-Mecway (route `liml`): all archived solver steps up to the last time reached (the
-bridge sets no `ARCHIVAGE`), or (route `tabel`) only that last time. The solver steps
+Mecway: all archived solver steps up to the last time reached (the
+bridge sets no `ARCHIVAGE`). The solver steps
 are Mecway's (*Time step size*, `<timesteps stepsize>`: dt, 2 dt, ... up to the period),
 plus the kinks of the load tables that fall in between; so Mecway shows the same times
 as with Mecway's own solver. Load times after the period are dropped. If Mecway's
@@ -1093,8 +1093,7 @@ same supports (bolt displacements within ~20%, stresses within ~35% on this coar
 - Mecway shows the message with the error code, advice and "Last time with results:
   ... s".
 - **Dynamic**: all output times up to that time go to Mecway.
-- **Static**: route `liml` all archived steps up to that time, route `tabel` only the
-  last time reached (§2.1).
+- **Static**: all archived steps up to that time (§2.1).
 - Another Code-Aster error in the step loop (e.g. `DVP_2`, an element that is too
   distorted) is handled the same way, once a step beyond the start has been archived: on
   every Code-Aster error the result with the steps so far is available in the `.comm`

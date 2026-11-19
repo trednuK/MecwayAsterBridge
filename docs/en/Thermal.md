@@ -24,7 +24,7 @@ template `Scripts/AsterTemplate_Thermique.comm`). Code-Aster 17.4.
 - **Initial temperature:** `<initialconditions><temperature2>`; nodes without an
   initial temperature start, as in Mecway, at 0 K (manual v33 §6.7.2). The bridge
   warns if there is no initial temperature.
-- **Results:** only via `result_route = "liml"`: `temperature` (nodes) and the
+- **Results:** `temperature` (nodes) and the
   heat flux `heatfluxx/y/z` + `heatfluxmag` (`FLUX_NOEU` = −λ grad T; nodes), and for
   volume elements also per element node (`FLUX_ELNO`), as Mecway stores it.
 - **Formulas** (*Solution > Formula*, e.g. `qf.z/3600/(12^2)`): the bridge computes

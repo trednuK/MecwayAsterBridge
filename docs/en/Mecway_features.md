@@ -149,9 +149,9 @@ Bonded contact per combination (slave on master):
 | Mecway field | Status | Remark |
 |---|---|---|
 | Displacement, rotation | Yes | Modal and buckling: the mode shapes. |
-| Stress tensor of solid elements (node and element node) | Yes | Code-Aster averaging, different from Mecway (KB3). Route `tabel`: with Mecway 36 or later and a solution without time steps the values per element node are Code-Aster's node values; otherwise KB7. |
+| Stress tensor of solid elements (node and element node) | Yes | Code-Aster averaging, different from Mecway (KB3). The values per element node are Code-Aster's own. |
 | von Mises (solids; shells top/middle/bottom) | Yes | KB3. |
-| Stress tensor of shells (global, top/middle/bottom), forces and moments per length | Yes | Fields `shell_stresses` (off by default) and `shell_forces`; route `liml` only. `shell_forces` is on for static and nonlinear and makes the results about 2.5 times larger with shells (WARNING; untick it on the page of the analysis). Mecway's *stress in element coordinates* of shells not (of solids with orthotropic material it is: `lamuu` .., [`Orthotropic_material.md`](Orthotropic_material.md) §4). U axis from *Element properties* or an *Element orientation* card ([`UserGuide.md`](UserGuide.md) §4.1). |
+| Stress tensor of shells (global, top/middle/bottom), forces and moments per length | Yes | Fields `shell_stresses` (off by default) and `shell_forces`. `shell_forces` is on for static and nonlinear and makes the results about 2.5 times larger with shells (WARNING; untick it on the page of the analysis). Mecway's *stress in element coordinates* of shells not (of solids with orthotropic material it is: `lamuu` .., [`Orthotropic_material.md`](Orthotropic_material.md) §4). U axis from *Element properties* or an *Element orientation* card ([`UserGuide.md`](UserGuide.md) §4.1). |
 | Beam stress | Partly | Smallest/largest axial stress for rectangular and circular sections (`beamsixxmin/max`; not with `POU_D_T_GD`, WARNING). General sections with an outline and I, T, L, C: von Mises, longitudinal and shear stress over the section (`beamvonmisesmax`, `beamsixxabsmax`, `beamtaumax`, shells of the section; [UserGuide §4.3](UserGuide.md#43-the-shape-of-a-general-section)). No warping stress. |
 | Section forces and moments of beams | Yes | Field `beam_forces` (`tensileforce`, `sheary`, `shearz`, `torsion`, `bendingmomv/w`), also per mode. With `POU_D_T_GD` from `SIEF_ELNO`, one value per element in the co-rotating axes (NL-81, NL-83). |
 | Reaction forces and moments | Yes | Not with mode superposition, harmonic and vibroacoustics (KB54, KB59). |
@@ -164,7 +164,7 @@ Bonded contact per combination (slave on master):
 | Temperature, heat flux | Yes | Thermal. |
 | Natural frequencies, buckling factors, effective mass | Yes | Effective mass fraction differs from Mecway (KB49). |
 | Acoustic pressure | Yes | [`Acoustics.md`](Acoustics.md). |
-| *Saved monitor* (Solution) | Optional | The summary of the Code-Aster run instead of Mecway's solver messages, only with the setting `save_monitor_liml` (off by default; route `liml`). The summary is always in `<model>_<run-id>_aster_summary.txt` ([`UserGuide.md`](UserGuide.md) §5.2). |
+| *Saved monitor* (Solution) | Optional | The summary of the Code-Aster run instead of Mecway's solver messages, only with the setting `save_monitor_liml` (off by default). The summary is always in `<model>_<run-id>_aster_summary.txt` ([`UserGuide.md`](UserGuide.md) §5.2). |
 
 Extra fields of the bridge (error estimator, fatigue, metallurgy) and which Code-Aster
 field belongs to which Mecway name: [`UserGuide.md`](UserGuide.md) §4.1.

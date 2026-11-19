@@ -90,9 +90,7 @@ superposition*): [`Respons_op_modale_basis.md`](Respons_op_modale_basis.md).
 
 1. **Actieve analyse (auto = volgens Mecway):** `auto` kiest bij V30 `modal_3d` en bij
    B30 `buckling_3d`; of kies de analyse zelf.
-2. **Resultaten naar Mecway** moet `liml` zijn (pagina Algemeen); met `tabel` stopt
-   de bridge vóór de run met een melding.
-3. Pagina **Modaal** of **Knik** (alleen aanpassen als dat nodig is):
+2. Pagina **Modaal** of **Knik** (alleen aanpassen als dat nodig is):
 
 | Instelling (label) | Standaard | Wanneer aanpassen |
 |---|---|---|
@@ -106,7 +104,7 @@ superposition*): [`Respons_op_modale_basis.md`](Respons_op_modale_basis.md).
 | Resultaatvelden naar Mecway (alleen modaal) | `displacements` | vink `stresses` en/of `vonmises` aan voor **spanningen per mode** (§1.4): waar een trillingsvorm de grootste spanning geeft, bijv. om een sensor of een vermoeiingsgevoelige plek te kiezen. Andere velden (reacties, ...) worden genegeerd (INFO). Bij knik alleen de vormen |
 | Tijdslimiet / Geheugenlimiet run_aster, MUMPS NPREC | 900 s, 2048 MB, 8 | grote modellen |
 
-4. De elementkeuzes op de pagina **Elementen** gelden ook hier. Hex8 met `3D` is te
+3. De elementkeuzes op de pagina **Elementen** gelden ook hier. Hex8 met `3D` is te
    stijf bij buiging (KNOWN_BUGS 1): frequenties en kniklastfactoren worden te hoog.
    Gebruik `LINE_QUAD` of kwadratische elementen (hex20) in Mecway. Gemeten met de
    bridge (ingeklemde balk 1 x 0,1 x 0,1 m, 20x2x2 hex8, Euler-Bernoulli
@@ -638,7 +636,6 @@ U4.42.01 §9.4.3, testcase ssll103a). Mecway heeft geen keuze voor dit element.
 | Geen RX/RY/RZ achter de modes; in de `.mess`: `aster_results_export: WAARSCHUWING: effectieve massa rotaties niet ...` | de eigen berekening lukte niet of kwam voor de translaties niet uit op Code-Aster's waarden (bijv. een onbekend soort vrijheidsgraad) | de frequenties, vormen en translaties zijn goed; meld het model als fout (KNOWN_BUGS). Een rotatie-effectieve massa kun je dan in Mecway zelf opvragen (*modal effective mass*, interne solver) |
 | RX/RY/RZ-fracties lijken op de translaties | het model ligt ver van de oorsprong: een rotatie om de oorsprong is dan vooral een verplaatsing | leg de oorsprong in het punt waarom je de rotatie wilt (§1.5) |
 | INFO: Modes: ... ignored: reactions (of een ander veld) | bij modes gaan alleen vormen en spanningen naar Mecway | normaal; reacties horen niet bij een mode |
-| De resultaatroute 'tabel' werkt niet ... | modes alleen via `liml` | zet *Resultaten naar Mecway* op `liml` |
 
 ## 5. Niet-lineaire knik
 
@@ -1051,7 +1048,7 @@ sector).
    opleggingen) kan ook: dan zijn er starre modes bij ~0 Hz in ND 0 en 1.
 5. **Belastingen** geven, zoals bij §2.5, een voorgespannen modale analyse (bijv.
    *Centrifugal force* om de symmetrieas: spanningsverstijving en spin softening).
-6. **Hoofdvenster**: `auto` (of `modal_3d`), resultaatroute `liml`. *Starten*.
+6. **Hoofdvenster**: `auto` (of `modal_3d`). *Starten*.
 
 | Instelling (label) | Sleutel | Standaard | Wanneer aanpassen |
 |---|---|---|---|

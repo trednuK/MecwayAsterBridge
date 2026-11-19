@@ -64,8 +64,7 @@ structures: [`Modal_and_buckling.md`](Modal_and_buckling.md).
 
 1. **Active analysis:** `auto` chooses `acoustic_modes_3d` for A30 and A20; or choose
    it yourself.
-2. **Results to Mecway** must be `liml` (General page).
-3. Page **Acoustics (cavity modes)** (change only when needed):
+2. Page **Acoustics (cavity modes)** (change only when needed):
 
 | Setting (label) | Default | When to change |
 |---|---|---|
@@ -302,7 +301,7 @@ elements:
 3. **Boundaries** on edges (face selection of the edges) or nodes: an edge without a
    condition is a hard wall, *Fluid pressure* = 0 a pressure node, *Impedance* gives
    complex modes (§3.3), all as in 3D.
-4. **Bridge:** `auto` (or `acoustic_modes_3d`), results route `liml`. Code-Aster:
+4. **Bridge:** `auto` (or `acoustic_modes_3d`). Code-Aster:
    `PHENOMENE='ACOUSTIQUE'`, `MODELISATION='PLAN'` (impedance edges `PLAN_ABSO`, Code-Aster
    test case ahlv100f); the rest is the A30 route. The 2D analysis has no harmonic
    pressure field (`acoustic_harm_3d`: ERROR, and `auto` keeps the cavity modes with a
@@ -412,8 +411,7 @@ The prefixes apply to the name of the selection in Mecway; case does not matter
    `acoustic_modes_3d`. To get the cavity modes of a model with a source: choose
    `acoustic_modes_3d` yourself (the source and absorbing selections are then hard
    walls, INFO in the log).
-2. **Results to Mecway** must be `liml`.
-3. Page **Acoustics (harmonic)**:
+2. Page **Acoustics (harmonic)**:
 
 | Setting (label) | Default | When to change |
 |---|---|---|
@@ -612,10 +610,9 @@ The prefixes apply to the name in Mecway; upper/lower case does not matter.
 1. **Active analysis:** `auto` chooses `vibroacoustic_modes_3d` for a Frequency model
    with a fluid (INFO in the log); or choose it yourself. If you choose `modal_3d` for
    such a model, the bridge computes the fluid as a solid (WARNING).
-2. **Results to Mecway** must be `liml`.
-3. **Mecway solve first as a check**: pointless (Mecway computes a material without
+2. **Mecway solve first as a check**: pointless (Mecway computes a material without
    Young's modulus as a solid with E = 0; the bridge then does not compare).
-4. Page **Vibroacoustics (modes)**:
+3. Page **Vibroacoustics (modes)**:
 
 | Setting (label) | Default | When to change |
 |---|---|---|

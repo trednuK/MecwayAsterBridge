@@ -754,8 +754,6 @@ Mecway leest de gesplitste resultaten (IronPython `bridge_results_liml.splice_re
 daarna headless `mw.open` en `solution.node_value`) en maakt zelf de items *tensile
 force*, *shear force*, *bending moment*, *torsion moment*, *stress*, *strain*, *force
 per length*, *moment per length*, *failure*, *contact stress* en *contact state* aan.
-Route `tabel` (LS-30, LS-32, NL-31 met een nep-solution in CPython): `beam_forces` en
-`strain` (ook Green-Lagrange) gelijk aan route `liml`.
 ### LS-40 .. LS-44 Formules in x, y, z
 
 - **Doel**: Mecway-formules in x, y, z (KNOWN_BUGS 45, opgelost; grenzen KNOWN_BUGS 104)

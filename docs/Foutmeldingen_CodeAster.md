@@ -1171,15 +1171,15 @@ de oplossing is berekend, maar de commando's erna worden overgeslagen.
 
 - **Melding** (alarm): met structuurelementen heeft `SIGM_NOEU` (of `EFGE_NOEU`) alleen
   betekenis in het lokale assenstelsel; `REPERE` wordt genegeerd.
-- **Oorzaak**: gemengde modellen. In de bridge bestaat `SIGM_NOEU` alleen op de
-  3D-elementen en staat daar in het globale assenstelsel (`_build_postreleve_block`).
-  Dezelfde melding komt met resultaatroute `tabel` en het veld `beam_forces`: de
-  snedekrachten `EFGE_NOEU` worden in het lokale assenstelsel van de balk uitgelezen, en
-  dat is wat de bridge wil. Waar balken met verschillende lokale assen in één knoop
-  samenkomen (een hoek, een knik) is die knoopwaarde een gemiddelde over assen die niet
-  bij elkaar horen (NIET gemeten); gebruik daar route `liml` (waarden per elementknoop).
-- **Gezien**: route `tabel`: elk gemengd model en balken (17 nov 2026). De WARNING in de
-  log geeft deze uitleg mee.
+- **Oorzaak**: een eigen `POST_RELEVE_T` (via `#ASTER-POST`) die een veld van balk- of
+  schaalelementen uitleest: dat gebeurt in het lokale assenstelsel van die elementen.
+  Waar balken met verschillende lokale assen in één knoop samenkomen (een hoek, een
+  knik) is een knoopwaarde een gemiddelde over assen die niet bij elkaar horen (NIET
+  gemeten). Geef `REPERE` mee voor waarden in het globale stelsel. De resultaten
+  in Mecway worden hier niet door beïnvloed: die schrijft Code-Aster zelf (per
+  elementknoop) en de bridge zet ze in de `.liml`.
+- **Gezien**: met de voormalige tabelroute (inmiddels verwijderd, 17 nov 2026), elk
+  gemengd model en balken.
 - **Oplossing**: geen nodig.
 - **Status**: onschuldig.
 
@@ -1215,7 +1215,7 @@ de oplossing is berekend, maar de commando's erna worden overgeslagen.
 - **Melding** (fout): extractie gevraagd voor velden zonder sub-punten.
 - **Oorzaak**: `SIGM_ELNO` eerst alleen op de volumes; de latere `CALC_CHAMP` op de
   schalen vulde het veld niet aan.
-- **Gezien**: gemengd model ME (route `liml`).
+- **Gezien**: gemengd model ME.
 - **Oplossing**: in de bridge: `SIGM_ELNO` één keer over volumes en schalen samen
   (commit ed7971c).
 - **Status**: opgelost in de bridge.

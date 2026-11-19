@@ -130,14 +130,12 @@ solver's prefix: `#ASTER-PLANE` in an OpenRadioss field, `$ASTER-PLANE` in a Mys
 
 ### 1.2 In the main window of the bridge
 
-![General page with the active analysis and the result route](../img/general_analysis_results_en.png)
+![General page with the active analysis](../img/general_analysis_results_en.png)
 
 1. *Active analysis (auto = follow Mecway)*: `auto` (or `lin_static_3d`; for D20/DA0
    `dyna_impl_3d`).
-2. *Results to Mecway*: `liml`.
 
-"Active analysis (auto = follow Mecway)" `auto` (or `lin_static_3d`) and "Results to Mecway" `liml` (General page;
-the route `tabel` does not scale the reactions, the bridge stops). The settings of the
+"Active analysis (auto = follow Mecway)" `auto` (or `lin_static_3d`). The settings of the
 Static or Dynamic (implicit) page apply as in 3D; for D20/DA0 equal to Mecway: "Time
 scheme (SCHEMA_TEMPS)" `NEWMARK`, `deformation` `PETIT` and "Solver steps per Mecway
 time step" = 1 (default; §2.4). The result fields `strain` and `shell_*`
@@ -246,8 +244,7 @@ with one line to compute it in 2D (examples 2, 3 and 4 in §1.5):
    `**ASTER-ZONE SANS_GROUP_NO='<<selection>>'` (KNOWN_BUGS 141). *Bonded* contact in 2D
    is not possible: an ERROR, the bridge stops (remove it or compute the model in 3D). Whether Mecway's window lets you pick shell edges for a contact is NOT verified.
 7. **Bridge.** "Active analysis (auto = follow Mecway)" `auto` (→ `nonlin_static_3d` for
-   L30, `lin_static_3d` for S30) and "Results to Mecway" `liml` (the route `tabel`: ERROR).
-   Check in the log that the line was read: per elset
+   L30, `lin_static_3d` for S30) Check in the log that the line was read: per elset
    `INFO: Elset '…' -> MODELISATION='C_PLAN', thickness … m (Mecway L30).` (for `AXIS`
    without the thickness) and once `INFO: 2D analysis L30: MODELISATION='…'; concentrated
    forces / … and reactions x … (…).` Without these lines the bridge computed the elements
@@ -307,8 +304,8 @@ Worked examples: example 5 (heat transfer) and example 6 (the chain) in §1.5.
    time tables and in the same way as in 3D ([`Thermal.md`](Thermal.md); *Internal heat
    generation* and a *Heat flow* on elements verified: PL-56, PL-57). T31: an initial
    temperature (as in 3D).
-6. **Bridge.** "Active analysis (auto = follow Mecway)" `auto` (→ `ther_3d`, page Thermal)
-   and "Results to Mecway" `liml`. The log shows `INFO: T30 (or T31) with '#ASTER-PLANE AXIS':
+6. **Bridge.** "Active analysis (auto = follow Mecway)" `auto` (→ `ther_3d`, page Thermal).
+   The log shows `INFO: T30 (or T31) with '#ASTER-PLANE AXIS':
    thermal MODELISATION='AXIS' about Y (per radian in Code-Aster, 360 degrees in Mecway).`
    and per elset `INFO: Elset '…' -> thermal MODELISATION='AXIS' (the shell thickness does
    not count).`
@@ -358,8 +355,7 @@ in Mecway).` (here t = 1 mm) Verified (PL-75 … PL-80): a strip with a linear t
 (σ_xx = −E α ΔT, in `D_PLAN` /(1 − ν), and σ_zz), with a pressure, a force in N and a heat
 flow in W on an edge (2 mm thick), and with plasticity: all within 1e-6 of the closed form.
 
-ERROR in the chain (`AXIS`, `C_PLAN`, `D_PLAN`): the result route
-`tabel` (the reactions are not scaled to 360 degrees or the thickness), contact, node-surface
+ERROR in the chain (`AXIS`, `C_PLAN`, `D_PLAN`): contact, node-surface
 couplings, bonded contact and an initial velocity. A failure limit (`#ASTER-BEZWIJKEN`) gives
 a WARNING: the chain has no failure loop, the elements do not fail (in 3D too). Point masses are ignored with an INFO; constraint equations,
 flexible joints and element offsets are skipped by the reader already with a WARNING (not an
@@ -437,7 +433,7 @@ example: example 7 in §1.5.
    traction, a force on faceid 1, a pressure with a formula in x, y, z, line pressure,
    centrifugal force, temperatures and contact (§1.6).
 7. **Bridge.** "Active analysis (auto = follow Mecway)" `auto` (→ `lin_static_3d` or
-   `nonlin_static_3d`) and "Results to Mecway" `liml`. The log shows per elset
+   `nonlin_static_3d`). The log shows per elset
    `INFO: Elset '…' -> MODELISATION='COQUE_AXIS' (axisymmetric shell, SEG3), thickness … m
    (Mecway S30).` and once `INFO: 2D analysis S30: axisymmetric shells (COQUE_AXIS) about Y;
    …`. In L30 the shells are computed with small displacements (`deformation` other than
@@ -711,7 +707,7 @@ Steps:
    **ASTER-PLANE AXIS
    ```
 
-6. Bridge: `auto` (→ `ther_3d`, page Thermal), "Results to Mecway" `liml`. The log shows
+6. Bridge: `auto` (→ `ther_3d`, page Thermal). The log shows
    `INFO: T30 with '#ASTER-PLANE AXIS': thermal MODELISATION='AXIS' about Y (per radian in
    Code-Aster, 360 degrees in Mecway).` and `INFO: Elset 'Buis' -> thermal
    MODELISATION='AXIS' (the shell thickness does not count).`
@@ -740,7 +736,7 @@ Steps:
    | – | – | *Thermal stress* with *Reference temperature* 293 K (= the initial temperature) |
 
 5. The line: in CCX > *Custom model definition* `**ASTER-PLANE AXIS`.
-6. Bridge: `auto` (→ `ther_3d`), "Results to Mecway" `liml`; on the Thermal page "Time
+6. Bridge: `auto` (→ `ther_3d`); on the Thermal page "Time
    scheme THETA (0 .. 1)" = 1 as in the verification (the default 0.57 is not checked for
    this case). The log shows the two INFO lines of example 5 (with T31 instead of T30) and `INFO: T31: the mechanical
    part of the thermomechanical chain as MODELISATION='AXIS' (reactions x 2 pi).`
@@ -856,7 +852,6 @@ Code-Aster. The bridge writes the line as `#ASTER-PLANE`, also when you typed
 | Route A with `C_PLAN`/`D_PLAN` but no shell thickness | ERROR: Elset '…': #ASTER-PLANE C_PLAN needs a thickness; give material '…' a Shell/membrane geometry with a thickness in Mecway (also for plane strain; Mecway itself does not solve without one). | give the material *Shell/membrane* with the thickness t |
 | Two materials with a different thickness | ERROR: The 2D analysis has elsets with different modelisation or thickness (…); the bridge translates a model with one thickness and one type (plane stress or plane strain). | one thickness for the whole model |
 | Another bridge analysis than `auto` chosen | ERROR: Mecway analysis type L30 (2D) is only translated to nonlin_static_3d, not to …. Choose 'auto' or nonlin_static_3d on the start screen. | `auto` |
-| Result route `tabel` | ERROR: A 2D analysis (…) only works with the result route 'liml' (General page); the route 'tabel' does not scale the reaction forces to the thickness or 360 degrees. | result route `liml` |
 | Plasticity in an S20/SA0 model | WARNING: Material '…' has plasticity, but S20 is linear (in Mecway too); the bridge computes elastically. For plasticity in 2D: Nonlinear Static (L30) with plane shell elements and the line '**ASTER-PLANE C_PLAN\|D_PLAN\|AXIS' (docs 2D par. 1.4). | route A (example 2 or 3) |
 | A load or support on the element faces (faceid 5/6) instead of on edges in route A | ERROR: … on '…' in a 2D analysis: only edges of plane elements (faceid 1..4), here shellface. NOT included. | a face selection of edges |
 | A contact between element faces instead of edges | ERROR: contact '…' / '…': in a 2D analysis only edges of the plane elements (here […]). NOT included. | face selections of edges (example 4) |
@@ -870,7 +865,6 @@ Code-Aster. The bridge writes the line as `#ASTER-PLANE`, also when you typed
 | `#ASTER-LASBRON`, `#ASTER-METALLURGIE` or *Bonded* contact in an axisymmetric thermal model | ERROR: Bonded contact in an axisymmetric thermal model ('#ASTER-PLANE AXIS' in T30) is not translated (yet). (or the name of the other item; T31 likewise). In T31 with *Thermal stress* (the chain) bonded contact gives: ERROR: Bonded contact in an axisymmetric thermomechanical chain (T31) is not translated (yet). | leave it out, or compute in 3D |
 | *Heat flow* on nodes in an axisymmetric thermal model | ERROR: Not translated: … on '…': heat flow on nodes in an axisymmetric model (AXIS) is not translated; use a heat flow on an edge. | a *Heat flow* on an edge |
 | A thermal load on the face of the cross-section (faceid 5/6) in an axisymmetric thermal model | ERROR: Not translated: … on '…': N face(s) of the cross-section (faceid 5/6) in '…': no surface in an axisymmetric model (AXIS); only edges (faceid 1..4). | put the load on an edge (faceid 1..4) or on the elements |
-| The chain (T31 with *Thermal stress*) with the result route `tabel` | ERROR: An axisymmetric thermomechanical chain (T31) only works with the result route 'liml' (General page); the route 'tabel' does not scale the reaction forces to 360 degrees. (`C_PLAN`/`D_PLAN`: A 2D thermomechanical chain (T31, '#ASTER-PLANE C_PLAN') … to the thickness.) | result route `liml` |
 | Contact, a node-surface coupling, bonded contact or an initial velocity in the chain | ERROR: … in an axisymmetric thermomechanical chain (T31) is not translated (yet). (`C_PLAN`/`D_PLAN`: … in a 2D thermomechanical chain (T31, '#ASTER-PLANE C_PLAN') is not translated (yet).) | leave it out |
 | A constraint equation, flexible joint or element offset in the chain | WARNING: … on '…' is not translated in the thermal -> mechanical chain (Thermal stress in a T31 model); the mechanical solve runs without it. | leave it out, or compute in 3D |
 | Axisymmetric shells (§1.4.2) of line2 elements | ERROR: Elset '…' contains line2 elements; axisymmetric shells ('#ASTER-PLANE AXIS', …) only with line3 (COQUE_AXIS on SEG3, as in all Code-Aster test cases). Make the elements quadratic in Mecway. | line3 elements |
@@ -1044,7 +1038,6 @@ S44e: built, §1.4.2). A20 (acoustics): §4. The exact messages: §1.6 and §6.
   the chain (WARNING). Welding, metallurgy and bonded contact: ERROR; a
   *Heat flow* on nodes and loads on the face of the cross-section: skipped (ERROR "Not
   translated: …").
-- The error estimator (INFO) and the result route `tabel` (ERROR).
 
 ## 4. Acoustics in 2D
 
@@ -1083,7 +1076,6 @@ transfer and of the chain thermal -> mechanical, word for word: §1.6.
 | ERROR: Mecway analysis type A20 (Acoustic Resonance 2D) is only translated to the cavity modes … | another analysis chosen | choose `auto` or `acoustic_modes_3d` ([`Acoustics.md`](Acoustics.md) §3.5) |
 | ERROR: Mecway analysis type D20 (2D) is only translated to dyna_impl_3d, not to … | another analysis chosen on the start screen | choose `auto` or the analysis named |
 | ERROR: D20 (2D) is translated with the implicit scheme … | explicit scheme or *Mode superposition* | choose `NEWMARK` or `HHT`; switch off *Mode superposition* in Mecway |
-| ERROR: A 2D analysis (…) only works with the result route 'liml' | route `tabel` chosen | choose `liml` on the General page |
 | ERROR: '#ASTER-PLANE …' only works in Mecway's Static 3D (S30) and Nonlinear Static (L30) … | the switch in another analysis type | use S30 or L30 (§1.4), T30/T31 with `AXIS` (§1.4.1), or remove the line |
 | ERROR: '#ASTER PLANE …' is Code-Aster code and is skipped; meant is '#ASTER-PLANE …' | the switch without the hyphen | write `**ASTER-PLANE` (§1.4) |
 | WARNING: Material '…' has plasticity, but S20 is linear … | plasticity in S20/SA0 | Nonlinear Static (L30) with `**ASTER-PLANE` (§1.4) |

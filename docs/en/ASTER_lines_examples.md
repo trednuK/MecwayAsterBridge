@@ -545,8 +545,8 @@ Pitfalls:
   `DEFI_GROUP`. In these tests `DEFI_GROUP(reuse=mesh)` after the solve worked; if a job
   aborts on it without a message, see
   [Error messages §9](CodeAster_error_messages.md#no-code-crash-aborted-job-or-logging-error).
-- `UNITE=6` writes to the `.mess`. Unit 8 is the `.resu` file the bridge itself reads in
-  the `tabel` route (it does not exist in the `liml` route); do not write there.
+- `UNITE=6` writes to the `.mess`. The bridge no longer writes tables to a file of its
+  own (there is no `.resu` any more): write your own tables with `UNITE=6`.
 - *Static*: `t_res` does not exist; write `NUME_ORDRE=1` (computed on model A with
   `GROUP_MA='<<Root>>'`: reaction (0; -50; 100) N, equal to minus the load).
 
@@ -573,7 +573,7 @@ vmis_max         0000000a SIEQ_NOEU                   1  0.00000E+00 MIN      8 
 ```
 
 Pitfalls:
-- The bridge already computes `SIGM_NOEU`, `SIEQ_NOEU` and, in the `liml` route, for
+- The bridge already computes `SIGM_NOEU`, `SIEQ_NOEU` and for
   solid elements also `SIGM_ELNO`/`SIEQ_ELNO` itself (for model A `stressxx` …
   `vonmises` are in the results as node and as element-node values, with or without
   extra lines). Your own

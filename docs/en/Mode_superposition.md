@@ -51,8 +51,7 @@ the modes); the expensive step is the modal analysis. For natural frequencies on
 
 1. **Active analysis** `auto`: D30 with *Mode superposition* → `dyna_modal_3d`; D30
    without → `dyna_impl_3d` (§2.6). Or choose the analysis yourself.
-2. **Results to Mecway** must be `liml` (General page).
-3. Page **Mode superposition**:
+2. Page **Mode superposition**:
 
 | Setting (label) | Default | When to change |
 |---|---|---|
@@ -238,7 +237,6 @@ the default `HHT` (numerical damping) and `GROT_GDEP` the bridge logs a WARNING.
 | ERROR: Thermal strain ... is not translated ... | not built | `dyna_impl_3d` |
 | ERROR: The output times ... are not on a regular grid | end time not a multiple of the time step | adjust *Time period* or *Time step* |
 | ERROR: ... is not possible in a mode superposition analysis (linear) | contact, gap, tension/compression only | remove or suppress it, or `dyna_impl_3d` |
-| ERROR: The result route 'tabel' does not work ... | modes and time steps only via `liml` | *Results to Mecway* = `liml` |
 | WARNING: The Mecway model computes Dynamic Response without Mode superposition ... | `dyna_modal_3d` chosen by hand for a D30 without mode superposition | intended? Otherwise `auto` or `dyna_impl_3d` |
 | WARNING: Mecway Dynamic Response (D30) computes linearly with Newmark ... | D30 without mode superposition, `dyna_impl_3d` with HHT or large displacements | schema `NEWMARK` and deformation `PETIT` for the same scheme as Mecway (§2.6) |
 | WARNING: No loads: the response is zero everywhere | no load | apply the load |
@@ -310,8 +308,7 @@ steady state, but for many frequencies at once.
 
 1. **Active analysis:** choose *Harmonic response* (`harmonic_3d`) yourself; `auto`
    picks the modal analysis for V30 and the transient one for D30.
-2. **Results to Mecway** must be `liml`.
-3. Page **Harmonic response**:
+2. Page **Harmonic response**:
 
 | Setting (label) | Default | When to change |
 |---|---|---|

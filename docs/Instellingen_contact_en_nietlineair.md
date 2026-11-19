@@ -92,9 +92,8 @@ Code-Aster-standaard als je het sleutelwoord weglaat (catalogus 17.4).
 **Statisch (`STAT_NON_LINE`).** Net als bij impliciete dynamica maakt de bridge een
 `DEFI_LIST_INST` met automatisch knippen (zie hieronder); met alleen een
 `DEFI_LIST_REEL` zou Code-Aster de stap niet verkleinen (EDF R&D, U4.51.03; melding
-`SUBDIVISE_3`). Naar Mecway gaan (route `liml`) alle gearchiveerde rekenstappen tot
-het laatst bereikte tijdstip (de bridge zet geen `ARCHIVAGE`), of (route `tabel`)
-alleen dat laatste tijdstip. De rekenstappen zijn die van Mecway (*Time step size*,
+`SUBDIVISE_3`). Naar Mecway gaan alle gearchiveerde rekenstappen tot
+het laatst bereikte tijdstip (de bridge zet geen `ARCHIVAGE`). De rekenstappen zijn die van Mecway (*Time step size*,
 `<timesteps stepsize>`: dt, 2 dt, ... tot de periode), plus de knikken van de
 lasttabellen die ertussen vallen; zo staan in Mecway dezelfde tijdstippen als bij
 Mecway's eigen solver. Lasttijden na de periode vallen weg. Staat Mecway's *Automatic time stepping* aan (`automatictimestepping="true"`, met de
@@ -1119,8 +1118,7 @@ op dit grove mesh van 76 hex20-elementen).
 - In Mecway verschijnt de melding met de foutcode, een advies en "Laatste tijdstip
   met resultaten: ... s".
 - **Dynamisch**: alle uitvoertijden tot dat tijdstip gaan naar Mecway.
-- **Statisch**: route `liml` alle gearchiveerde stappen tot dat tijdstip, route
-  `tabel` alleen het laatst bereikte tijdstip (§2.1).
+- **Statisch**: alle gearchiveerde stappen tot dat tijdstip (§2.1).
 - Een andere Code-Aster-fout in de stappenlus (bijv. `DVP_2`, een te sterk vervormd
   element) gaat op dezelfde manier, als er al een stap na het begin gearchiveerd is: bij
   elke Code-Aster-fout staat het resultaat met de stappen tot dan in de `.comm`

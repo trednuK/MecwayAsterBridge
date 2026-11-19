@@ -156,7 +156,7 @@ toe).
     dan de bezweken elementen uit de `.mess`), ook als er niets te verbergen was; na
     *Resultaten... > Inladen* niet. Elementen zonder eindige verplaatsing vóór het
     bezwijken blijven ook zichtbaar; het statusvak noemt ze daarnaast apart.
-  - Alleen voor resultaten met tijdstappen; niet met de resultaatroute `tabel`, niet
+  - Alleen voor resultaten met tijdstappen; niet
     bij statische of modale resultaten (ook niet het hele wiel van cyclische symmetrie).
     *Doorsnede in resultaten* weigert resultaten met verborgen elementen. Na een run
     komt de doorsnede eerst in de resultaten en daarna het verbergen: de doorsnede van

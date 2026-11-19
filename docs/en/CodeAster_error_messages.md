@@ -1150,15 +1150,14 @@ export): the solution has been computed, but the commands that follow are skippe
 
 - **Message** (alarm): with structural elements `SIGM_NOEU` (or `EFGE_NOEU`) is only
   meaningful in the local coordinate system; `REPERE` is ignored.
-- **Cause**: mixed models. In the bridge `SIGM_NOEU` exists only on the 3D elements and
-  is in the global system there (`_build_postreleve_block`). The same message comes with
-  result route `tabel` and the field `beam_forces`: the section forces `EFGE_NOEU` are read
-  in the local system of the beam, which is what the bridge wants. Where beams with
-  different local axes meet at one node (a corner, a kink) that node value is an average
-  over axes that do not belong together (NOT measured); use route `liml` there (values per
-  element node).
-- **Seen**: route `tabel`: every mixed model and beams (17 Nov 2026). The WARNING in the
-  log carries this explanation.
+- **Cause**: your own `POST_RELEVE_T` (through `#ASTER-POST`) that reads a field of beam
+  or shell elements: that happens in the local coordinate system of those elements.
+  Where beams with different local axes meet at one node (a corner, a kink) a node value
+  is an average over axes that do not belong together (NOT measured). Give `REPERE` for
+  values in the global system. The results in Mecway are not affected: Code-Aster writes
+  those itself (per element node) and the bridge puts them into the `.liml`.
+- **Seen**: with the former table route (since removed, 17 Nov 2026), every mixed model
+  and beams.
 - **Solution**: none needed.
 - **Status**: harmless.
 
@@ -1194,7 +1193,7 @@ export): the solution has been computed, but the commands that follow are skippe
 - **Message** (error): extraction requested for fields without sub-points.
 - **Cause**: `SIGM_ELNO` first only on the solids; the later `CALC_CHAMP` on the shells
   did not complete the field.
-- **Seen**: mixed model ME (route `liml`).
+- **Seen**: mixed model ME.
 - **Solution**: in the bridge: `SIGM_ELNO` once over solids and shells together (commit
   ed7971c).
 - **Status**: fixed in the bridge.
