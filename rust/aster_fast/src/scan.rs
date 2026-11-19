@@ -2,6 +2,7 @@
 //! top-level `<solution`) into a slim XML plus the mesh records the
 //! bridge used to pull out with ElementTree.
 
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{self, BufReader, Read, Write};
 use std::path::Path;
@@ -575,8 +576,184 @@ fn find_bytes(data: &[u8], pat: &[u8]) -> Option<usize> {
     data.windows(pat.len()).position(|w| w == pat)
 }
 
+fn elem_plain(e: &Elem) -> bool {
+    !e.truss
+        && e.ux.is_none()
+        && e.uy.is_none()
+        && e.uz.is_none()
+        && e.vx.is_none()
+        && e.vy.is_none()
+        && e.vz.is_none()
+        && e.angle.is_none()
+}
+
+/// One shape, one node count, no per-element attributes: the reader can
+/// take the ids and the connectivity as two arrays.
+fn uniform_elems(elset: &Elset) -> bool {
+    let Some(first) = elset.elems.first() else {
+        return true;
+    };
+    if !elem_plain(first) {
+        return false;
+    }
+    let n = first.nodes.len();
+    elset
+        .elems
+        .iter()
+        .all(|e| e.shape == first.shape && e.nodes.len() == n && elem_plain(e))
+}
+
+/// `"1"` and `"0"` are canonical. `"01"` is not: Python keeps that text
+/// (`"N01"`).
+fn canonical_u32(text: &str) -> Option<u32> {
+    if text.is_empty() || (text.len() > 1 && text.as_bytes()[0] == b'0') {
+        return None;
+    }
+    if !text.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    text.parse().ok()
+}
+
+fn canonical_ids(ids: &[String]) -> Option<Vec<u32>> {
+    let mut out = Vec::with_capacity(ids.len());
+    for id in ids {
+        out.push(canonical_u32(id)?);
+    }
+    Some(out)
+}
+
+/// Corner-node key of a face. Order does not matter (Python uses a
+/// frozenset); the stored corner list keeps the first element's order.
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct FaceKey {
+    n: u8,
+    a: [u32; 4],
+}
+
+fn face_key(nodes: &[u32]) -> FaceKey {
+    let n = nodes.len().min(4);
+    let mut a = [0u32; 4];
+    a[..n].copy_from_slice(&nodes[..n]);
+    a[..n].sort_unstable();
+    FaceKey { n: n as u8, a }
+}
+
+/// Solid faces in the same order as `_free_faces`: elements by ascending
+/// eid (the last element wins when an eid is repeated), faces by ascending
+/// face id. Only faces of exactly one solid, and not the corner nodes of a
+/// shell. Python still drops faces that a load or a fixed support owns.
+fn boundary_faces(mesh: &Mesh) -> Vec<(u32, Vec<u32>)> {
+    let mut elems: Vec<(u32, &str, &[u32])> = Vec::new();
+    for elset in &mesh.elsets {
+        for e in &elset.elems {
+            elems.push((e.eid, e.shape.as_str(), e.nodes.as_slice()));
+        }
+    }
+    elems.sort_by_key(|e| e.0);
+    elems.reverse();
+    elems.dedup_by_key(|e| e.0);
+    elems.reverse();
+
+    let mut shells: HashSet<FaceKey> = HashSet::new();
+    for &(_eid, shape, nodes) in &elems {
+        if let Some(corners) = shell_corners(shape, nodes) {
+            shells.insert(face_key(&corners));
+        }
+    }
+
+    struct Seen {
+        count: u32,
+        eid: u32,
+        corners: Vec<u32>,
+    }
+    let mut order: Vec<FaceKey> = Vec::new();
+    let mut map: HashMap<FaceKey, Seen> = HashMap::new();
+    for &(eid, shape, nodes) in &elems {
+        let Some(faces) = solid_faces(shape) else {
+            continue;
+        };
+        for face in faces {
+            if face.iter().any(|&i| i >= nodes.len()) {
+                continue;
+            }
+            let corners: Vec<u32> = face.iter().map(|&i| nodes[i]).collect();
+            let key = face_key(&corners);
+            if let Some(seen) = map.get_mut(&key) {
+                seen.count += 1;
+            } else {
+                order.push(key);
+                map.insert(
+                    key,
+                    Seen {
+                        count: 1,
+                        eid,
+                        corners,
+                    },
+                );
+            }
+        }
+    }
+    let mut out = Vec::new();
+    for key in order {
+        let seen = &map[&key];
+        if seen.count == 1 && !shells.contains(&key) {
+            out.push((seen.eid, seen.corners.clone()));
+        }
+    }
+    out
+}
+
+fn shell_corners(shape: &str, nodes: &[u32]) -> Option<Vec<u32>> {
+    // ASTER corner indices, expressed in Mecway order (_ASTER_TYPES).
+    let idx: &[usize] = match shape {
+        "tri3" => &[0, 1, 2],
+        "tri6" => &[0, 2, 4],
+        "quad4" => &[0, 1, 2, 3],
+        "quad8" => &[0, 2, 4, 6],
+        _ => return None,
+    };
+    if idx.iter().any(|&i| i >= nodes.len()) {
+        return None;
+    }
+    Some(idx.iter().map(|&i| nodes[i]).collect())
+}
+
+fn solid_faces(shape: &str) -> Option<&'static [&'static [usize]]> {
+    const HEXA: &[&[usize]] = &[
+        &[0, 3, 2, 1],
+        &[4, 5, 6, 7],
+        &[0, 1, 5, 4],
+        &[1, 2, 6, 5],
+        &[2, 3, 7, 6],
+        &[3, 0, 4, 7],
+    ];
+    const TETRA: &[&[usize]] = &[&[0, 2, 1], &[0, 1, 3], &[2, 3, 1], &[0, 3, 2]];
+    const PENTA: &[&[usize]] = &[
+        &[0, 2, 1],
+        &[3, 4, 5],
+        &[0, 1, 4, 3],
+        &[1, 2, 5, 4],
+        &[2, 0, 3, 5],
+    ];
+    const PYRAM: &[&[usize]] = &[
+        &[0, 1, 4],
+        &[1, 2, 4],
+        &[2, 3, 4],
+        &[3, 0, 4],
+        &[0, 3, 2, 1],
+    ];
+    match shape {
+        "hex8" | "hex20" => Some(HEXA),
+        "tet4" | "tet10" => Some(TETRA),
+        "wedge6" | "wedge15" => Some(PENTA),
+        "pyr5" | "pyr13" => Some(PYRAM),
+        _ => None,
+    }
+}
+
 fn write_bin(w: &mut impl Write, mesh: &Mesh) -> io::Result<()> {
-    w.write_all(b"MWFAST1")?;
+    w.write_all(b"MWFAST2")?;
     write_u32(w, mesh.nodes.len() as u32)?;
     for (nid, _, _, _) in &mesh.nodes {
         write_u32(w, *nid)?;
@@ -590,46 +767,65 @@ fn write_bin(w: &mut impl Write, mesh: &Mesh) -> io::Result<()> {
     for elset in &mesh.elsets {
         write_str(w, &elset.name)?;
         write_u32(w, elset.elems.len() as u32)?;
-        for e in &elset.elems {
-            write_u32(w, e.eid)?;
-            write_str(w, &e.shape)?;
-            write_u32(w, e.nodes.len() as u32)?;
-            for n in &e.nodes {
-                write_u32(w, *n)?;
+        if uniform_elems(elset) {
+            w.write_all(&[1])?;
+            let (shape, n_conn) = match elset.elems.first() {
+                Some(e) => (e.shape.as_str(), e.nodes.len() as u32),
+                None => ("", 0),
+            };
+            write_str(w, shape)?;
+            write_u32(w, n_conn)?;
+            for e in &elset.elems {
+                write_u32(w, e.eid)?;
             }
-            let mut flags = 0u8;
-            if e.truss {
-                flags |= 1;
-            }
-            if e.ux.is_some() {
-                flags |= 1 << 1;
-            }
-            if e.uy.is_some() {
-                flags |= 1 << 2;
-            }
-            if e.uz.is_some() {
-                flags |= 1 << 3;
-            }
-            if e.vx.is_some() {
-                flags |= 1 << 4;
-            }
-            if e.vy.is_some() {
-                flags |= 1 << 5;
-            }
-            if e.vz.is_some() {
-                flags |= 1 << 6;
-            }
-            if e.angle.is_some() {
-                flags |= 1 << 7;
-            }
-            w.write_all(&[flags])?;
-            for part in [&e.ux, &e.uy, &e.uz, &e.vx, &e.vy, &e.vz] {
-                if let Some(text) = part {
-                    write_str(w, text)?;
+            for e in &elset.elems {
+                for n in &e.nodes {
+                    write_u32(w, *n)?;
                 }
             }
-            if let Some(text) = &e.angle {
-                write_str(w, text)?;
+        } else {
+            w.write_all(&[0])?;
+            for e in &elset.elems {
+                write_u32(w, e.eid)?;
+                write_str(w, &e.shape)?;
+                write_u32(w, e.nodes.len() as u32)?;
+                for n in &e.nodes {
+                    write_u32(w, *n)?;
+                }
+                let mut flags = 0u8;
+                if e.truss {
+                    flags |= 1;
+                }
+                if e.ux.is_some() {
+                    flags |= 1 << 1;
+                }
+                if e.uy.is_some() {
+                    flags |= 1 << 2;
+                }
+                if e.uz.is_some() {
+                    flags |= 1 << 3;
+                }
+                if e.vx.is_some() {
+                    flags |= 1 << 4;
+                }
+                if e.vy.is_some() {
+                    flags |= 1 << 5;
+                }
+                if e.vz.is_some() {
+                    flags |= 1 << 6;
+                }
+                if e.angle.is_some() {
+                    flags |= 1 << 7;
+                }
+                w.write_all(&[flags])?;
+                for part in [&e.ux, &e.uy, &e.uz, &e.vx, &e.vy, &e.vz] {
+                    if let Some(text) = part {
+                        write_str(w, text)?;
+                    }
+                }
+                if let Some(text) = &e.angle {
+                    write_str(w, text)?;
+                }
             }
         }
         write_u32(w, elset.extra_shapes.len() as u32)?;
@@ -657,9 +853,31 @@ fn write_bin(w: &mut impl Write, mesh: &Mesh) -> io::Result<()> {
     write_u32(w, mesh.nodesels.len() as u32)?;
     for sel in &mesh.nodesels {
         write_str(w, &sel.name)?;
-        write_u32(w, sel.ids.len() as u32)?;
-        for id in &sel.ids {
-            write_str(w, id)?;
+        let nums = canonical_ids(&sel.ids);
+        match nums {
+            Some(ids) => {
+                w.write_all(&[0])?;
+                write_u32(w, ids.len() as u32)?;
+                for id in ids {
+                    write_u32(w, id)?;
+                }
+            }
+            None => {
+                w.write_all(&[1])?;
+                write_u32(w, sel.ids.len() as u32)?;
+                for id in &sel.ids {
+                    write_str(w, id)?;
+                }
+            }
+        }
+    }
+    let boundary = boundary_faces(mesh);
+    write_u32(w, boundary.len() as u32)?;
+    for (eid, corners) in &boundary {
+        write_u32(w, *eid)?;
+        write_u32(w, corners.len() as u32)?;
+        for n in corners {
+            write_u32(w, *n)?;
         }
     }
     Ok(())
@@ -719,5 +937,41 @@ mod tests {
         assert!(mesh.elsets[0].elems[0].truss);
         assert_eq!(mesh.elsets[0].extra_shapes, vec!["line3".to_string()]);
         assert_eq!(mesh.nodesels[0].ids, vec!["01".to_string()]);
+    }
+
+    #[test]
+    fn boundary_matches_free_face_walk() {
+        // Two hex8 sharing {5,6,7,8}, plus a quad4 on {1,2,5,6}.
+        let xml = br#"<liml>
+  <elset name="Solid">
+    <elem eid="1" shape="hex8" nodes="1 2 3 4 5 6 7 8" />
+    <elem eid="2" shape="hex8" nodes="5 8 7 6 9 12 11 10" />
+  </elset>
+  <elset name="Skin">
+    <elem eid="3" shape="quad4" nodes="1 2 6 5" />
+  </elset>
+</liml>"#;
+        let mut mesh = Mesh::new();
+        parse(xml, &mut Vec::new(), &mut mesh).unwrap();
+        let faces = boundary_faces(&mesh);
+        let sets: Vec<Vec<u32>> = faces
+            .iter()
+            .map(|(_e, c)| {
+                let mut s = c.clone();
+                s.sort_unstable();
+                s
+            })
+            .collect();
+        assert!(
+            !sets.iter().any(|s| s == &vec![5, 6, 7, 8]),
+            "shared face counted twice: {sets:?}"
+        );
+        assert!(
+            !sets.iter().any(|s| s == &vec![1, 2, 5, 6]),
+            "shell face must be excluded: {sets:?}"
+        );
+        assert_eq!(faces.len(), 9, "{sets:?}");
+        assert_eq!(faces[0].0, 1);
+        assert_eq!(faces[0].1, vec![1, 4, 3, 2]);
     }
 }

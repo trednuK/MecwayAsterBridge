@@ -38,7 +38,7 @@ import re
 from collections import OrderedDict
 
 from bridge_utils import (log, tr, error_estimator_requested,
-                          get_active_analysis, CONFIG_BRIDGE)
+                          get_active_analysis, CONFIG_BRIDGE, progress)
 from bridge_bcs import SUPPORTED_BCS, _angl_naut, _scale, is_position
 import bridge_custom
 import bridge_warping
@@ -1085,16 +1085,36 @@ def _free_faces(model_data, conn):
     (_DIRICHLET_BCS). Faces from _FACE_CORNERS (corner nodes; the order
     does not matter for PRES_REP ~0, ORIE_PEAU orients them outwards).
 
-    Speed: a plain dict plus a list of the keys in first-seen order
-    (that order is the order of the result) instead of an OrderedDict,
-    which is pure Python in IronPython 2.7, and the face table looked up
-    once per element type. On a generated 804k-node hex8 block the count
-    took 26 s in IronPython with the OrderedDict (19 Nov 2026).
+    aster_fast already walked the solid faces (model_data["_fast_boundary"],
+    same order). This function then only drops the loaded and the fixed
+    ones. Without that list the count is done here: a plain dict plus a
+    list of the keys in first-seen order (that order is the order of the
+    result) instead of an OrderedDict, which is pure Python in IronPython
+    2.7, and the face table looked up once per element type.
     """
+    cached = model_data.get("_fast_boundary")
+    if cached is not None:
+        progress(tr("Mesh schrijven", "Writing the mesh"), tr(
+            "Vrije vlakken uit de mesh-index ({0})",
+            "Free faces from the mesh index ({0})").format(len(cached)),
+            None, True)
+        taken, fixed = _free_face_filters(model_data, conn)
+        out = []
+        for eid, corners in cached:
+            if eid not in conn:
+                continue
+            key = frozenset(corners)
+            if key in taken or key <= fixed:
+                continue
+            atype, cn = conn[eid]
+            out.append(_skin_element(atype, cn, corners))
+        return out
+    progress(tr("Mesh schrijven", "Writing the mesh"), tr(
+        "Vrije vlakken tellen...", "Counting free faces..."), None, True)
     shapes = model_data.get("elem_shapes", {})
     counts = {}
     order = []
-    face_tables = {}       # atype -> [corner indices per faceid, sorted]
+    face_tables = {}
     for eid in sorted(conn):
         if shapes.get(eid) not in _SOLID_SHAPES:
             continue
@@ -1116,6 +1136,20 @@ def _free_faces(model_data, conn):
                 order.append(key)
             else:
                 entry[0] += 1
+    taken, fixed = _free_face_filters(model_data, conn)
+    out = []
+    for key in order:
+        n, eid, corners = counts[key]
+        if n != 1 or key in taken or key <= fixed:
+            continue
+        atype, cn = conn[eid]
+        out.append(_skin_element(atype, cn, corners))
+    return out
+
+
+def _free_face_filters(model_data, conn):
+    """(taken face keys, Dirichlet node ids) for _free_faces."""
+    shapes = model_data.get("elem_shapes", {})
     taken = set()
     for eid, (atype, cn) in conn.items():
         if shapes.get(eid) in _SHELL_SHAPES:
@@ -1140,14 +1174,7 @@ def _free_faces(model_data, conn):
         # (seen in verification LS-04).
         for i in model_data.get("node_groups", {}).get(sel, []):
             fixed.add(int(str(i).lstrip("N")))
-    out = []
-    for key in order:
-        n, eid, corners = counts[key]
-        if n != 1 or key in taken or key <= fixed:
-            continue
-        atype, cn = conn[eid]
-        out.append(_skin_element(atype, cn, corners))
-    return out
+    return taken, fixed
 
 
 def _adapt_boundaries(model_data, conn, skin_by_key, skin_count, by_type):
@@ -1247,6 +1274,9 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     bool  True on success; False on an error (message in bridge_log.txt).
     """
     log("--- Mesh schrijven (ASTER-formaat): {0} ---".format(mail_path))
+    progress(tr("Mesh schrijven", "Writing the mesh"), tr(
+        "Knopen sorteren ({0})", "Sorting nodes ({0})").format(
+            len(model_data.get("mesh_nodes", {}))), None, True)
     nodes = model_data.get("mesh_nodes", {})
     elements = model_data.get("mesh_elements", [])
     if not nodes or not elements:
@@ -1275,7 +1305,11 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     elset_mods = model_data.get("elset_modelisations", {})
     n_split = 0
     curved = []        # [(eid, bow)] curved line3 beams (KNOWN_BUGS 107)
-    for eid, shape, enodes, elset in elements:
+    n_elem = len(elements)
+    progress(tr("Mesh schrijven", "Writing the mesh"), tr(
+        "Elementen ordenen (0 / {0})", "Ordering elements (0 / {0})").format(
+            n_elem), 0.35, True)
+    for i_elem, (eid, shape, enodes, elset) in enumerate(elements):
         spec = _ASTER_TYPES.get(shape)
         if spec is None:
             log(tr("ERROR: Elementvorm '{0}' (element {1}) wordt niet "
@@ -1308,11 +1342,21 @@ def write_mesh(mail_path, model_data, face_nodes=None):
                 cell_refs.setdefault(eid, []).append(("SEG2", len(items)))
                 items.append((name, part))
                 elset_members.setdefault(elset, []).append(name)
+            if i_elem and i_elem % 25000 == 0:
+                progress(tr("Mesh schrijven", "Writing the mesh"), tr(
+                    "Elementen ordenen ({0} / {1})",
+                    "Ordering elements ({0} / {1})").format(i_elem, n_elem),
+                    None, True)
             continue
         items = by_type.setdefault(atype, [])
         cell_refs[eid] = [(atype, len(items))]
         items.append(("M{0}".format(eid), cn))
         elset_members.setdefault(elset, []).append("M{0}".format(eid))
+        if i_elem and i_elem % 25000 == 0:
+            progress(tr("Mesh schrijven", "Writing the mesh"), tr(
+                "Elementen ordenen ({0} / {1})",
+                "Ordering elements ({0} / {1})").format(i_elem, n_elem),
+                None, True)
     if n_split:
         log("INFO: {0} line3 element(s) split into two SEG2 cells "
             "(M<eid> and H<eid>).".format(n_split))
@@ -1916,6 +1960,10 @@ def write_mesh(mail_path, model_data, face_nodes=None):
                                 for name, _cn in items]
     extra_nodes = ((offset_plan or {}).get("new_nodes", []) +
                    list(joint_nodes.items()) + list(pret_nodes.items()))
+    progress(tr("Mesh schrijven", "Writing the mesh"), tr(
+        ".mail: {0} knopen, {1} elementen, {2} groepen",
+        ".mail: {0} nodes, {1} elements, {2} groups").format(
+            len(nids), len(conn), len(group_ma) + len(group_no)), None, True)
     # Written to a temporary file next to it, which replaces the .mail
     # only when complete: a failure while writing keeps an existing .mail
     # (a failing rename after the remove loses it; write_mesh then returns

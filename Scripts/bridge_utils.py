@@ -16,6 +16,7 @@ import io
 import os
 import re
 import math
+import time
 from datetime import datetime
 
 
@@ -1260,6 +1261,7 @@ def set_run_log(run_id, model=None):
     (run_name). run_id None: back to bridge_log.txt. Returns the
     file name of the log.
     """
+    _close_log_fh()
     _RUN_LOG["id"] = run_id
     stem = model_stem(model)
     # Windows paths up to 259 characters (MAX_PATH): seen in a test with a
@@ -1291,6 +1293,61 @@ _LONGEST_SUFFIX = "_monitor_log.txt"
 def log_file_name():
     """Name of the current log file in the working directory."""
     return _RUN_LOG["name"]
+
+
+# One open log file for the whole run. Opening and closing it for every
+# line (thousands of node groups) was slower than the line itself.
+_LOG_FH = {"path": None, "fh": None}
+# User-visible preparation status. fn(section, detail, fraction) paints
+# the window; pump() only refreshes the elapsed time. Both None in tests.
+_PROGRESS = {"fn": None, "pump": None, "last": 0.0}
+
+
+def _close_log_fh():
+    fh = _LOG_FH.get("fh")
+    _LOG_FH["fh"] = None
+    _LOG_FH["path"] = None
+    if fh is not None:
+        try:
+            fh.close()
+        except (IOError, OSError):
+            pass
+
+
+def set_progress_hook(fn, pump=None):
+    """Register the preparation window. fn is None to detach it."""
+    _PROGRESS["fn"] = fn
+    _PROGRESS["pump"] = pump
+    _PROGRESS["last"] = 0.0
+
+
+def progress(section, detail, fraction=None, force=False):
+    """
+    One preparation step, shown to the user while the run has not started
+    Code-Aster yet (bridge_gui preparation window). Also one STATUS line
+    in the log, at most a few times a second unless force is set (a new
+    step). fraction is 0..1 or None (the bar just moves). A missing window
+    still writes the log line.
+    """
+    now = time.time()
+    show = force or (now - _PROGRESS["last"]) >= 0.4
+    if not show:
+        pump = _PROGRESS["pump"]
+        if pump is not None:
+            try:
+                pump()
+            except Exception:
+                pass
+        return
+    _PROGRESS["last"] = now
+    log(u"STATUS: {0} | {1}".format(section, detail))
+    fn = _PROGRESS["fn"]
+    if fn is None:
+        return
+    try:
+        fn(section, detail, fraction)
+    except Exception:
+        pass
 
 
 def run_name(suffix):
@@ -1351,20 +1408,24 @@ def log(text):
     """Write a time-stamped log line to the log file of the
     run. If the working directory is missing (e.g. a fresh installation),
     it is created; if writing fails, the message is lost instead of
-    making the action fail."""
+    making the action fail. The file stays open for the run."""
     work_dir = _log_dir()
     path = os.path.join(work_dir, _RUN_LOG["name"])
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    line = u"[{0}] {1}\n".format(timestamp, run_names(text))
     try:
         if not os.path.isdir(work_dir):
             os.makedirs(work_dir)
-        # io.open with UTF-8: messages from study.mess contain French
-        # accents (e.g. "numéro"), which plain open() cannot always
-        # handle.
-        with io.open(path, "a", encoding="utf-8") as f:
-            f.write(u"[{0}] {1}\n".format(timestamp, run_names(text)))
+        fh = _LOG_FH.get("fh")
+        if fh is None or _LOG_FH.get("path") != path:
+            _close_log_fh()
+            fh = io.open(path, "a", encoding="utf-8")
+            _LOG_FH["fh"] = fh
+            _LOG_FH["path"] = path
+        fh.write(line)
+        fh.flush()
     except (IOError, OSError):
-        pass
+        _close_log_fh()
 
 
 def log_size():

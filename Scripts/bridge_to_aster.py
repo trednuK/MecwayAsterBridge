@@ -57,7 +57,7 @@ from bridge_results_liml import RESULTS_SUFFIX
 from bridge_utils import (log, tr, CONFIG_BRIDGE, get_active_analysis,
                           run_name, template_path, parse_yes_no,
                           mumps_keywords, mumps_memory, mumps_memory_note,
-                          mumps_solveur)
+                          mumps_solveur, progress)
 
 
 # ==========================================
@@ -9745,6 +9745,9 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
     mumps_memory_note(analysis, CONFIG_BRIDGE.get("active_analysis"))
 
     solver_cmd = analysis.get("solver_command")
+    progress(tr("Solverbestanden", "Solver files"), tr(
+        ".comm en .export ({0})", ".comm and .export ({0})").format(
+            solver_cmd or "?"), None, True)
     builder    = SOLVER_BUILDERS_ASTER.get(solver_cmd)
     # Thermal and acoustic: no mechanical preparation (LINE_QUAD,
     # material check E/rho, beam loads); own materials in

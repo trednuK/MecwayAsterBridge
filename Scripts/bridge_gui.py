@@ -2866,6 +2866,223 @@ def _open_viewer(item, name, owner=None):
 
 
 # ==========================================
+# PREPARATION WINDOW (until Code-Aster starts)
+# ==========================================
+_PREP = {"form": None, "section": None, "detail": None, "bar": None,
+         "time": None, "t0": None, "disabled": None, "on_closing": None}
+
+
+def open_prep_progress(subtitle):
+    """
+    Window while the bridge reads the model and writes the solver files.
+    The run blocks the UI thread, so each progress() call refreshes this
+    window and pumps messages; otherwise Mecway shows nothing until the
+    Code-Aster status window opens. Returns False when Windows Forms is
+    not available (the STATUS lines still go to the log).
+    """
+    close_prep_progress()
+    try:
+        import time
+        import clr
+        clr.AddReference("System.Windows.Forms")
+        clr.AddReference("System.Drawing")
+        from System.Windows.Forms import (
+            Form, Label, FormBorderStyle, FormStartPosition,
+            ProgressBar, ProgressBarStyle, Application)
+        from System.Drawing import Point, Size
+        from System.Threading import Thread, ApartmentState
+    except Exception as exc:
+        bridge_utils.log(
+            "WARNING: preparation window not shown ({0}).".format(exc))
+        return False
+    if Thread.CurrentThread.GetApartmentState() != ApartmentState.STA:
+        bridge_utils.log(
+            "WARNING: preparation window not shown (script thread is "
+            "not STA).")
+        return False
+    try:
+        look = _Look()
+        form = Form()
+        form.Text = tr("MecwayAsterBridge - voorbereiden",
+                       "MecwayAsterBridge - preparing")
+        form.Font = look.font
+        form.BackColor = look.col("page_bg")
+        form.ClientSize = Size(560, 220)
+        form.StartPosition = FormStartPosition.CenterScreen
+        form.FormBorderStyle = FormBorderStyle.FixedDialog
+        form.MaximizeBox = False
+        form.MinimizeBox = False
+        form.ShowInTaskbar = True
+        form.TopMost = True
+        header = look.header(
+            form, tr("Voorbereiden", "Preparing"), subtitle or u"")
+        y = header.Height + 16
+        section = Label()
+        section.Font = look.section
+        section.Location = Point(16, y)
+        section.Size = Size(528, look.line_height(look.section) + 6)
+        section.Text = tr("Bezig...", "Working...")
+        form.Controls.Add(section)
+        y = section.Bottom + 8
+        detail = Label()
+        detail.Font = look.font
+        detail.Location = Point(16, y)
+        detail.Size = Size(528, look.line_height() * 2 + 8)
+        form.Controls.Add(detail)
+        y = detail.Bottom + 10
+        bar = ProgressBar()
+        bar.Location = Point(16, y)
+        bar.Size = Size(528, 18)
+        bar.Style = ProgressBarStyle.Marquee
+        bar.MarqueeAnimationSpeed = 30
+        form.Controls.Add(bar)
+        y = bar.Bottom + 10
+        elapsed = Label()
+        elapsed.Font = look.font
+        elapsed.ForeColor = look.col("muted")
+        elapsed.Location = Point(16, y)
+        elapsed.Size = Size(528, look.line_height() + 4)
+        form.Controls.Add(elapsed)
+        y = elapsed.Bottom + 8
+        note = Label()
+        note.Font = look.font
+        note.ForeColor = look.col("muted")
+        note.Location = Point(16, y)
+        note.Size = Size(528, look.line_height() * 2 + 8)
+        note.Text = tr(
+            "Mecway is geblokkeerd tot Code-Aster start. Elke stap staat "
+            "hier, met de status.",
+            "Mecway is locked until Code-Aster starts. Each step is shown "
+            "here, with its status.")
+        form.Controls.Add(note)
+        form.ClientSize = Size(560, note.Bottom + 16)
+
+        def on_closing(sender, args):
+            if not _PREP.get("allow_close"):
+                args.Cancel = True
+        form.FormClosing += on_closing
+        _PREP["on_closing"] = on_closing
+        _PREP["form"] = form
+        _PREP["section"] = section
+        _PREP["detail"] = detail
+        _PREP["bar"] = bar
+        _PREP["time"] = elapsed
+        _PREP["t0"] = time.time()
+        _PREP["disabled"] = None
+        _PREP["allow_close"] = False
+        _disable_mecway(True)
+        form.Show()
+        form.Activate()
+
+        def paint(section_text, detail_text, fraction):
+            section.Text = section_text or u""
+            detail.Text = detail_text or u""
+            if fraction is None:
+                if bar.Style != ProgressBarStyle.Marquee:
+                    bar.Style = ProgressBarStyle.Marquee
+            else:
+                if bar.Style != ProgressBarStyle.Continuous:
+                    bar.Style = ProgressBarStyle.Continuous
+                    bar.Minimum = 0
+                    bar.Maximum = 100
+                pct = int(max(0, min(100, round(100.0 * float(fraction)))))
+                bar.Value = pct
+            _prep_clock()
+            form.Refresh()
+            Application.DoEvents()
+
+        def pump():
+            _prep_clock()
+            form.Refresh()
+            Application.DoEvents()
+
+        bridge_utils.set_progress_hook(paint, pump)
+        paint(tr("Bezig...", "Working..."), u"", None)
+        return True
+    except Exception as exc:
+        bridge_utils.log(
+            "WARNING: preparation window not shown ({0}).".format(exc))
+        close_prep_progress()
+        return False
+
+
+def _prep_clock():
+    import time
+    label = _PREP.get("time")
+    t0 = _PREP.get("t0")
+    if label is None or t0 is None:
+        return
+    sec = int(time.time() - t0)
+    label.Text = tr("Verstreken: {0}:{1:02d}",
+                    "Elapsed: {0}:{1:02d}").format(sec // 60, sec % 60)
+
+
+def _disable_mecway(disable):
+    """Stop the user changing the model while the files are built. The
+    Code-Aster status window does the same thing for the solve."""
+    try:
+        from System import IntPtr
+        from System.Diagnostics import Process
+        import ctypes
+        user32 = ctypes.windll.user32
+    except Exception:
+        return
+    if disable:
+        try:
+            handle = Process.GetCurrentProcess().MainWindowHandle
+        except Exception:
+            return
+        if handle == IntPtr.Zero:
+            return
+        try:
+            hwnd = ctypes.c_void_p(handle.ToInt64())
+        except Exception:
+            try:
+                hwnd = ctypes.c_void_p(int(handle))
+            except Exception:
+                return
+        try:
+            if user32.IsWindowEnabled(hwnd):
+                user32.EnableWindow(hwnd, False)
+                _PREP["disabled"] = hwnd
+        except Exception:
+            pass
+        return
+    hwnd = _PREP.get("disabled")
+    _PREP["disabled"] = None
+    if hwnd is None:
+        return
+    try:
+        user32.EnableWindow(hwnd, True)
+    except Exception:
+        pass
+
+
+def close_prep_progress():
+    """Close the preparation window and turn progress() back into log lines."""
+    bridge_utils.set_progress_hook(None, None)
+    _disable_mecway(False)
+    form = _PREP.get("form")
+    _PREP["form"] = None
+    _PREP["section"] = None
+    _PREP["detail"] = None
+    _PREP["bar"] = None
+    _PREP["time"] = None
+    _PREP["on_closing"] = None
+    _PREP["allow_close"] = True
+    if form is None:
+        return
+    try:
+        form.Close()
+    except Exception:
+        pass
+    try:
+        form.Dispose()
+    except Exception:
+        pass
+
+
+# ==========================================
 # STATUS WINDOW WHILE CODE-ASTER RUNS (setting wait_for_aster = "auto")
 # ==========================================
 _STATUS_POLL_MS = 500       # interval of job.poll() [ms]

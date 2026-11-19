@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- **Preparation window, and a faster mesh index.** Until Code-Aster starts, Mecway
+  showed nothing: the log file was the only trace, and on an 800k-node model that
+  silent stretch was still about three minutes. A window now stays open for each
+  step (reading the model, node groups, ordering elements, free faces, `.mail`,
+  `.comm`/`.export`) with the counts so far and the elapsed time. `aster_fast` also
+  stores nodes, plain elements and numeric node groups as arrays, and counts the
+  free faces of the solids while it reads the `.liml` (the same faces the error
+  estimator used to count in IronPython). The `.mail` bytes are unchanged.
+  The Windows executable is on fork release **V2026.14-fast.3**. `ASTER_FAST=0`
+  still uses Python only. fast.2 is the previous executable (no preparation
+  window, free faces still counted in Python).
+
 - **Large meshes: optional Rust helper for the .liml read and the ASTER mesh.**
   `aster_fast` (crate `rust/aster_fast`, no dependencies) does the two steps that
   dominate the time before Code-Aster starts on an 800k-node model under IronPython 2.7:
@@ -11,9 +23,9 @@
   executable, or when `ASTER_FAST=0`, the bridge behaves as before. Build with
   `cargo build --release --manifest-path rust/aster_fast/Cargo.toml` and copy
   `target/release/aster_fast` (Windows: `aster_fast.exe`) next to `Scripts/`, or set
-  `ASTER_FAST` to that path. The Windows executable is attached to fork release
-  **V2026.14-fast.2** (and is already inside `Scripts/` in the Windows zip).
-  fast.1 aborted on Windows before reading the file: a 1 MiB read buffer sat
+  `ASTER_FAST` to that path. That executable was fork release **V2026.14-fast.2**
+  (superseded by **V2026.14-fast.3**, which adds the preparation window and the
+  mesh index above). fast.1 aborted on Windows before reading the file: a 1 MiB read buffer sat
   on the 1 MiB stack (`STATUS_STACK_OVERFLOW`). The buffer is on the heap now,
   and the Windows build reserves 8 MiB of stack. IronPython
   cannot load a Rust extension, so this is a separate program. `tests/test_bridge_fast.py`.

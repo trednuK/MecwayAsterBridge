@@ -69,8 +69,10 @@ independently before you rely on them.**
 On a model of about 800,000 nodes, IronPython 2.7 can spend more than half an hour
 building the files before Code-Aster starts. `Scripts\aster_fast.exe` does the two slow
 steps outside IronPython: it reads the mesh out of the `.liml` (results under `<solution>`
-are still skipped) and writes the Code-Aster `.mail`. The mesh text is the same as the
-pure Python writer. Materials, loads and constraints are still read by the bridge.
+are still skipped), counts the free faces of the solids and writes the Code-Aster `.mail`.
+The mesh text is the same as the pure Python writer. Materials, loads and constraints are
+still read by the bridge. While those steps run, the **Preparing** window shows each step
+and its status; it closes when the Code-Aster status window opens.
 
 The helper is not in the V2026.15 zip. Build it as above and copy `aster_fast.exe`
 next to `MecwayAsterBridgeMain.py`; the bridge then uses it on its own. If the file
@@ -97,7 +99,9 @@ used.
      Empty means `WorkDir` next to the `Scripts` folder; it is created when needed;
    - the active analysis follows the Mecway analysis type (`auto`); each analysis has
      its own page with settings. Hover over a setting for an explanation.
-3. Click **Start**. Code-Aster runs in a separate window; the convergence window shows
+3. Click **Start**. A **Preparing** window shows each step until Code-Aster starts
+   (reading the model, writing the mesh, writing `.comm` and `.export`), with counts and
+   the elapsed time. Code-Aster then runs in a separate window; the convergence window shows
    the progress. A status window in Mecway shows the elapsed time and the current step,
    with a *Stop...* button; Mecway is locked until the run has finished. When Code-Aster
    has finished, the status window closes by itself, the model is reopened with the

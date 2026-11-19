@@ -36,16 +36,20 @@ def _diff(a, b, path):
     """First mismatch path, or None. Skips the fast-path marker."""
     if path == "_fast_mesh" or path.endswith("._fast_mesh"):
         return None
+    if path == "_fast_boundary" or path.endswith("._fast_boundary"):
+        return None
     if type(a) != type(b) and not (
             isinstance(a, (int, float)) and isinstance(b, (int, float))):
         return path + " type {0} vs {1}".format(type(a).__name__,
                                                 type(b).__name__)
     if isinstance(a, dict):
-        if set(a) - set(["_fast_mesh"]) != set(b) - set(["_fast_mesh"]):
-            extra = sorted((set(a) ^ set(b)) - set(["_fast_mesh"]))
+        if set(a) - set(["_fast_mesh", "_fast_boundary"]) != set(b) - set(
+                ["_fast_mesh", "_fast_boundary"]):
+            extra = sorted((set(a) ^ set(b)) - set(
+                ["_fast_mesh", "_fast_boundary"]))
             return path + " keys {0}".format(extra[:8])
         for key in a:
-            if key == "_fast_mesh":
+            if key in ("_fast_mesh", "_fast_boundary"):
                 continue
             found = _diff(a[key], b[key], path + "." + str(key))
             if found:
@@ -91,6 +95,26 @@ def _compare_liml(path):
     check(fast.get("_fast_mesh") is True, name + ": used aster_fast")
     print("  {0}: rust {1:.3f}s, python {2:.3f}s, nodes {3}".format(
         name, dt_fast, dt_slow, len(fast.get("mesh_nodes", {}))))
+    fd, p1 = tempfile.mkstemp(suffix=".mail")
+    os.close(fd)
+    fd, p2 = tempfile.mkstemp(suffix=".mail")
+    os.close(fd)
+    try:
+        ok1 = bridge_mesh.write_mesh(p1, fast)
+        ok2 = bridge_mesh.write_mesh(p2, slow)
+        check(bool(ok1) and bool(ok2), name + ": write_mesh")
+        if ok1 and ok2:
+            b1 = open(p1, "rb").read()
+            b2 = open(p2, "rb").read()
+            check(b1 == b2, name + ": .mail bytes ({0})".format(len(b1)))
+            if b1 != b2:
+                n = min(len(b1), len(b2))
+                i = next((k for k in range(n) if b1[k] != b2[k]), n)
+                print("  mail mismatch at {0}".format(i))
+    finally:
+        for p in (p1, p2):
+            if os.path.isfile(p):
+                os.remove(p)
 
 
 def _mail():
@@ -196,6 +220,72 @@ def _synthetic():
         os.remove(path)
 
 
+def _free_faces_agree():
+    """The boundary list from aster_fast must give the same skin elements
+    as the Python face count, including a shell face and a fixed face."""
+    nodes = []
+    coords = {
+        1: (0, 0, 0), 2: (1, 0, 0), 3: (1, 1, 0), 4: (0, 1, 0),
+        5: (0, 0, 1), 6: (1, 0, 1), 7: (1, 1, 1), 8: (0, 1, 1),
+        9: (0, 0, 2), 10: (1, 0, 2), 11: (1, 1, 2), 12: (0, 1, 2),
+    }
+    for nid in range(1, 13):
+        x, y, z = coords[nid]
+        nodes.append(
+            '<node nid="{0}" x="{1}" y="{2}" z="{3}" />'.format(nid, x, y, z))
+    xml = (
+        "<liml><analysis type=\"S30\" />\n" + "\n".join(nodes) + """
+  <elset name="Solid" material="S">
+    <elem eid="1" shape="hex8" nodes="1 2 3 4 5 6 7 8" />
+    <elem eid="2" shape="hex8" nodes="5 8 7 6 9 12 11 10" />
+  </elset>
+  <elset name="Skin" material="S">
+    <elem eid="3" shape="quad4" nodes="1 2 6 5" />
+  </elset>
+  <nodeselection name="Vast">
+    <node nid="3" /><node nid="4" /><node nid="7" /><node nid="8" />
+  </nodeselection>
+  <mat name="S">
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa"
+                poissonratio="0.3" />
+  </mat>
+</liml>
+""")
+    fd, path = tempfile.mkstemp(suffix=".liml")
+    os.close(fd)
+    try:
+        with open(path, "w") as f:
+            f.write(xml)
+        fast, _dt = _extract(path, True)
+        slow, _dt = _extract(path, False)
+        check(fast is not None and slow is not None, "hex extract")
+        if not fast or not slow:
+            return
+        check(fast.get("_fast_boundary") is not None, "boundary list present")
+        for data in (fast, slow):
+            data["bcs"] = [{"type": "fixed", "selection": "Vast"}]
+
+        def conn_of(data):
+            conn = {}
+            for eid, shape, enodes, _es in data["mesh_elements"]:
+                atype = "HEXA8" if shape == "hex8" else "QUAD4"
+                conn[eid] = (atype, list(enodes))
+            return conn
+
+        a = bridge_mesh._free_faces(fast, conn_of(fast))
+        saved = fast.pop("_fast_boundary")
+        b = bridge_mesh._free_faces(fast, conn_of(fast))
+        fast["_fast_boundary"] = saved
+        c = bridge_mesh._free_faces(slow, conn_of(slow))
+        check(a == b == c, "free faces fast index == python count ({0})".format(
+            len(a)))
+        if a != c:
+            print("  fast", a)
+            print("  slow", c)
+    finally:
+        os.remove(path)
+
+
 def main():
     exe = bridge_fast.find_exe()
     if not exe:
@@ -204,6 +294,7 @@ def main():
     print("aster_fast:", exe)
     _mail()
     _synthetic()
+    _free_faces_agree()
     root = os.path.join(_HERE, "..", "TestFiles")
     names = [
         os.path.join(root, "Voorbeelden", "Voorbeeld_A.liml"),
