@@ -1561,6 +1561,31 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 except Exception:
                     pass
 
+            def on_choice_wheel(sender, e):
+                # A closed choice list would change its value with the
+                # wheel, also while the user only scrolls the page past it
+                # (seen in the Mecway 36 window): scroll the page instead,
+                # vertically, the way ScrollableControl.OnMouseWheel does
+                # (Delta pixels). An open list scrolls as usual; the arrow
+                # keys still change the value of the focused list.
+                try:
+                    if sender.DroppedDown:
+                        return
+                    e.Handled = True   # HandledMouseEventArgs: value stays
+                except Exception:
+                    return
+                try:
+                    host = sender.Parent
+                    while (host is not None and
+                           not getattr(host, "AutoScroll", False)):
+                        host = host.Parent
+                    if host is not None:
+                        at = host.AutoScrollPosition
+                        host.AutoScrollPosition = Point(
+                            -at.X, max(0, -at.Y - e.Delta))
+                except Exception:
+                    pass
+
             def on_nav_key(sender, e):
                 # The list is as high as all pages, so its own PageDown/
                 # PageUp would jump to the last/first page: move by the
@@ -1853,6 +1878,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 elif kind in _CHOICE_KINDS:
                     ctrl = ComboBox()
                     ctrl.DropDownStyle = ComboBoxStyle.DropDownList
+                    ctrl.MouseWheel += on_choice_wheel
                     ctrl.Location = Point(x, y)
                     ctrl.Width = 220
                     opts = _choice_options(kind, extra)
