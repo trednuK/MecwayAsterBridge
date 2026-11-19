@@ -873,7 +873,12 @@ Step-by-step plan and settings:
   `RESI_GLOB_MAXI`, contact):
   1. **Relative residual stalls, absolute residual is ~0.** A bending model (profile, roller and die with contact):
      `RESI_GLOB_RELA` around 0.1 with `RESI_GLOB_MAXI` ~1e-11: an imposed motion without
-     resistance, so no reference force: choose `convergence_criterion` = MAXI.
+     resistance, so no reference force: choose `convergence_criterion` = MAXI or
+     RELA_OF_MAXI. When no step converged and `RESI_GLOB_MAXI` stayed below 1e-6 N in
+     the first step, the bridge says so in the message of the stop
+     (`bridge_run_aster._no_resistance_advice`). Seen with Mecway's Samples/PipeClip
+     (`RESI_GLOB_MAXI` ~4e-12 N, stop in step 1): with RELA_OF_MAXI it completed in 20
+     steps without cuts (19 Nov 2026).
   2. **Stagnation just above the criterion** (e.g. 1.4–2.8e-6 at 1e-6), especially when
      unloading a plastic solid with `GDEF_LOG`; the absolute residual then gets stuck
      (NL-01: ~1e-2 N at 12 kN).

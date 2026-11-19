@@ -275,17 +275,6 @@ Code-Aster value per node) and logs the largest difference per variable.
    the shell temperature to CCX's expanded elements). Status: open question to Mecway; with
    CCX as a reference for shells under a temperature, compare with the internal solver.
 
-148\. **Contact with friction: the tangential stiffness kt has almost no effect** (confirmed,
-   Code-Aster 17.4 and Mecway 36 with CCX headless, 18 Nov 2026; `bridge_to_aster._penalty_args`,
-   verification NL-03h). Two hex20 blocks, 10 MPa compression, then 2 MPa shear, μ = 0.5
-   (sticking), `ALGO_FROT='PENALISATION'` with `COEF_PENA_FROT` = Mecway's tangential
-   stiffness kt: the mean tangential displacement of the top is 1.8636 µm for kt = 1e13 and
-   for kt = 1e12 Pa/m (1.8653 µm with 1e9). Mecway: 2.0752 µm and 3.881 µm, i.e. an elastic
-   slip τ/kt (0.2 µm and 2 µm). Code-Aster's penalised friction in `CONTINUE` sticks almost
-   rigidly; how `COEF_PENA_FROT` enters is NOT verified (U doc and source not checked).
-   The normal direction is equal to Mecway (1.9156 µm). Status: open; with a small kt the
-   bridge is stiffer in shear than Mecway.
-
 ## Translation that works differently from Mecway
 
 8\. **Duplicate boundary conditions** (confirmed, partly caught). Mecway reduces
@@ -520,7 +509,9 @@ Code-Aster value per node) and logs the largest difference per variable.
    at t = 0.8), AssemblyWithContact (Fixed_support) stops with MECANONLINE9_4 (pivot on
    LAGS_C); with PENALISATION (Mecway's stiffness) both follow Mecway (2..8% and −1.1%,
    headless). Configuration Quadratic_ramp of AssemblyWithContact (friction 0.5 +
-   elastic support) does not converge in step 1 with penalty either (unexplained).
+   elastic support) stopped in step 1 with penalty too: the cause was Mecway's kt written as
+   `COEF_PENA_FROT`, a coefficient in 1/m (item 149); with the rigid stick of item 149 it
+   completes (19 Nov 2026).
    Line contact between hex20 solids (verification NL-03a: two beams with their tips
    on each other) does not work with STANDARD: with the default INTEGRATION='NCOTES' (bridge,
    quadratic slave face) the edge penetrates between the integration points (contact force
@@ -957,6 +948,30 @@ Code-Aster value per node) and logs the largest difference per variable.
    beam variables stay Mecway's (`bridge_element_node` leaves beam variables alone on
    purpose). Not measured with the beam analysis. Status: open; use route `liml` for beams.
 
+149\. **Contact with friction: Mecway's tangential stiffness kt is not modelled** (confirmed,
+   Code-Aster 17.4 source and runs, Mecway 36 with CCX headless, 19 Nov 2026;
+   `bridge_to_aster._penalty_args`, `_FRIC_SLIP_REL`, verification NL-03h/NL-03i). Mecway (CCX)
+   gives a sticking contact an elastic slip τ/kt. Code-Aster's friction in `DEFI_CONTACT` has
+   no elastic tangential spring: in `CONTINUE` the penalised friction multiplier is
+   `COEF_PENA_FROT` × the slip increment of the time step, sticking while it is ≤ 1, and the
+   friction force is μ × contact pressure × that multiplier (`mmtrpr.F90`, `mmmvff.F90`,
+   `mmmjeu.F90`/`mmdepm.F90` on gitlab.com/codeaster/src); `DISCRETE` (`frogdp.F90`, `E_T`)
+   also works on the slip increment of the step. So `COEF_PENA_FROT` is in 1/m, and a
+   penalised stick slips (τ/(μp))/`COEF_PENA_FROT` in every step, also at constant load: a
+   creep, not an elastic slip. Measured on NL-03h (10 MPa, then 2 MPa shear in 5 steps,
+   μ = 0.5): `COEF_PENA_FROT` = kt/(μp) gave 2.50 µm (kt 1e13) and 7.91 µm (kt 1e12) against
+   Mecway 2.08 and 3.88 µm, and 12.9 µm with twice the steps; Mecway's kt itself as
+   `COEF_PENA_FROT` (before V2026.15) stuck rigidly (1.8636 µm) but needed 754 steps instead
+   of 10, and stopped Tutorials/AssemblyWithContact *Friction* at t = 0.9 and *Quadratic_ramp*
+   in step 1. Since V2026.15 Nonlinear Static 3D sticks rigidly with `COEF_PENA_FROT` =
+   1/(1e-8 × the diagonal of the zone's contact faces) (NL-03h 3.5e9 1/m: 1.8641 µm in 10
+   steps; both AssemblyWithContact configurations complete; Mecway's own CCX result of
+   *Friction* is unusable, 3.6e6 m, so not compared), with a WARNING per run. The creep stays:
+   at most 1e-8 × that size per step at full friction (NL-03i, 25 shear steps: +0.1% against
+   the Lagrange stick). Dynamics and 2D still write kt as `COEF_PENA_FROT` (not measured).
+   Status: limitation of Code-Aster 17.4; the bridge is stiffer in shear than Mecway by τ/kt
+   (NL-03h −10% at kt 1e13).
+
 ## Open questions (Mecway behaviour not checked)
 
 27\. **Inputs checked headless only, not from a model saved in the Mecway GUI** (question;
@@ -1004,6 +1019,12 @@ Code-Aster value per node) and logs the largest difference per variable.
    tensioned spring a geometric stiffness in Buckling (measured with a pretensioned spring,
    item 124), DIS_T does not; suspected for any spring with an axial force in Buckling and
    modal with prestress, NOT measured (STAPPENPLAN S15c).
+
+150\. **Friction with tangential stiffness 0** (question; `bridge_to_aster._penalty_args`).
+   With kt = 0 the bridge writes Lagrange friction (`ALGO_FROT='STANDARD'`); what Mecway/CCX
+   does with kt = 0 is not checked. On AssemblyWithContact *Friction* `ALGO_FROT='STANDARD'`
+   stopped in step 1 (`MECANONLINE9_4`) where the penalised rigid stick of item 149 completes
+   (19 Nov 2026). Status: open.
 
 ## Not translated (the bridge reports it at the end of the run)
 

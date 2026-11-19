@@ -889,7 +889,12 @@ Stappenplan en instellingen:
   `RESI_GLOB_MAXI`, contact):
   1. **Relatief residu blijft hangen, absoluut residu is ~0.** Een buigmodel (profiel, rol en mal met contact):
      `RESI_GLOB_RELA` rond 0,1 bij `RESI_GLOB_MAXI` ~1e-11: een opgelegde beweging
-     zonder weerstand, dus geen referentiekracht: kies `convergence_criterion` = MAXI.
+     zonder weerstand, dus geen referentiekracht: kies `convergence_criterion` = MAXI of
+     RELA_OF_MAXI. Convergeerde geen enkele stap en bleef `RESI_GLOB_MAXI` in de eerste
+     stap onder 1e-6 N, dan zegt de bridge dat in de melding van de stop
+     (`bridge_run_aster._no_resistance_advice`). Gezien bij Mecway's Samples/PipeClip
+     (`RESI_GLOB_MAXI` ~4e-12 N, stop in stap 1): met RELA_OF_MAXI rekende het in 20
+     stappen zonder halveringen door (19 nov 2026).
   2. **Stagnatie net boven het criterium** (bijv. 1,4–2,8e-6 bij 1e-6), vooral bij
      ontlasten van een plastisch volume met `GDEF_LOG`; de absolute rest blijft dan
      steken (NL-01: ~1e-2 N bij 12 kN).

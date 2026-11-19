@@ -652,8 +652,11 @@ contact = DEFI_CONTACT(
   `ALGO_CONT`:
   - `auto` (default for Nonlinear Static since V2026.15): `PENALISATION` for every zone
     with Mecway's *normal stiffness* (Mecway requires one, so in practice every zone),
-    otherwise `STANDARD`; 2D models (`**ASTER-PLANE`) keep `STANDARD` (penalty not measured
-    there). Dynamics keeps the default `STANDARD` (penalty not measured; in explicit
+    otherwise `STANDARD`; 2D models (`**ASTER-PLANE`) keep `STANDARD`: Mecway has no 2D
+    contact to compare with. With `PENALISATION` chosen (19 Nov 2026, PL-40 … PL-47 with
+    kn = 1e12 Pa/m) every 2D case runs, and the shrink fits give exactly the solution with an
+    elastic interface, p = δ/(C + 1/kn) (PL-40: 9.977 MPa against 9.9774 MPa, 20 % below
+    hard contact); the Hertz contact PL-45 then spreads over 4.8 times the Hertz width. Dynamics keeps the default `STANDARD` (penalty not measured; in explicit
     dynamics a stiff spring can lower the stable time step).
     Measured against Mecway 36 with CCX (headless, largest node deviation / largest
     displacement): contact patch tests NL-03c and NL-30 2e-5 with `PENALISATION`
@@ -666,9 +669,9 @@ contact = DEFI_CONTACT(
     cases PL-40 … PL-47 compare with Lamé this way).
   - `PENALISATION`: contact pressure = `COEF_PENA_CONT` × penetration, with
     `COEF_PENA_CONT` = Mecway's *normal stiffness* (Pa/m); with friction
-    `ALGO_FROT='PENALISATION'` with `COEF_PENA_FROT` = *tangential stiffness* (if that
-    is 0, Lagrange friction). This is how Mecway itself computes (Mecway, 2026,
-    §9.9.2). Choose this if `STANDARD` loses the contact or stops with
+    `ALGO_FROT='PENALISATION'` (if the *tangential stiffness* is 0, Lagrange friction),
+    see **Friction** below for `COEF_PENA_FROT`. This is how Mecway itself computes the
+    normal direction (Mecway, 2026, §9.9.2). Choose this if `STANDARD` loses the contact or stops with
     `MECANONLINE9_4` with `LAGS_C` in the message (line contact). Verified: the
     penetration is exactly p/kn (NL-03d/f) and line contact between hex20 beams is
     exact (NL-03b), where `STANDARD` fails (NL-03a). Against Mecway (headless):
@@ -727,8 +730,19 @@ contact = DEFI_CONTACT(
   no tangential stiffness in the first Newton iteration and Code-Aster stopped in step 1
   with `MECANONLINE9_4` (verification NL-03h); the converged result did not depend on the
   value (1e3, 1e6 and 1e9 identical). Your own `#ASTER-ZONE SEUIL_INIT=...` takes precedence.
-  The tangential stiffness has almost no effect in Code-Aster: sticking is nearly rigid,
-  Mecway adds an elastic slip τ/kt (KNOWN_BUGS 148).
+  Mecway's *tangential stiffness* kt is **not** taken over (WARNING in the log):
+  Code-Aster's friction has no elastic tangential spring. Its `COEF_PENA_FROT` is in
+  1/m: the friction force is μ × contact pressure × `COEF_PENA_FROT` × the slip *of the
+  time step*, so a penalised stick slips (τ/(μp))/`COEF_PENA_FROT` in every step, also at
+  constant load (Code-Aster 17.4 source, KNOWN_BUGS 149). In Nonlinear Static 3D the bridge
+  therefore lets the contact stick rigidly: `COEF_PENA_FROT` = 1/(1e-8 × the diagonal of
+  the zone's contact faces), so full friction slips at most 1e-8 × that size per step
+  (NL-03i: 25 steps +0.1% against a Lagrange stick). Mecway adds an elastic slip τ/kt, so
+  the bridge is stiffer in shear (NL-03h: −10% at kt = 1e13 Pa/m). Before V2026.15 kt
+  itself was written as `COEF_PENA_FROT`: just as rigid, but NL-03h needed 754 steps
+  instead of 10, and Tutorials/AssemblyWithContact *Friction* and *Quadratic_ramp* stopped
+  (now they complete). Dynamics and 2D (with `PENALISATION` chosen) still write kt (not
+  measured). Your own `#ASTER-ZONE COEF_PENA_FROT=...` takes precedence.
 - **Adaptation.** CA default `ADAPTATION='CYCLAGE'`: if a contact point keeps
   switching status, Code-Aster switches there to penalty with a maximum penetration
   (U4.44.11, "Operand ADAPTATION"; U2.04.04 §4.1). Then check the penetration in the
@@ -827,7 +841,8 @@ that is slave against a blade and against a contour).
 The bridge merges such pairs into one zone: master = union of the masters, slave =
 union of the slaves (`DEFI_GROUP ... UNION`, groups `CMAIT<n>`/`CESCL<n>`). Friction:
 the largest coefficient; with `contact_algo` = PENALISATION also the largest normal and
-tangential stiffness. Every merge writes a WARNING to `<model>_<run-id>_bridge_log.txt`,
+tangential stiffness (the tangential one only in dynamics and 2D: Nonlinear Static 3D sticks
+rigidly, KNOWN_BUGS 149). Every merge writes a WARNING to `<model>_<run-id>_bridge_log.txt`,
 with an extra one if the friction coefficients differed (KNOWN_BUGS 10). The solution
 suggested by `CONTACT2_16` itself (swapping master and slave) is not used by the bridge:
 the stiff tool would then become slave.

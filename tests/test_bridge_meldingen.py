@@ -502,12 +502,84 @@ def test_zone_keys():
     check(b._drop_keys(args, set()) == args, "no user keys: unchanged")
 
 
+def test_friction_coef():
+    """KNOWN_BUGS 149: friction sticks rigidly with COEF_PENA_FROT = 1 /
+    (_FRIC_SLIP_REL x the diagonal of the zone's contact faces), 1/m; a
+    fixed value without faces; Mecway's kt only outside static 3D."""
+    import bridge_to_aster as b
+    saved = b.log
+    b.log = _log
+    try:
+        md = {"mesh_nodes": {1: (0.0, 0.0, 0.0), 2: (0.03, 0.0, 0.0),
+                             3: (0.03, 0.04, 0.0), 9: (5.0, 5.0, 5.0)},
+              "group_face_list": {"M": [{"nodes": [1, 2]}],
+                                  "S": [{"nodes": [2, 3]}]}}
+        size = b._zone_size(md, ("M", "S"))
+        check(abs(size - 0.05) < 1e-12, "zone size {0}".format(size))
+        check(b._zone_size(md, ("X",)) is None, "no faces: None")
+        md["group_ma_unions"] = {"CESCL1": ["S"], "CMAIT1": ["M"]}
+        got = b._zone_size(md, ("CMAIT1", "CESCL1"))
+        check(got is not None and abs(got - 0.05) < 1e-12,
+              "merged zone size {0}".format(got))
+        c = {"master": "M", "slave": "S", "kn": 1e13, "kt": 1e13,
+             "friction": 0.5}
+        args = b._penalty_args(c, "PENALISATION", True, size)
+        coef = float(args.split("COEF_PENA_FROT=")[1].split(",")[0])
+        check(abs(coef - 2e9) < 1.0, "rigid coef: {0}".format(args))
+        del LOG[:]
+        b._penalty_args(c, "PENALISATION", True, size, False)
+        check(not [x for x in LOG if "COEF_PENA_FROT" in x],
+              "no friction INFO with a user COEF_PENA_FROT: {0}".format(LOG))
+        args = b._penalty_args(c, "PENALISATION", True, None)
+        check("COEF_PENA_FROT=1000000000.0" in args,
+              "fallback: {0}".format(args))
+        args = b._penalty_args(c, "PENALISATION", True)
+        check("COEF_PENA_FROT=10000000000000.0" in args,
+              "outside static 3D kt: {0}".format(args))
+        c["kt"] = 0.0
+        args = b._penalty_args(c, "PENALISATION", True, size)
+        check("ALGO_FROT" not in args, "kt 0: Lagrange friction: " + args)
+    finally:
+        b.log = saved
+
+
+def _newton_table(maxi):
+    """A first step of STAT_NON_LINE that does not converge (as in the
+    .mess of Code-Aster 17.4), with RESI_GLOB_MAXI = maxi in every row."""
+    sep = u"-" * 72
+    rows = [u"|     1        X |     {0}        X | 1.53597E+00  X | {1:.5E}"
+            u"    |TANGENTE (NOSYM)|".format(i, maxi) for i in range(3)]
+    return u"\n".join(
+        [u"Instant de calcul:  5.000000000000e-02 - Niveau de découpe: 1",
+         u"", sep,
+         u"|     CONTACT    |     NEWTON     |     RESIDU     |     RESIDU     "
+         u"|     OPTION     |",
+         u"|    BCL. GEOM.  |    ITERATION   |     RELATIF    |     ABSOLU     "
+         u"|   ASSEMBLAGE   |",
+         u"|    ITERATION   |                | RESI_GLOB_RELA | RESI_GLOB_MAXI "
+         u"|(+ TYPE MATRICE)|", sep] + rows + [
+         sep, u"<Erreur> Le nombre maximum d'itérations de Newton est "
+         u"atteint", u""])
+
+
+def test_no_resistance():
+    """PipeClip-type stop (MECANONLINE9_7): no step converged and the
+    absolute residual about 0: advice RELA_OF_MAXI; not with a normal
+    absolute residual."""
+    import bridge_run_aster as r
+    got = r._no_resistance_advice(_newton_table(3.9e-12))
+    check(u"RELA_OF_MAXI" in got, u"tiny residual: {0!r}".format(got))
+    got = r._no_resistance_advice(_newton_table(2.5))
+    check(got == u"", u"normal residual: {0!r}".format(got))
+
+
 def main():
     for test in (test_harm_check_model, test_harm_comm, test_harm_report,
                  test_acoustic_density, test_factor57, test_log_errors,
                  test_bonded_offset, test_harm_stress_eta,
                  test_constraint_constant, test_bonded_gap, test_alarm_hint,
-                 test_ccx_keywords, test_zone_keys):
+                 test_ccx_keywords, test_zone_keys,
+                 test_friction_coef, test_no_resistance):
         test()
     if FAILS:
         for f in FAILS:

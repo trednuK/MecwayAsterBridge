@@ -160,11 +160,11 @@ No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Offi
 
 Added since this regression and run on their own (19 Nov 2026, not yet in a full
 regression): LS-07n (2 OK), LS-07o (1 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
-148).
+149), NL-03i (1 OK).
 
 **Known limitations** (status BEKEND):
-- KNOWN_BUGS 148: the tangential stiffness kt has almost no effect in Code-Aster (NL-03h,
-  1 check, u 10 % below Mecway's 2.0752 µm: Mecway adds the slip τ/kt).
+- KNOWN_BUGS 149: Mecway's tangential stiffness kt is not modelled, Code-Aster sticks
+  rigidly (NL-03h, 1 check, u 10 % below Mecway's 2.0752 µm: Mecway adds the slip τ/kt).
 - KNOWN_BUGS 43: Lagrange contact (`contact_algo` = STANDARD) on a line contact between
   hex20 solids stops (NL-03a, 3 checks). Use PENALISATION (NL-03b: exact).
 - KNOWN_BUGS 83: K_I from `CALC_G_XFEM` on a curved front +5.3 % (BR-10, 1 check,
@@ -2136,8 +2136,14 @@ samples) plus the kinks of the load tables (NL-20).
   face above the interface), 10 MPa compression, then 2 MPa shear, μ = 0.5 (sticking),
   kn = kt = 1e13 Pa/m. Without `SEUIL_INIT` Code-Aster stopped in step 1
   (`MECANONLINE9_4`); with it: w = 1.9156 µm, equal to Mecway 36 with CCX (1.9156 µm);
-  u = 1.8636 µm against Mecway 2.0752 µm (BEKEND, KNOWN_BUGS 148: Code-Aster's
-  penalised friction sticks almost rigidly, Mecway adds the slip τ/kt).
+  u = 1.8641 µm against Mecway 2.0752 µm (BEKEND, KNOWN_BUGS 149: Code-Aster's friction
+  has no elastic tangential spring, the bridge sticks rigidly with `COEF_PENA_FROT` =
+  1/(1e-8 × the contact face diagonal) = 3.5e9 1/m; Mecway adds the slip τ/kt). 10 steps;
+  with Mecway's kt as `COEF_PENA_FROT` (before V2026.15) 754.
+- **NL-03i** (friction, step count): NL-03h with step 0.02 s (25 shear steps instead of 5).
+  Penalised friction slips (τ/(μp))/`COEF_PENA_FROT` per step (KNOWN_BUGS 149), here about
+  1.5 nm in all. u = 1.8656 µm against 1.8638 µm of NL-03h with Lagrange friction
+  (`ALGO_FROT='STANDARD'`, rigid stick): +0.1 % (tolerance 0.3 %).
 - **NL-03p** (penetration check): the patch test of NL-03d with kn = 1e10 Pa/m:
   penetration p/kn = 1 mm (exact), 15 % of the edge of the slave face (6.67 mm); the
   bridge gives a WARNING after the run (`contact_pene_maxi` 0.05). NL-03b/d/f (1 µm)

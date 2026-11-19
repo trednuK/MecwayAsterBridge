@@ -6408,8 +6408,67 @@ def moved_nodes_arg(model_data):
     return ", moved_nodes={0!r}".format(sorted(int(n) for n in moved))
 
 
-def _penalty_args(c, algo, friction):
-    """Extra zone arguments for ALGO_CONT='PENALISATION' (or "")."""
+# Penalised friction in DEFI_CONTACT CONTINUE (Code-Aster 17.4 source,
+# bibfor/cont_elem): mmtrpr.F90 sets the friction semi-multiplier to
+# COEF_PENA_FROT x the tangential slip, sticking while its norm is <= 1, and
+# mmmvff.F90 makes the friction force mu x contact pressure x that
+# multiplier. So COEF_PENA_FROT is in 1/m (the tangential stiffness is
+# mu p COEF_PENA_FROT, Pa/m), and the slip is the increment of the time
+# step (mmmjeu.F90/mmdepm.F90): the multiplier is rebuilt in every step, a
+# penalised stick slips (tau / (mu p)) / COEF_PENA_FROT in every step, also at
+# constant load. Measured (NL-03h, KNOWN_BUGS 149): COEF_PENA_FROT =
+# kt / (mu p) gave 2.50 and 7.91 um instead of Mecway's elastic 2.08 and
+# 3.88 um (creep, 12.9 um with twice the steps); Mecway's kt itself as
+# COEF_PENA_FROT (before V2026.15) sticks rigidly but needed 754 steps
+# instead of 10 and stopped AssemblyWithContact Friction at t = 0.9 and
+# Quadratic_ramp in step 1, which complete with 1e8 .. 1e11. 17.4 has no
+# elastic tangential spring in DEFI_CONTACT (DISCRETE, frogdp.F90, is
+# incremental too). Nonlinear static 3D therefore sticks rigidly with
+# COEF_PENA_FROT = 1 / (_FRIC_SLIP_REL x the diagonal of the zone's contact
+# faces): full friction is mobilised by a slip of 1e-8 x that size per step
+# (NL-03h: 3.5e9, 10 steps; 1e-9: 26 steps).
+_FRIC_SLIP_REL = 1e-8
+# Without contact faces to measure (no nodes): a value inside the measured
+# window 1e8 .. 1e11 (1/m).
+_FRIC_COEF_FALLBACK = 1e9
+
+
+def _zone_size(model_data, groups):
+    """Diagonal (m) of the bounding box of the nodes of the faces of the
+    groups (group_face_list, mesh_nodes), or None. A merged contact group
+    (CMAIT<k>/CESCL<k>, model_data["group_ma_unions"]) counts with its
+    parts. Master and slave together (measured cases: faces of equal size;
+    a large master and a small slave NOT measured)."""
+    nodes = model_data.get("mesh_nodes") or {}
+    faces = model_data.get("group_face_list", {})
+    unions = model_data.get("group_ma_unions", {}) or {}
+    names = []
+    for g in groups:
+        names.extend(unions.get(g) or [g])
+    pts = [nodes[n] for g in names for f in faces.get(g, [])
+           for n in f.get("nodes", []) if n in nodes]
+    if not pts:
+        return None
+    d = math.sqrt(sum((max(p[i] for p in pts) - min(p[i] for p in pts)) ** 2
+                      for i in range(3)))
+    return d if d > 0.0 else None
+
+
+def _rigid_friction_coef(size):
+    """(COEF_PENA_FROT in 1/m, from the size or the fallback) for a rigid
+    penalised stick; see _FRIC_SLIP_REL."""
+    if size:
+        return 1.0 / (_FRIC_SLIP_REL * size), True
+    return _FRIC_COEF_FALLBACK, False
+
+
+def _penalty_args(c, algo, friction, rigid_size=False, note=True):
+    """Extra zone arguments for ALGO_CONT='PENALISATION' (or "").
+    rigid_size: False = COEF_PENA_FROT = Mecway's kt (analyses other than
+    nonlinear static 3D, not measured with the rigid rule); else the
+    diagonal of the zone's contact faces (m) or None: rigid stick
+    (_rigid_friction_coef). note: log the friction INFO (False when the
+    user's #ASTER-ZONE replaces COEF_PENA_FROT)."""
     if algo != "PENALISATION":
         return ""
     label = "'{0}' / '{1}'".format(c.get("master"), c.get("slave"))
@@ -6423,7 +6482,19 @@ def _penalty_args(c, algo, friction):
     out = ", ALGO_CONT='PENALISATION', COEF_PENA_CONT={0!r}".format(kn)
     if friction and c.get("friction", 0.0) > 0.0:
         kt = c.get("kt", 0.0) or 0.0
-        if kt > 0.0:
+        if kt > 0.0 and rigid_size is not False:
+            coef, sized = _rigid_friction_coef(rigid_size)
+            out += ", ALGO_FROT='PENALISATION', COEF_PENA_FROT={0!r}".format(
+                coef)
+            if note:
+                log("INFO: Contact {0}: friction PENALISATION, COEF_PENA_FROT="
+                    "{1} 1/m ({2}; rigid sticking, Mecway's kt {3} Pa/m not "
+                    "used, KNOWN_BUGS 149).".format(
+                        label, "%.4g" % coef,
+                        "1 / ({0:g} x contact face size {1:.4g} m)".format(
+                            _FRIC_SLIP_REL, rigid_size) if sized else
+                        "no contact face size, fixed value", "%.6g" % kt))
+        elif kt > 0.0:
             out += ", ALGO_FROT='PENALISATION', COEF_PENA_FROT={0!r}".format(
                 kt)
         else:
@@ -6494,7 +6565,7 @@ def _penetration_limit_line(model_data, analysis, pairs, algo):
                 limit, edge))
 
 
-def _build_contact_block(model_data, analysis=None):
+def _build_contact_block(model_data, analysis=None, rigid_stick=False):
     """
     DEFI_CONTACT for the contact2 pairs (bridge_mesh.py has aligned the
     names and put the faces in skin_groups).
@@ -6509,8 +6580,11 @@ def _build_contact_block(model_data, analysis=None):
         stiffness needed, no penetration;
       - "PENALISATION": COEF_PENA_CONT = Mecway's normalstiffness (Pa/m;
         contact pressure = coef x penetration, like Mecway); with friction
-        ALGO_FROT='PENALISATION' with COEF_PENA_FROT = tangentialstiffness,
-        or Lagrange friction if that is 0. Tested (headless against Mecway):
+        ALGO_FROT='PENALISATION' (Lagrange friction if Mecway's
+        tangentialstiffness is 0); COEF_PENA_FROT (1/m) for a rigid stick
+        from the size of the contact faces with rigid_stick (nonlinear
+        static 3D, _FRIC_SLIP_REL), else = tangentialstiffness (dynamics,
+        2D: not measured). Tested (headless against Mecway):
         Samples/PipeClip follows Mecway within ~3% (STANDARD lost the
         contact), AssemblyWithContact Fixed_support computes on (STANDARD:
         pivot on LAGS_C, MECANONLINE9_4).
@@ -6566,6 +6640,7 @@ def _build_contact_block(model_data, analysis=None):
     glob_user = set(k for g in custom.get("contact", [])
                     for k in bridge_custom.line_keys(g) if k)
     zones = []
+    kt_lost = []
     for c in pairs:
         z = "_F(GROUP_MA_MAIT='{0}', GROUP_MA_ESCL='{1}'".format(
             c["master"], c["slave"])
@@ -6593,7 +6668,14 @@ def _build_contact_block(model_data, analysis=None):
             drop = set(user_keys)
             if "ALGO_FROT" in drop:
                 drop.add("COEF_PENA_FROT")
-            z += _drop_keys(_penalty_args(c, zone_algo, friction), drop)
+            size = (_zone_size(model_data, (c["master"], c["slave"]))
+                    if rigid_stick else False)
+            args = _penalty_args(c, zone_algo, friction, size,
+                                 "COEF_PENA_FROT" not in drop)
+            if rigid_stick and "COEF_PENA_FROT=" in args and \
+                    "COEF_PENA_FROT" not in drop:
+                kt_lost.append(c["slave"])
+            z += _drop_keys(args, drop)
         if friction and c.get("friction", 0.0) > 0.0 and \
                 "SEUIL_INIT" not in user_keys:
             # Initial friction threshold (zone keyword SEUIL_INIT, catalogue
@@ -6630,6 +6712,20 @@ def _build_contact_block(model_data, analysis=None):
         if c.get("sans_groups") and "SANS_GROUP_NO" not in zone_user:
             z += ", SANS_GROUP_NO={0}".format(_fmt_groups(c["sans_groups"]))
         zones.append(z + zone_extra + ")")
+    if kt_lost:
+        # one WARNING per run: the result is stiffer in shear than Mecway's
+        # (NL-03h 10% at kt 1e13, about 50% at 1e12; KNOWN_BUGS 149)
+        log(tr(u"WARNING: Contact met wrijving ({0}): Mecway's tangentiële "
+               u"stijfheid kt wordt niet overgenomen. Code-Aster kent geen "
+               u"elastische tangentiële veer in DEFI_CONTACT; de bridge laat "
+               u"het contact star plakken, zonder Mecway's elastische slip "
+               u"tau/kt (stijver in afschuiving dan Mecway, KNOWN_BUGS 149).",
+               "WARNING: Contact with friction ({0}): Mecway's tangential "
+               "stiffness kt is not taken over. Code-Aster has no elastic "
+               "tangential spring in DEFI_CONTACT; the bridge makes the "
+               "contact stick rigidly, without Mecway's elastic slip tau/kt "
+               "(stiffer in shear than Mecway, KNOWN_BUGS 149).").format(
+            ", ".join(kt_lost)))
     # Normal smoothing (S28): LISSAGE is a global keyword of DEFI_CONTACT
     # (bloc b_contact_mail, FORMULATION CONTINUE/DISCRETE, default 'NON';
     # catalogue defi_contact.py 17.4): normals averaged at the nodes of
@@ -7989,7 +8085,9 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
     # NEWTON / CONVERGENCE / SOLVEUR values from CONFIG_BRIDGE["analyses"][...].
     # --------------------------------------------------
     reac_iter      = analysis.get("newton_reac_iter",      1)
-    contact_block, contact_ref = _build_contact_block(model_data, analysis)
+    contact_block, contact_ref = _build_contact_block(
+        model_data, analysis,
+        rigid_stick=not dynamic and not model_data.get("plane"))
     extra = ""
     if dynamic:
         etat_block, etat_ref = _build_etat_init_block(model_data)

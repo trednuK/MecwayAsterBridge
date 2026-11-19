@@ -661,8 +661,12 @@ contact = DEFI_CONTACT(
   `ALGO_CONT`:
   - `auto` (standaard bij niet-lineair statisch sinds V2026.15): `PENALISATION` voor elke
     zone met Mecway's *normal stiffness* (Mecway eist die, dus in de praktijk elke zone),
-    anders `STANDARD`; 2D-modellen (`**ASTER-PLANE`) houden `STANDARD` (penalty daar niet
-    gemeten). Dynamica houdt de standaard `STANDARD` (penalty niet gemeten; bij expliciete
+    anders `STANDARD`; 2D-modellen (`**ASTER-PLANE`) houden `STANDARD`: Mecway heeft geen
+    2D-contact om mee te vergelijken. Met `PENALISATION` gekozen (19 nov 2026, PL-40 … PL-47
+    met kn = 1e12 Pa/m) rekent elke 2D-case door, en de krimpverbindingen geven precies de
+    oplossing met een elastisch grensvlak, p = δ/(C + 1/kn) (PL-40: 9,977 MPa tegen
+    9,9774 MPa, 20 % onder hard contact); het Hertz-contact PL-45 spreidt dan over 4,8 keer
+    de Hertz-breedte. Dynamica houdt de standaard `STANDARD` (penalty niet gemeten; bij expliciete
     dynamica kan een stijve veer de stabiele tijdstap verkleinen). Gemeten tegen Mecway 36 met CCX (headless, grootste knoopafwijking /
     grootste verplaatsing): contact-patchtests NL-03c en NL-30 2e-5 met `PENALISATION`
     tegen 0,50 met `STANDARD` (geen penetratie p/kn), Voorbeeld_C 3,2 % tegen 7,0 %,
@@ -675,8 +679,9 @@ contact = DEFI_CONTACT(
     PL-40 … PL-47 vergelijken zo met Lamé).
   - `PENALISATION`: contactdruk = `COEF_PENA_CONT` × penetratie, met
     `COEF_PENA_CONT` = Mecway's *normal stiffness* (Pa/m); bij wrijving
-    `ALGO_FROT='PENALISATION'` met `COEF_PENA_FROT` = *tangential stiffness* (is die 0,
-    dan Lagrange-wrijving). Zo rekent Mecway zelf (Mecway, 2026, §9.9.2). Kies dit als
+    `ALGO_FROT='PENALISATION'` (is de *tangential stiffness* 0, dan Lagrange-wrijving),
+    zie **Wrijving** hieronder voor `COEF_PENA_FROT`. Zo rekent Mecway zelf de
+    normaalrichting (Mecway, 2026, §9.9.2). Kies dit als
     `STANDARD` het contact verliest of stopt met `MECANONLINE9_4` met `LAGS_C` in de
     melding (lijncontact). Geverifieerd: de penetratie is exact p/kn (NL-03d/f) en
     lijncontact tussen hex20-balken is exact (NL-03b), waar `STANDARD` faalt (NL-03a).
@@ -736,9 +741,21 @@ contact = DEFI_CONTACT(
   heeft een deel dat alleen door contact vastzit in de eerste Newton-iteratie geen
   tangentiële stijfheid en stopte Code-Aster in stap 1 met `MECANONLINE9_4`
   (verificatie NL-03h); het geconvergeerde resultaat hing niet af van de waarde (1e3, 1e6
-  en 1e9 gelijk). Een eigen `#ASTER-ZONE SEUIL_INIT=...` gaat voor. De tangentiële
-  stijfheid heeft in Code-Aster bijna geen effect: plakken is vrijwel star, Mecway
-  voegt een elastische slip τ/kt toe (KNOWN_BUGS 148).
+  en 1e9 gelijk). Een eigen `#ASTER-ZONE SEUIL_INIT=...` gaat voor.
+  Mecway's *tangential stiffness* kt wordt **niet** overgenomen (WARNING in het log):
+  de wrijving van Code-Aster heeft geen elastische tangentiële veer. De
+  `COEF_PENA_FROT` van Code-Aster is in 1/m: de wrijvingskracht is μ × contactdruk × `COEF_PENA_FROT`
+  × de slip *van de tijdstap*, dus een gepenaliseerd plakken slipt in elke stap
+  (τ/(μp))/`COEF_PENA_FROT`, ook bij constante belasting (broncode Code-Aster 17.4,
+  KNOWN_BUGS 149). In Nonlinear Static 3D laat de bridge het contact daarom star plakken:
+  `COEF_PENA_FROT` = 1/(1e-8 × de diagonaal van de contactvlakken van de zone), zodat
+  volle wrijving per stap hooguit 1e-8 × die maat slipt (NL-03i: 25 stappen +0,1% tegen
+  Lagrange-plakken). Mecway voegt een elastische slip τ/kt toe, dus de bridge is stijver
+  in afschuiving (NL-03h: −10% bij kt = 1e13 Pa/m). Voor V2026.15 werd kt zelf als
+  `COEF_PENA_FROT` geschreven: even star, maar NL-03h had 754 stappen nodig in plaats van
+  10, en Tutorials/AssemblyWithContact *Friction* en *Quadratic_ramp* stopten (nu rekenen
+  ze door). Dynamica en 2D (met `PENALISATION` gekozen) schrijven nog kt (niet gemeten).
+  Een eigen `#ASTER-ZONE COEF_PENA_FROT=...` gaat voor.
 - **Adaptatie.** CA-standaard `ADAPTATION='CYCLAGE'`: wisselt een contactpunt
   steeds van status, dan schakelt Code-Aster daar zelf over op penalty met een
   maximale penetratie (U4.44.11, "Operand ADAPTATION"; U2.04.04 §4.1). Controleer
@@ -843,7 +860,8 @@ Code-Aster verbiedt knopen die in de slave-vlakken van twee zones zitten
 De bridge voegt zulke paren samen tot één zone: master = unie van de masters,
 slave = unie van de slaves (`DEFI_GROUP ... UNION`, groepen `CMAIT<n>`/`CESCL<n>`).
 Wrijving: de grootste coëfficiënt; met `contact_algo` = PENALISATION ook de grootste
-normaal- en tangentiële stijfheid. Elke samenvoeging zet een WARNING in
+normaal- en tangentiële stijfheid (de tangentiële alleen bij dynamica en 2D: Nonlinear
+Static 3D plakt star, KNOWN_BUGS 149). Elke samenvoeging zet een WARNING in
 `<model>_<run-id>_bridge_log.txt`, en nog een als de wrijvingscoëfficiënten verschilden
 (KNOWN_BUGS 10). De oplossing die `CONTACT2_16` zelf voorstelt (master en slave wisselen)
 gebruikt de bridge niet: dan wordt het stijve gereedschap slave.

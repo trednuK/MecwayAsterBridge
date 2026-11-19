@@ -457,10 +457,19 @@ def build_nl03_patch(kn=KN4, n_lo=2, extra=None):
 # mu 0.5: sticking). Mecway 36 with CCX, headless (18 Nov 2026): mean top
 # displacement w = -1.9156e-6 m, u = 2.0752e-6 m (kn = kt = 1e13 Pa/m).
 MW_NL03H = (1.9156e-6, 2.0752e-6)
+# NL-03i: the same model with step 0.02 s (25 shear steps instead of 5).
+# Reference: NL-03h with ALGO_FROT='STANDARD' (Lagrange, rigid stick, no
+# creep), Code-Aster 17.4, 19 Nov 2026: u = 1.86378e-6 m. Penalised friction
+# slips (tau / (mu p)) / COEF_PENA_FROT in every step (KNOWN_BUGS 149): here
+# at most 0.4 / 3.5e9 m per step, about 1.5e-9 m over the 25 steps (0.08%);
+# measured 1.8656e-6 m (+0.1%, NL-03h 1.8641e-6 m), tolerance 0.3%.
+RIGID_NL03I = 1.86378e-6
 
 
-def build_nl03_friction():
-    m = Model("L30", timesteps=_timesteps(1.0))
+def build_nl03_friction(step=0.1):
+    ts = _timesteps(1.0)
+    ts["stepsize"] = "%g s" % step
+    m = Model("L30", timesteps=ts)
     m.elset("Onderblok", "Staal")
     lo = hexmesh(m, "Onderblok", 2, 2, 1, box(0, A4, 0, A4, -H4, 0),
                  order=2)
@@ -611,9 +620,19 @@ TESTS = [
           Check("u bovenkant t.o.v. Mecway", lambda r: _mean_top(
               r, "displx"), ref=MW_NL03H[1], tol=0.02, unit="m",
                 source="Mecway 36 (CCX), headless",
-                known="KNOWN_BUGS 148")],
+                known="KNOWN_BUGS 149")],
          note="Eerst 10 MPa druk, dan 2 MPa schuif, mu 0,5 (plakken). Zonder "
-              "SEUIL_INIT stopte Code-Aster in stap 1 (MECANONLINE9_4)."),
+              "SEUIL_INIT stopte Code-Aster in stap 1 (MECANONLINE9_4). "
+              "COEF_PENA_FROT uit de grootte van de contactvlakken (star "
+              "plakken), 10 stappen; met Mecway's kt waren het er 754."),
+    Case("NL-03i", GROUP, "Wrijving als NL-03h met 5x zoveel stappen: "
+         "verwaarloosbare kruip door de penalty-wrijving", "nonlin_static_3d",
+         lambda: build_nl03_friction(0.02),
+         [Check("u bovenkant t.o.v. star plakken", lambda r: _mean_top(
+             r, "displx"), ref=RIGID_NL03I, tol=0.003, unit="m",
+                source="NL-03h met ALGO_FROT='STANDARD' (Lagrange, star)")],
+         note="Kruip per stap (tau/(mu p))/COEF_PENA_FROT, hier samen "
+              "~0,08% (KNOWN_BUGS 149)."),
     Case("NL-03p", GROUP, "Contact-patchtest (PENALISATION), te slappe "
          "normal stiffness: penetratiecontrole", "nonlin_static_3d",
          lambda: build_nl03_patch(kn=1.0e10),

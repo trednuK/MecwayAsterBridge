@@ -1556,17 +1556,21 @@ SETTING_HELP = {
         u"STANDARD (standaard bij dynamica). STANDARD = "
         u"Lagrange-contact van Code-Aster: geen penetratie, geen stijfheid "
         u"nodig. PENALISATION = contact als veer met de normaalstijfheid uit "
-        u"Mecway (en de tangentiele stijfheid bij wrijving), zoals Mecway "
-        u"zelf rekent: kleine penetratie, vaak robuuster bij lijncontact of "
-        u"een deel dat het contact kan verliezen.",
+        u"Mecway, zoals Mecway zelf rekent: kleine penetratie, vaak "
+        u"robuuster bij lijncontact of een deel dat het contact kan "
+        u"verliezen. Wrijving plakt in Nonlinear Static 3D star: Mecway's "
+        u"tangentiele stijfheid "
+        u"heeft geen tegenhanger in Code-Aster (KNOWN_BUGS 149).",
         u"auto (default in nonlinear static) = PENALISATION for every 3D "
         u"contact with a normal stiffness in Mecway, otherwise STANDARD "
         u"(default in dynamics). STANDARD = Code-Aster "
         u"Lagrange contact: no penetration, no stiffness needed. "
         u"PENALISATION = contact as a spring with the normal stiffness from "
-        u"Mecway (and the tangential stiffness with friction), as Mecway "
-        u"itself computes: small penetration, often more robust for line "
-        u"contact or a part that can lose contact."),
+        u"Mecway, as Mecway itself computes: small penetration, often more "
+        u"robust for line contact or a part that can lose contact. Friction "
+        u"sticks rigidly in Nonlinear Static 3D: Mecway's tangential "
+        u"stiffness has no counterpart "
+        u"in Code-Aster (KNOWN_BUGS 149)."),
     "line_search": (
         u"Lijnzoeken (RECH_LINEAIRE, methode CORDE, max. 3 iteraties): "
         u"Newton schaalt elke correctie zodat het residu daalt. Helpt "

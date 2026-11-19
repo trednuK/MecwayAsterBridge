@@ -66,8 +66,19 @@
   `key=value` stops the run with an ERROR; an unknown keyword gives a WARNING.
 - **Friction with parts held only by contact** no longer stops in the first step: zones
   with friction get `SEUIL_INIT` (initial friction threshold; the result does not depend
-  on its value). Known: the tangential stiffness kt has almost no effect in Code-Aster,
-  Mecway adds an elastic slip τ/kt (KNOWN_BUGS 148).
+  on its value).
+- **Friction: `COEF_PENA_FROT` no longer equals Mecway's kt** (behaviour change, Nonlinear
+  static 3D). Code-Aster's `COEF_PENA_FROT` is in 1/m and acts on the slip of each time step
+  (Code-Aster 17.4 source), so it cannot model Mecway's elastic slip τ/kt. The bridge now
+  lets friction contact stick rigidly with `COEF_PENA_FROT` = 1/(1e-8 × the size of the
+  contact faces) and gives a WARNING that kt is not used (KNOWN_BUGS 149). Results stay the
+  same (it already stuck almost rigidly), but convergence is much better: NL-03h 10 steps
+  instead of 754, and Tutorials/AssemblyWithContact *Friction* and *Quadratic_ramp* now
+  complete (they stopped). Your own `#ASTER-ZONE COEF_PENA_FROT=...` still wins.
+- **Clearer message when nothing resists yet.** If no step converges while Code-Aster's
+  absolute residual stays about 0 (e.g. an imposed displacement before the contact closes,
+  as in Mecway's sample PipeClip), the message now says that the relative criterion cannot
+  converge and advises *Convergence criterion* = RELA_OF_MAXI (PipeClip then completes).
 
 ## V2026.14 – 18 November 2026
 

@@ -164,11 +164,12 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
 
 Toegevoegd na deze regressie en apart gedraaid (19 nov 2026, nog niet in een volledige
 regressie): LS-07n (2 OK), LS-07o (1 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
-148).
+149), NL-03i (1 OK).
 
 **Bekende beperkingen** (status BEKEND):
-- KNOWN_BUGS 148: de tangentiële stijfheid kt heeft in Code-Aster bijna geen effect (NL-03h,
-  1 controle, u 10 % onder Mecway's 2,0752 µm: Mecway voegt de slip τ/kt toe).
+- KNOWN_BUGS 149: Mecway's tangentiële stijfheid kt wordt niet gemodelleerd, Code-Aster
+  plakt star (NL-03h, 1 controle, u 10 % onder Mecway's 2,0752 µm: Mecway voegt de slip τ/kt
+  toe).
 - KNOWN_BUGS 43: Lagrange-contact (`contact_algo` = STANDARD) op een lijncontact tussen
   hex20-volumes stopt (NL-03a, 3 controles). Gebruik PENALISATION (NL-03b: exact).
 - KNOWN_BUGS 83: K_I uit `CALC_G_XFEM` op een gekromd front +5,3 % (BR-10, 1 controle,
@@ -2152,8 +2153,14 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
   vastgehouden (Y vast op zijn vlak y = 0 boven de naad), 10 MPa druk, dan 2 MPa schuif,
   μ = 0,5 (plakken), kn = kt = 1e13 Pa/m. Zonder `SEUIL_INIT` stopte Code-Aster in stap 1
   (`MECANONLINE9_4`); met: w = 1,9156 µm, gelijk aan Mecway 36 met CCX (1,9156 µm);
-  u = 1,8636 µm tegen Mecway 2,0752 µm (BEKEND, KNOWN_BUGS 148: de penalty-wrijving van
-  Code-Aster plakt vrijwel star, Mecway voegt de slip τ/kt toe).
+  u = 1,8641 µm tegen Mecway 2,0752 µm (BEKEND, KNOWN_BUGS 149: de wrijving van Code-Aster
+  heeft geen elastische tangentiële veer, de bridge plakt star met `COEF_PENA_FROT` =
+  1/(1e-8 × de diagonaal van de contactvlakken) = 3,5e9 1/m; Mecway voegt de slip τ/kt
+  toe). 10 stappen; met Mecway's kt als `COEF_PENA_FROT` (voor V2026.15) 754.
+- **NL-03i** (wrijving, aantal stappen): NL-03h met stap 0,02 s (25 schuifstappen in
+  plaats van 5). Gepenaliseerde wrijving slipt per stap (τ/(μp))/`COEF_PENA_FROT`
+  (KNOWN_BUGS 149), hier samen ongeveer 1,5 nm. u = 1,8656 µm tegen 1,8638 µm van NL-03h
+  met Lagrange-wrijving (`ALGO_FROT='STANDARD'`, star plakken): +0,1 % (tolerantie 0,3 %).
 - **NL-03p** (penetratiecontrole): de patchtest van NL-03d met kn = 1e10 Pa/m:
   penetratie p/kn = 1 mm (exact), 15 % van de rand van het slave-vlak (6,67 mm); de
   bridge geeft na de run een WARNING (`contact_pene_maxi` 0,05). NL-03b/d/f (1 µm)

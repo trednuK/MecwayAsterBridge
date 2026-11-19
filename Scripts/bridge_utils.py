@@ -274,8 +274,9 @@ CONFIG_BRIDGE = {
             # V2026.15) = "PENALISATION" for zones with Mecway's normal
             # stiffness in 3D, else "STANDARD"; "STANDARD" = Lagrange, no
             # penetration; "PENALISATION" = spring with Mecway's
-            # normalstiffness (COEF_PENA_CONT, Pa/m) and with friction
-            # tangentialstiffness (COEF_PENA_FROT), like Mecway/CCX.
+            # normalstiffness (COEF_PENA_CONT, Pa/m), like Mecway/CCX; friction
+            # sticks rigidly (COEF_PENA_FROT from the contact face size,
+            # bridge_to_aster._FRIC_SLIP_REL; Mecway's kt not used, KB 149).
             "contact_algo":          "auto",
             # DEFI_CONTACT LISSAGE (S28): smoothed normals for faceted
             # curved contact surfaces; not across sharp edges.

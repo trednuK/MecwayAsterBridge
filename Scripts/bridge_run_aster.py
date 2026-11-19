@@ -223,7 +223,8 @@ _NEWTON_HINT = (u"Newton convergeert niet; de resultaten tot het laatst "
                 u"bezwijkmoment helpen kleinere stappen. Blijft RESI_GLOB_RELA "
                 u"in de eerste stappen hoog terwijl RESI_GLOB_MAXI heel klein "
                 u"is (een beweging zonder weerstand), kies dan "
-                u"Convergentiecriterium = MAXI. Stagneert RESI_GLOB_RELA net "
+                u"Convergentiecriterium = MAXI of RELA_OF_MAXI. Stagneert "
+                u"RESI_GLOB_RELA net "
                 u"boven het criterium (bijv. 2e-6 bij 1e-6, gezien bij "
                 u"ontlasten met GDEF_LOG), gebruik dan de standaard 1e-5, of "
                 u"Convergentiecriterium = RELA_OF_MAXI met RESI_GLOB_MAXI "
@@ -245,7 +246,8 @@ _NEWTON_HINT = (u"Newton convergeert niet; de resultaten tot het laatst "
                 u"after a failure event smaller steps help. If "
                 u"RESI_GLOB_RELA stays high in the first steps while "
                 u"RESI_GLOB_MAXI is very small (a motion without "
-                u"resistance), choose Convergence criterion = MAXI. If "
+                u"resistance), choose Convergence criterion = MAXI or "
+                u"RELA_OF_MAXI. If "
                 u"RESI_GLOB_RELA stalls just above the criterion (e.g. 2e-6 "
                 u"at 1e-6, seen when unloading with GDEF_LOG), use the "
                 u"default 1e-5, or Convergence criterion = RELA_OF_MAXI with "
@@ -354,6 +356,49 @@ _RESI_HINT = (
     u"(RESI_RELA)' (lin_solver_resi) of the analysis well above that "
     u"error. If it is large (order 1 or more): " + _SINGULAR_HINT[1])
 _NUMBER_RE = re.compile(r"[0-9]+(?:\.[0-9]*)?(?:[eE][-+]?[0-9]+)?")
+
+
+# Absolute residual (N) below which nothing resists the motion yet: with only
+# RESI_GLOB_RELA as criterion Newton cannot converge (the residual is
+# divided by a load plus reactions of about 0). Measured: Samples/PipeClip
+# (Mecway) stopped in step 1 with MECANONLINE9_7, RESI_GLOB_MAXI ~4e-12 N in
+# every iteration; with MAXI or RELA_OF_MAXI it completed in 20 steps
+# without cuts (19 Nov 2026).
+_NO_RESISTANCE_N = 1e-6
+
+
+def _no_resistance_advice(text):
+    """Advice (chosen language) when no step converged and the absolute
+    residual of every iteration of the first attempt stayed below
+    _NO_RESISTANCE_N while only RESI_GLOB_RELA was a criterion; else u''."""
+    try:
+        parser = ConvergenceParser()
+        parser.feed(text)
+        parser.close()
+        data = parser.data
+    except Exception:
+        return u""
+    if not data.steps or data.last_converged() is not None or \
+            data.command not in (None, "STAT_NON_LINE", "DYNA_NON_LINE"):
+        return u""
+    its = data.steps[0].iterations
+    vals = [it.get("resi_maxi") for it in its
+            if it.get("resi_maxi") is not None]
+    if not vals or max(vals) >= _NO_RESISTANCE_N or any(
+            "resi_maxi" in it.get("flags", {}) for it in its):
+        return u""
+    return tr(u"Geen enkele stap convergeerde, terwijl de absolute rest "
+              u"(RESI_GLOB_MAXI) in de eerste stap hooguit {0} N was: er is "
+              u"nog niets dat de beweging tegenhoudt (bijv. een opgelegde "
+              u"verplaatsing voordat het contact sluit), dus kan "
+              u"RESI_GLOB_RELA niet convergeren. Kies "
+              u"Convergentiecriterium = RELA_OF_MAXI en reken opnieuw. ",
+              u"No step converged, while the absolute residual "
+              u"(RESI_GLOB_MAXI) was at most {0} N in the first step: "
+              u"nothing resists the motion yet (e.g. an imposed displacement "
+              u"before the contact closes), so RESI_GLOB_RELA cannot "
+              u"converge. Choose Convergence criterion = RELA_OF_MAXI and run "
+              u"again. ").format("%.3g" % max(vals))
 
 
 def _resi_advice(box_text, analysis_name=None):
@@ -1673,7 +1718,10 @@ def aster_mess_errors(work_dir, since=None):
                             _TIME_HINT if extra_line > i and not post_lost
                             else _TIME_SKIP_HINT))
                     elif m.group(2) in hints:
-                        msg += u" -> " + hints[m.group(2)]
+                        msg += u" -> " + (
+                            _no_resistance_advice(text)
+                            if m.group(2) == "MECANONLINE9_7" else u"") + \
+                            hints[m.group(2)]
                     partial = _MESS_PARTIAL_RE.search(text)
                     stop_id = _MESS_STOP_ID_RE.search(text)
                     if partial and not post_lost and (
