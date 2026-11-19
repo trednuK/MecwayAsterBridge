@@ -1,6 +1,37 @@
 # Changelog
 
-## Unreleased
+## V2026.15 – 19 November 2026
+
+Route `tabel` is removed: the results always go through the `.liml`, and they can still be
+kept apart from the model (*Results...* > *Remove from model* and *Load*, user guide §5.1).
+With Mecway 36 a run reads a copy of the open model (`mw.liml_text()`), so the model is saved
+only when the results go into it. Contact was reviewed against Mecway 36 with CCX: contact
+method `auto` as the default in Nonlinear Static and implicit dynamics, rigid friction stick,
+WARNINGs for bonded contact across a gap and for CCX keyword modifications, and an option to
+close bonded gaps like CCX. Further: the Code-Aster element per component
+(`#ASTER-ELEMENT`), shells in implicit dynamics, load tables and CCX *time points* like
+Mecway, faster preparation of very large models with a MUMPS memory setting, and figures and
+"where to set it" screenshots across the documentation.
+Behaviour changes (results of such models change):
+- contact method `auto` (penalty with Mecway's normal stiffness) in Nonlinear Static and
+  implicit dynamics; a saved start screen keeps its `STANDARD` until you choose `auto`;
+- friction sticks rigidly: Mecway's kt is no longer written as `COEF_PENA_FROT`, and kt = 0
+  sticks too;
+- DKT shells in implicit dynamics (KNOWN_BUGS 156);
+- a force on shell edges of several components is shared by length × thickness, like Mecway;
+- Nonlinear Static without *Quasi-static* takes load tables at t = 1 s, and with CCX
+  *time points* it ends at the period and gives Mecway only the end state;
+- D31 with a *Time step size* uses that step as solver and output step;
+- `COQUE_3D` stays DKT where a constraint selection also lies on other elements
+  (KNOWN_BUGS 162);
+- contact in explicit dynamics stops with an ERROR before the run.
+
+Checked in the Mecway 36 window (36.0.9815, 19 Nov 2026): 22 checks of the route removal, the
+model copy and contact on a434d50, the "Save changes?" question on 47b6fd4 (Mecway behaviour,
+KNOWN_BUGS 151) and the wait window on 9556f23. The later changes (contact in implicit
+dynamics, time points, shells in dynamics, element per component, edge forces, large models
+apart from the wait window) were measured headless with Code-Aster 17.4 and Mecway 36 only.
+REGRESSION_LINE
 
 - **Very large models: faster preparation and a MUMPS memory setting.** Ideas from the
   public fork larsmei/MecwayAsterBridge, written anew. The `.mail` is written in pieces
@@ -106,6 +137,11 @@
   longer saves either. Older Mecway versions (no `mw.liml_text()`) behave as before.
   Verified in the Mecway 36 window (36.0.9815).
 
+- **Documentation: figures and where to set it.** About 25 new figures (contact
+  master/slave, time steps, shell axes and layers, beam section forces, failure timing, the
+  files of one run and more) and, in about 26 pages, the page, heading and field where each
+  setting is, with screenshots of the start screen and of Mecway's *Analysis settings* and
+  *custom model definition*.
 - **Start screen: the mouse wheel over a closed choice list scrolls the page** and no longer
   changes the setting (it did when the pointer was over a list while scrolling the page, e.g.
   *Active analysis*; KNOWN_BUGS 152). An open list scrolls as before; the arrow keys still

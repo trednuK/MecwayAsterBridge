@@ -50,7 +50,8 @@ Related documents:
 - **Mecway 33, 34 or 36.** The bridge runs in Mecway's IronPython 2.7 scripting environment
   (Mecway Ltd., 2026, §16.2) and has been tested with `.liml` files of versions 33, 34 and
   36: developed and verified with Mecway 34; Mecway 36 (36.0.9815) was verified headless with
-  V2026.14 and with ten checks in the Mecway window (18 Nov 2026); Mecway 33 was last fully
+  V2026.14 and V2026.15, with ten checks in the Mecway window (18 Nov 2026) and further checks
+  there for V2026.15 (19 Nov 2026); Mecway 33 was last fully
   verified with V2026.2 (which features are verified per version:
   [`After_an_update.md`](After_an_update.md) §6). Mecway 35 is not in the list of tested
   versions (single features were checked on it, see the same table); other versions have not

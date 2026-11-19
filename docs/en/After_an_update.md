@@ -183,6 +183,8 @@ it was last verified:
 | Shells in implicit dynamics: zero initial acceleration with DKT, `COQUE_3D` with `PETIT` (KNOWN_BUGS 156 fixed) (V2026.15) | NOT verified | NOT verified | verified headless (36.0.9815 with CCX, 19 Nov 2026: DY-40a..h against Mecway's own solve) |
 | Element per component (`#ASTER-ELEMENT`) (V2026.15) | NOT verified | NOT verified | NOT verified (offline only: the bridge reads the CCX field like the other `#ASTER` lines; LS-98a/b with Code-Aster 17.4 (19 Nov 2026), reference Mecway 34 on LS-07b) |
 | Force on shell edges of several components, shared by length × thickness (V2026.15) | NOT verified | NOT verified | verified headless (36.0.9815, internal solver, 19 Nov 2026: LS-98d, two strips of 2 and 4 mm) |
+| Very large models: the `.mail` written in pieces, `mumps_memory`, the WARNING when MUMPS put its factorization on disk, the window "Please wait" (V2026.15) | NOT verified | NOT verified | in the Mecway window (36.0.9815, 19 Nov 2026): "Please wait" while the mesh is written and while the results are loaded (the latter seen only by its title), gone once the Code-Aster status window opens, and the out-of-core WARNING on a large block; `mumps_memory` measured headless with Code-Aster 17.4 |
+| Mouse wheel over a closed choice list on the start screen scrolls the page instead of changing its value (V2026.15) | n/a (does not depend on Mecway) | n/a | n/a (offscreen test of the start screen only) |
 
 "Verified" means the verification of §2 and a run in Mecway with that version. Comparisons
 with Mecway's own solver in the other documents name the Mecway version they were measured

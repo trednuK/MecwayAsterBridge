@@ -12,7 +12,7 @@ in Mecway's *Custom model definition*.
 
 [![Architecture diagram](https://gitdiagram.com/diagram-badge.svg)](https://gitdiagram.com/trednuk/mecwayasterbridge?utm_source=readme&utm_medium=badge)
 
-Version: **V2026.14** (see [`CHANGELOG.md`](CHANGELOG.md)). Dutch documentation:
+Version: **V2026.15** (see [`CHANGELOG.md`](CHANGELOG.md)). Dutch documentation:
 [`docs/Handleiding.md`](docs/Handleiding.md).
 
 **Provided as is, without warranty (MPL-2.0, sections 6 and 7). Always check results
@@ -22,8 +22,8 @@ independently before you rely on them.**
 
 - **Windows** with **Mecway 33, 34 or 36** (the bridge runs in Mecway's built-in IronPython 2.7
   scripting environment). Developed and verified with Mecway 34; Mecway 36 (36.0.9815, a release
-  candidate of Mecway) was verified headless and with ten checks in the Mecway window with
-  V2026.14; Mecway 33 is supported, last fully verified with V2026.2 (features added since are
+  candidate of Mecway) was verified headless, with ten checks in the Mecway window with
+  V2026.14 and with further checks in the window for V2026.15 (19 Nov 2026); Mecway 33 is supported, last fully verified with V2026.2 (features added since are
   verified with Mecway 34, or measured with Mecway 35 or 36, see
   [After an update](docs/en/After_an_update.md#6-mecway-versions--compatibility)). Mecway 35 is not
   in the list of tested versions (the bridge warns; single features were checked on it, see the

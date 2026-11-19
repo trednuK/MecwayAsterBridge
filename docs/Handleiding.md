@@ -42,8 +42,9 @@ Verwante documenten:
 
 - **Mecway 33, 34 of 36.** De bridge draait in Mecway's IronPython 2.7-scriptomgeving
   (Mecway Ltd., 2026, §16.2) en is getest met `.liml`-bestanden van versie 33, 34 en 36:
-  ontwikkeld en geverifieerd met Mecway 34; Mecway 36 (36.0.9815) is met V2026.14 headless
-  geverifieerd en met tien controles in het Mecway-venster (18 nov 2026); Mecway 33 is voor
+  ontwikkeld en geverifieerd met Mecway 34; Mecway 36 (36.0.9815) is met V2026.14 en V2026.15
+  headless geverifieerd, met tien controles in het Mecway-venster (18 nov 2026) en verdere
+  controles daar voor V2026.15 (19 nov 2026); Mecway 33 is voor
   het laatst volledig geverifieerd met V2026.2 (welke functies per versie geverifieerd zijn:
   [`Na_een_update.md`](Na_een_update.md) §6). Mecway 35 staat niet in de lijst van geteste
   versies (losse functies zijn erop nagelopen, zie dezelfde tabel); andere versies zijn niet

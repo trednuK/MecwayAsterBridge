@@ -181,6 +181,8 @@ het laatst is nagelopen:
 | Schalen in impliciete dynamica: beginversnelling nul bij DKT, `COQUE_3D` met `PETIT` (KNOWN_BUGS 156 opgelost) (V2026.15) | NIET nagelopen | NIET nagelopen | headless nagelopen (36.0.9815 met CCX, 19 nov 2026: DY-40a..h t.o.v. Mecway's eigen oplossing) |
 | Element per component (`#ASTER-ELEMENT`) (V2026.15) | NIET nagelopen | NIET nagelopen | NIET nagelopen (alleen offline: de bridge leest het CCX-veld zoals de andere `#ASTER`-regels; LS-98a/b met Code-Aster 17.4 (19 nov 2026), referentie Mecway 34 op LS-07b) |
 | Kracht op schaalranden van meer componenten, verdeeld naar lengte × dikte (V2026.15) | NIET nagelopen | NIET nagelopen | headless nagelopen (36.0.9815, eigen solver, 19 nov 2026: LS-98d, twee stroken van 2 en 4 mm) |
+| Zeer grote modellen: de `.mail` in stukken geschreven, `mumps_memory`, de WARNING als MUMPS zijn factorisatie op schijf zette, het venster "Even geduld" (V2026.15) | NIET nagelopen | NIET nagelopen | in het Mecway-venster (36.0.9815, 19 nov 2026): "Even geduld" tijdens het schrijven van het mesh en het laden van de resultaten (dat laatste alleen aan de titel gezien), weg zodra het statusvenster van Code-Aster opent, en de out-of-core-WARNING bij een groot blok; `mumps_memory` headless gemeten met Code-Aster 17.4 |
+| Muiswiel boven een gesloten keuzelijst op het startscherm schuift de pagina in plaats van de waarde te wijzigen (V2026.15) | n.v.t. (hangt niet van Mecway af) | n.v.t. | n.v.t. (alleen offscreen getest op het startscherm) |
 
 "Nagelopen" betekent de verificatie van §2 en een run in Mecway met die versie. Vergelijkingen
 met Mecway's eigen solver in de andere documenten noemen de Mecway-versie waarmee ze gemeten
