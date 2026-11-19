@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 340" width="720" height="340">
+  <rect width="720" height="340" fill="#ffffff"/>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#333"/>
+    </marker>
+  </defs>
+  <!-- left: stiff, coarsely meshed master body above a finely meshed slave body (solids) -->
+  <rect x="60" y="50" width="250" height="100" fill="#c8d4df" stroke="#333" stroke-width="2"/>
+  <g stroke="#333" stroke-width="1">
+    <line x1="185" y1="50" x2="185" y2="150"/>
+    <line x1="60" y1="100" x2="310" y2="100"/>
+  </g>
+  <rect x="60" y="200" width="250" height="110" fill="#d6e4f0" stroke="#333" stroke-width="2"/>
+  <g stroke="#333" stroke-width="0.8">
+    <line x1="91.25" y1="200" x2="91.25" y2="310"/>
+    <line x1="122.5" y1="200" x2="122.5" y2="310"/>
+    <line x1="153.75" y1="200" x2="153.75" y2="310"/>
+    <line x1="185" y1="200" x2="185" y2="310"/>
+    <line x1="216.25" y1="200" x2="216.25" y2="310"/>
+    <line x1="247.5" y1="200" x2="247.5" y2="310"/>
+    <line x1="278.75" y1="200" x2="278.75" y2="310"/>
+    <line x1="60" y1="227.5" x2="310" y2="227.5"/>
+    <line x1="60" y1="255" x2="310" y2="255"/>
+    <line x1="60" y1="282.5" x2="310" y2="282.5"/>
+  </g>
+  <!-- the two contact faces -->
+  <line x1="60" y1="150" x2="310" y2="150" stroke="#2c5d8a" stroke-width="4"/>
+  <line x1="60" y1="200" x2="310" y2="200" stroke="#2c5d8a" stroke-width="4"/>
+  <!-- outward normals: master face down, slave face up -->
+  <g stroke="#333" stroke-width="2">
+    <line x1="120" y1="150" x2="120" y2="186" marker-end="url(#ah)"/>
+    <line x1="250" y1="150" x2="250" y2="186" marker-end="url(#ah)"/>
+    <line x1="90" y1="200" x2="90" y2="164" marker-end="url(#ah)"/>
+    <line x1="185" y1="200" x2="185" y2="164" marker-end="url(#ah)"/>
+    <line x1="280" y1="200" x2="280" y2="164" marker-end="url(#ah)"/>
+  </g>
+  <!-- right: what Code-Aster prevents and what it allows -->
+  <polygon points="410,230 480,230 540,254 600,230 690,230 690,310 410,310" fill="#d6e4f0" stroke="#333" stroke-width="2"/>
+  <polygon points="440,90 660,90 660,170 550,262 440,170" fill="#c8d4df" fill-opacity="0.85" stroke="#333" stroke-width="2"/>
+  <polygon points="440,170 550,262 660,170" fill="none" stroke="#333" stroke-width="2"/>
+  <g fill="#2c5d8a" stroke="#ffffff" stroke-width="1.5">
+    <circle cx="420" cy="230" r="6"/>
+    <circle cx="480" cy="230" r="6"/>
+    <circle cx="540" cy="254" r="6"/>
+    <circle cx="600" cy="230" r="6"/>
+    <circle cx="660" cy="230" r="6"/>
+  </g>
+  <circle cx="550" cy="262" r="6" fill="#ffffff" stroke="#333" stroke-width="2"/>
+  <!-- leader lines of markers 5 and 6 -->
+  <line x1="504" y1="282" x2="535" y2="259" stroke="#c0392b" stroke-width="1.5"/>
+  <line x1="588" y1="288" x2="555" y2="266" stroke="#c0392b" stroke-width="1.5"/>
+  <!-- markers -->
+  <g font-family="sans-serif" font-weight="bold" font-size="14" fill="#ffffff" text-anchor="middle">
+    <circle cx="36" cy="75" r="11" fill="#c0392b"/><text x="36" y="80">1</text>
+    <circle cx="36" cy="270" r="11" fill="#c0392b"/><text x="36" y="275">2</text>
+    <circle cx="136" cy="168" r="11" fill="#c0392b"/><text x="136" y="173">3</text>
+    <circle cx="202" cy="184" r="11" fill="#c0392b"/><text x="202" y="189">4</text>
+    <circle cx="496" cy="290" r="11" fill="#c0392b"/><text x="496" y="295">5</text>
+    <circle cx="596" cy="296" r="11" fill="#c0392b"/><text x="596" y="301">6</text>
+  </g>
+</svg>
