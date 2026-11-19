@@ -97,9 +97,14 @@ Mecway: all archived solver steps up to the last time reached (the
 bridge sets no `ARCHIVAGE`). Except with CCX *time points* without *Automatic time
 stepping*: Mecway then stores only the end state, and the bridge sends only the first
 step and the end state at the period (every step if the run stops earlier, with element
-failure or with fatigue; NL-75e..g). To see the whole load path, set a *Time step size*
-or turn on *Automatic time stepping*. The solver steps
-are Mecway's (*Time step size*, `<timesteps stepsize>`: dt, 2 dt, ... up to the period),
+failure or with fatigue; NL-75e..g). To see the whole load path: in Mecway's *Analysis
+settings* (*Nonlinear Static*, *Quasi-static* ticked) tick *Automatic time stepping* next
+to the *time points*, and leave the bridge setting *Follow Mecway's Automatic time
+stepping* (`auto_time_stepping`, start screen, page *Nonlinear static*) on (default): the
+results then come at the *time points* (off: fixed steps, every step goes to Mecway). With
+the internal solver Mecway asks for a *Time step size* instead; every step is then sent.
+The solver steps are Mecway's (*Time step size*, `<timesteps stepsize>`: dt, 2 dt, ... up
+to the period),
 plus the kinks of the load tables that fall in between; so Mecway shows the same times
 as with Mecway's own solver. Load times after the period are dropped. If Mecway's
 *Automatic time stepping* is on (`automatictimestepping="true"`, with the internal

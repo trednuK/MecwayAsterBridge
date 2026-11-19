@@ -96,8 +96,13 @@ Code-Aster-standaard als je het sleutelwoord weglaat (catalogus 17.4).
 het laatst bereikte tijdstip (de bridge zet geen `ARCHIVAGE`). Behalve bij CCX-*time
 points* zonder *Automatic time stepping*: Mecway bewaart dan alleen de eindtoestand, en de
 bridge stuurt alleen de eerste stap en de eindtoestand op de periode (elke stap als de run
-eerder stopt, bij bezwijken of bij vermoeiing; NL-75e..g). Wil je het hele lastpad zien,
-geef dan een *Time step size* of zet *Automatic time stepping* aan. De rekenstappen zijn die van Mecway (*Time step size*,
+eerder stopt, bij bezwijken of bij vermoeiing; NL-75e..g). Om het hele lastpad te zien:
+vink in Mecway's *Analysis settings* (*Nonlinear Static*, *Quasi-static* aangevinkt)
+*Automatic time stepping* aan naast de *time points*, en laat de bridge-instelling
+*Mecway's Automatic time stepping volgen* (`auto_time_stepping`, startscherm, pagina
+*Niet-lineair statisch*) aan (standaard): de resultaten komen dan op de *time points*
+(uit: vaste stappen, elke stap gaat naar Mecway). Met de interne solver vraagt Mecway in
+plaats daarvan een *Time step size*; dan gaat elke stap mee. De rekenstappen zijn die van Mecway (*Time step size*,
 `<timesteps stepsize>`: dt, 2 dt, ... tot de periode), plus de knikken van de
 lasttabellen die ertussen vallen; zo staan in Mecway dezelfde tijdstippen als bij
 Mecway's eigen solver. Lasttijden na de periode vallen weg. Staat Mecway's *Automatic time stepping* aan (`automatictimestepping="true"`, met de
