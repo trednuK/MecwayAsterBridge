@@ -259,7 +259,8 @@ spanning van `POST_CHAMP EXTR_COQUE` (zoals voor von Mises) als `SIEQ_NOEU`:
 `spanning = VMIS_SG` gebruikt de component `VMIS_SG`, `PRIN` de `PRIN_i` met de
 grootste absolute waarde. Dat zijn invarianten, dus het lokale assenstelsel van de
 schaal speelt geen rol. Bij buiging hebben boven en onder hetzelfde bereik maar een
-tegengesteld gemiddelde: met Goodman verschilt de schade (VM-10).
+tegengesteld gemiddelde: met Goodman verschilt de schade (VM-10). Welke kant de bovenzijde is (de
+elementnormaal uit de knoopvolgorde) staat in de figuur in [`Handleiding.md` §4.1](Handleiding.md#41-resultaatvelden).
 
 Niet bij schalen: een rekcurve en een multiaxiaal criterium (WARNING, schalen
 overgeslagen). Balken, staven en veren: geen schade.

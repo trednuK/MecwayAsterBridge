@@ -260,7 +260,8 @@ positive element normal, Code-Aster `NIVE_COUCHE='SUP'`, in Mecway the same side
 component `VMIS_SG`, `PRIN` the `PRIN_i` with the largest absolute value. These are
 invariants, so the local coordinate system of the shell plays no role. In bending, top
 and bottom have the same range but an opposite mean: with Goodman the damage differs
-(VM-10).
+(VM-10). Which side is the top (the element normal from the node order) is shown in
+the figure in [`UserGuide.md` §4.1](UserGuide.md#41-result-fields).
 
 Not for shells: a strain curve and a multiaxial criterion (WARNING, shells skipped).
 Beams, trusses and springs: no damage.
