@@ -1423,10 +1423,11 @@ def _pick_configuration(root):
     does not work in CPython 3 (smoke test).
     """
     names = [c.get("name") for c in root.findall("configuration")]
-    suppressed = set()
-    for elem in root.iter():
-        for sup in elem.findall("suppressed"):
-            suppressed.add(sup.get("configuration"))
+    # Every <suppressed> below <liml> (the same set as findall on every
+    # element; that took about 20 s in IronPython on a generated 804k-node
+    # block, 19 Nov 2026)
+    suppressed = set(sup.get("configuration")
+                     for sup in root.iter("suppressed"))
     return choose_configuration(names, suppressed)
 
 
@@ -1466,7 +1467,14 @@ def _apply_suppression(root, model_data):
     items = list(root)
     for ic in root.findall("initialconditions"):
         items.extend(list(ic))
+    # An item without children, without suppressed= and without group= is
+    # never suppressed (all <node> of the model: skipped cheaply), unless a
+    # suppressed group has no name
+    unnamed = None in groups
     for item in items:
+        if (not unnamed and len(item) == 0 and item.get("group") is None and
+                item.get("suppressed") is None):
+            continue
         if item.tag in ("configuration", "group") or \
                 item.get("suppressed", "") == "true":
             continue
@@ -2183,27 +2191,32 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
         for elset_elem in root.findall("elset"):
             ename  = elset_elem.get("name", "Default")
             shapes = set()
+            elem_shapes = model_data["elem_shapes"]
+            mesh_elements = model_data["mesh_elements"]
+            # Per element as few calls as possible (int(eid) once, no
+            # generators): this loop took 8 s in IronPython on a generated
+            # 804k-node hex8 block (19 Nov 2026); the result is the same.
             for e in elset_elem.findall("elem"):
                 s = e.get("shape")
                 if s:
                     shapes.add(s)
                     eid = e.get("eid")
+                    eid_i = int(eid) if eid else None
                     if eid and s in _DIM_1D_SHAPES:
-                        line_eids.setdefault(ename, set()).add(int(eid))
+                        line_eids.setdefault(ename, set()).add(eid_i)
                         if e.get("truss") == "true":
-                            truss_eids.setdefault(ename, set()).add(
-                                int(eid))
+                            truss_eids.setdefault(ename, set()).add(eid_i)
                     if eid:
-                        model_data["elem_shapes"][int(eid)] = s
-                        model_data["mesh_elements"].append((
-                            int(eid), s,
-                            [int(n) for n in e.get("nodes", "").split()],
+                        elem_shapes[eid_i] = s
+                        mesh_elements.append((
+                            eid_i, s,
+                            list(map(int, e.get("nodes", "").split())),
                             ename))
-                    if eid and any(e.get(k) is not None for k in (
-                            "orientationux", "orientationuy",
-                            "orientationuz")):
+                    if eid and (e.get("orientationux") is not None or
+                                e.get("orientationuy") is not None or
+                                e.get("orientationuz") is not None):
                         # U axis (gap direction, manual v33 par. 7.9)
-                        model_data.setdefault("elem_u_axes", {})[int(eid)] = \
+                        model_data.setdefault("elem_u_axes", {})[eid_i] = \
                             tuple(float(e.get(k, "0")) for k in (
                                 "orientationux", "orientationuy",
                                 "orientationuz"))
@@ -2211,9 +2224,9 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
                         # Material axes of a solid (orthotropic material,
                         # bridge_orthotropic): V vector and angle next to
                         # the U axis above (manual v34 par. 8.5)
-                        if any(e.get(k) is not None for k in (
-                                "orientationvx", "orientationvy",
-                                "orientationvz")):
+                        if (e.get("orientationvx") is not None or
+                                e.get("orientationvy") is not None or
+                                e.get("orientationvz") is not None):
                             model_data.setdefault("elem_v_axes", {})[
                                 int(eid)] = tuple(float(e.get(k, "0"))
                                                   for k in (

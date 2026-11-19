@@ -98,6 +98,9 @@ def test_helpers():
            if a.get("mumps_memory") != "auto"])
 
 
+_LAST_LOG = [u""]
+
+
 def _comm(tmp, model, analysis, settings):
     d = tempfile.mkdtemp(dir=tmp)
     liml = os.path.join(d, "model.liml")
@@ -110,8 +113,10 @@ def _comm(tmp, model, analysis, settings):
     try:
         md = extract_aster_data_from_liml(liml)
         mail = os.path.join(d, "model.mail")
-        if not (md and write_mesh(mail, md) and
-                generate_AsterSolver_files(d, md, mail, "test.resu")):
+        ok = md and write_mesh(mail, md) and generate_AsterSolver_files(
+            d, md, mail, "test.resu")
+        _LAST_LOG[0] = log_text()          # the log of this case folder
+        if not ok:
             return None
         with io.open(glob.glob(os.path.join(d, "*.comm"))[0],
                      encoding="utf-8") as f:
@@ -151,10 +156,13 @@ def test_comm(tmp):
         {"mumps_memory": "out_of_core"}))
     check("#ASTER-OPTIE mumps_memory overrides the setting", override == OOC,
           override)
+    no_effect = u"mumps_memory low_rank has no effect in this analysis"
     lines = _mumps_lines(_comm(tmp, nonlin, "nonlin_static_3d",
                                {"mumps_memory": "low_rank"}))
     check("nonlinear low_rank", lines and all(l.endswith(LR + u"),")
                                               for l in lines), lines)
+    check("nonlinear low_rank: no 'no effect' WARNING",
+          no_effect not in _LAST_LOG[0])
     explicit = [k for k, a in u.CONFIG_BRIDGE["analyses"].items()
                 if a.get("solver_command") == "DYNA_NON_LINE"]
     for name in explicit:
@@ -163,6 +171,8 @@ def test_comm(tmp):
                                     "schema": "DIFF_CENT"}))
         check(name + " explicit: no low rank",
               lines and not any(u"ACCELERATION" in l for l in lines), lines)
+        check(name + " explicit: WARNING that low_rank has no effect",
+              no_effect in _LAST_LOG[0])
         lines = _mumps_lines(_comm(tmp, nonlin, name,
                                    {"mumps_memory": "low_rank",
                                     "schema": "HHT"}))

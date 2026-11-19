@@ -97,7 +97,9 @@ Related documents:
    "Yes" saves those edits and "No" discards them. Without `mw.liml_text()` (earlier Mecway versions) it saves the model first
    (`mw.save()`). A read-only model or a folder that is gone stops the run at once. Then
    it reads the `.liml`, writes the mesh, `<model>_<run-id>.comm` and `.export` to the
-   work folder (§5) and starts Code-Aster in a **separate window**.
+   work folder (§5) and starts Code-Aster in a **separate window**. If that takes longer
+   than 2 s (a large model), a small window "Please wait" shows which step runs; Mecway
+   responds again only when it is done. The same window appears while the results load.
 5. The **status window** "Code-Aster run" appears (setting "Waiting for Code-Aster" =
    `auto`, default). It shows the elapsed time (with the time limit of the `.export`), what
    Code-Aster is doing at that moment (nonlinear: time reached, attempt, level and Newton

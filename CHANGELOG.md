@@ -15,8 +15,12 @@
   `low_rank` 160 s instead of 240 s and 1.5 instead of 10.6 GB on disk, but peak memory 11.2
   instead of 4.9 GB; results differ by less than 1e-13 relative. After a linear static run
   (*Static*) the bridge now warns when MUMPS put its factorization on disk
-  because it did not fit in `memory_limit` (Code-Aster does that without a message).
-  Settings §2.6.
+  because it did not fit in `memory_limit` (Code-Aster does that without a message), and
+  `low_rank` gives a WARNING when no solve of the analysis can use it (only eigenvalue,
+  harmonic or explicit solves). Reading the model is faster too (configurations and
+  elements: 36 instead of 54 s on the same block). When the preparation or the loading of
+  the results takes longer than 2 s, a small window "Please wait" shows the step; Mecway
+  responds again when it is done. Settings §2.6.
 - **Code-Aster element per component: `#ASTER-ELEMENT component: element`.** A line
   in the CCX *custom model definition* chooses the element of one Mecway component
   instead of the general setting `elem_hex8`/`elem_shell`/`elem_beam`: `3D`, `3D_SI`,

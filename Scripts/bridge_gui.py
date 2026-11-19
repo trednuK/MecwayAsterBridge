@@ -2894,6 +2894,153 @@ def _user32():
         return None
 
 
+# ==========================================
+# WAIT WINDOW (preparing a run, loading results)
+# ==========================================
+# While _run reads the model, writes the mesh and the solver files, and
+# later while the results go into Mecway, Mecway's UI thread is busy:
+# Mecway shows nothing (measured: about 1 min before Code-Aster starts on a
+# generated 804k-node block, 19 Nov 2026) and Windows marks it "Not
+# responding". This small window says which step runs. Unlike the other
+# windows here it always lives on its own STA thread with its own message
+# loop, and is never joined while open: the script itself runs on Mecway's
+# UI thread (comment at _INSTANCE_NAME), which is busy. No owner (an owner
+# on Mecway's thread would freeze it with Mecway) and no Invoke across
+# threads: _run only writes _WAIT["state"], a timer on the window's thread
+# reads it. Shown only after _WAIT_DELAY s, so a normal model never sees it.
+_WAIT = {"state": None, "thread": None}
+_WAIT_DELAY = 2.0
+# Screen position (x, y) instead of the centre: only for the offline test,
+# which keeps the window off the screen.
+_WAIT_POSITION = None
+
+
+def wait_open(step, enabled=True):
+    """
+    Start the wait window for a step (text shown in it). enabled=False
+    (MecwayAsterBridgeMain: not the start screen, so messages come as
+    mw.message dialogs, which the window must not cover) and without
+    Windows Forms: nothing. Closes an open one first.
+    """
+    wait_close()
+    if not enabled:
+        return
+    try:
+        import time
+        import clr
+        clr.AddReference("System.Windows.Forms")
+        clr.AddReference("System.Drawing")
+        from System.Threading import (Thread, ThreadStart, ApartmentState)
+    except Exception:
+        return
+    state = {"step": step, "close": False, "t0": time.time(),
+             "shown": False, "ticks": 0}
+
+    def body():
+        # An exception that leaves a .NET thread ends the process (Mecway)
+        try:
+            while not state["close"] and \
+                    time.time() - state["t0"] < _WAIT_DELAY:
+                Thread.CurrentThread.Join(50)    # Sleep does not pump (STA)
+            if state["close"]:
+                return
+            from System.Windows.Forms import (
+                Form, Label, Timer, Application, FormBorderStyle,
+                FormStartPosition)
+            from System.Drawing import Point, Size
+            look = _Look()
+            form = Form()
+            form.Text = u"MecwayAsterBridge"
+            form.Font = look.font
+            form.BackColor = look.col("page_bg")
+            form.FormBorderStyle = FormBorderStyle.FixedDialog
+            form.ControlBox = False
+            if _WAIT_POSITION is None:
+                form.StartPosition = FormStartPosition.CenterScreen
+            else:
+                form.StartPosition = FormStartPosition.Manual
+                form.Location = Point(*_WAIT_POSITION)
+            # Not TopMost: a dialog of Mecway during the run (mw.open)
+            # must never be covered
+            form.ShowInTaskbar = True
+            bar = look.header(form, tr(u"Even geduld", u"Please wait"),
+                              tr(u"Mecway reageert weer als deze stap "
+                                 u"klaar is.",
+                                 u"Mecway responds again when this step "
+                                 u"is done."))
+            line = Label()
+            line.Font = look.section
+            line.AutoSize = False
+            line.Location = Point(16, bar.Height + 14)
+            line.Size = Size(440, look.line_height(look.section) + 6)
+            form.Controls.Add(line)
+            clock = Label()
+            clock.Font = look.font
+            clock.ForeColor = look.col("muted")
+            clock.AutoSize = False
+            clock.Location = Point(16, line.Bottom + 6)
+            clock.Size = Size(440, look.line_height() + 4)
+            form.Controls.Add(clock)
+            form.ClientSize = Size(472, clock.Bottom + 16)
+
+            def refresh(sender=None, args=None):
+                if state["close"]:
+                    form.Close()
+                    return
+                line.Text = state["step"] or u""
+                state["ticks"] += 1
+                clock.Text = tr(u"{0} s bezig", u"{0} s running").format(
+                    int(time.time() - state["t0"]))
+            timer = Timer()
+            timer.Interval = 250
+            timer.Tick += refresh
+            refresh()
+            timer.Start()
+            state["shown"] = True
+            try:
+                Application.Run(form)
+            finally:
+                timer.Stop()
+                timer.Dispose()
+                form.Dispose()
+        except Exception as e:
+            try:
+                bridge_utils.log("INFO: Wait window not shown: {0}".format(e))
+            except Exception:
+                pass
+
+    try:
+        thread = Thread(ThreadStart(body))
+        thread.SetApartmentState(ApartmentState.STA)
+        thread.IsBackground = True
+        thread.Start()
+    except Exception:
+        return
+    _WAIT["state"] = state
+    _WAIT["thread"] = thread
+
+
+def wait_step(step):
+    """Text of the current step in the wait window (no-op when closed)."""
+    state = _WAIT.get("state")
+    if state is not None:
+        state["step"] = step
+
+
+def wait_close():
+    """Close the wait window; waits at most 2 s for its thread. Safe to
+    call twice or without a window."""
+    state, thread = _WAIT.get("state"), _WAIT.get("thread")
+    _WAIT["state"], _WAIT["thread"] = None, None
+    if state is None:
+        return
+    state["close"] = True
+    try:
+        thread.Join(2000)
+    except Exception:
+        pass
+
+
 def run_status_dialog(job, owner=None):
     """
     Modal status window while Code-Aster runs (bridge_run_aster.AsterJob):

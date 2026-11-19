@@ -124,7 +124,8 @@ from bridge_utils       import (CONFIG_BRIDGE, log, resolve_auto_analysis,
                                 legacy_route_note)
 from bridge_gui         import (run_settings_dialog, results_dialog,
                                 claim_instance, release_instance,
-                                instance_busy_text)
+                                instance_busy_text, wait_open, wait_step,
+                                wait_close)
 from bridge_from_liml   import extract_aster_data_from_liml
 from bridge_mesh        import write_mesh
 from bridge_to_aster    import generate_AsterSolver_files, results_file
@@ -350,6 +351,13 @@ def _run(settings):
                    "WARNING: {0} There is no comparison with "
                    "Mecway.").format(empty))
 
+        # Wait window until Code-Aster starts (bridge_gui.wait_open: only
+        # after 2 s, and only with the start screen: otherwise messages
+        # are mw.message dialogs)
+        wait_open(tr(u"Model opslaan of kopiëren",
+                     u"Saving or copying the model"),
+                  settings.get("gui") == "winforms")
+
         # --- Step 2: A copy of the model, or save ---
         # With mw.liml_text() (Mecway 36) the run reads a model-only copy
         # in the work folder (bridge_liml_text), which is also the job's
@@ -383,6 +391,7 @@ def _run(settings):
         version_notes["mecway"] = bridge_version.check_mecway(model_liml)[1]
 
         # --- Step 3: Read model_data from the .liml file ---
+        wait_step(tr(u"Model lezen", u"Reading the model"))
         mark = log_size()
         model_data = extract_aster_data_from_liml(model_liml)
         _LAST["model_data"] = model_data      # adaptive refinement
@@ -453,6 +462,7 @@ def _run(settings):
         # No Gmsh export: it truncated group names to 8 characters. See
         # bridge_mesh.py.
         mesh_file = os.path.join(work_dir_path(), run_name(".mail"))
+        wait_step(tr(u"Mesh schrijven (.mail)", u"Writing the mesh (.mail)"))
         mark = log_size()
         if not write_mesh(mesh_file, model_data, face_nodes=_face_nodes):
             _notify(_prep_failed(tr("Schrijven van het mesh mislukt.",
@@ -468,6 +478,8 @@ def _run(settings):
         _LAST["analysis"] = CONFIG_BRIDGE["active_analysis"]
 
         # --- Step 4: Generate .comm and .export ---
+        wait_step(tr(u"Code-Aster-bestanden schrijven (.comm, .export)",
+                     u"Writing the Code-Aster files (.comm, .export)"))
         mark = log_size()
         export_file = generate_AsterSolver_files(
             work_dir_path(), model_data, mesh_file, resu_name
@@ -483,6 +495,7 @@ def _run(settings):
         # can handle pop-ups and results outside the scripting context.
         run_start = time.time()
         model_copy["keep"] = True     # until the job is known to be clean
+        wait_close()                  # the status window of the job follows
         job = run_AsterSolver(export_file, work_dir_path(), resu_name, mw)
         if not job:
             bridge_manifest.finish_run(work_dir_path(), model_data,
@@ -537,6 +550,11 @@ def _run(settings):
         bridge_manifest.finish_run(
             work_dir_path(), model_data, export_file,
             not (stopped or job.exit_code or mess_errors), mess_version)
+        # Wait window while the results go into Mecway (opening a large
+        # .liml takes as long as the preparation)
+        wait_open(tr(u"Resultaten in Mecway laden",
+                     u"Loading the results into Mecway"),
+                  settings.get("gui") == "winforms")
         # Failed elements (bridge_failure.py) in the log and a message
         failure_note = report_failures(
             os.path.join(work_dir_path(), run_name(".mess")),
@@ -551,6 +569,7 @@ def _run(settings):
         loaded = _load_liml_results(active_liml, model_data, run_start,
                                     monitor, mess_errors,
                                     snapshot=model_copy["path"])
+        wait_close()
         # results not in Mecway: the copy stays for a run by hand too
         model_copy["keep"] = model_copy["keep"] or not loaded
         # also when _run returns False below (.mess errors, stopped)
@@ -639,6 +658,7 @@ def _run(settings):
                "ERROR: Unexpected error in main(): {0}").format(str(e)))
         raise  # Pass the error on so that the except block below logs it
     finally:
+        wait_close()                  # also after an error or early return
         if model_copy["path"] and model_copy["keep"]:
             log("INFO: Model copy kept: {0} (the .comm of this run reads it; "
                 "the run did not end cleanly).".format(model_copy["path"]))

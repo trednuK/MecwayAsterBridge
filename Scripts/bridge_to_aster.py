@@ -56,7 +56,8 @@ from bridge_bcs import _value_at
 from bridge_results_liml import RESULTS_SUFFIX
 from bridge_utils import (log, tr, CONFIG_BRIDGE, get_active_analysis,
                           run_name, template_path, parse_yes_no,
-                          mumps_keywords, mumps_memory_note, mumps_solveur)
+                          mumps_keywords, mumps_memory, mumps_memory_note,
+                          mumps_solveur)
 
 
 # ==========================================
@@ -9849,7 +9850,34 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
                                      adapt_plan is not None,
                                      _has_cara(model_data))
         _write_axis_paraview(work_dir, model_data)
+        _low_rank_effect(work_dir, analysis)
     return result
+
+
+def _low_rank_effect(work_dir, analysis):
+    """
+    mumps_memory low_rank, but the .comm has no low-rank solve: every
+    solve of this run is an eigenvalue search, a harmonic or an explicit
+    one (bridge_utils.mumps_keywords low_rank=False). Read from the .comm
+    itself, because which solves a run has depends on more than the
+    analysis (prestress, static corrections, scheme). One WARNING.
+    """
+    if mumps_memory(analysis) != "low_rank":
+        return
+    try:
+        with io.open(os.path.join(work_dir, run_name(".comm")),
+                     encoding="utf-8", errors="replace") as f:
+            text = f.read()
+    except (IOError, OSError):
+        return
+    if u"ACCELERATION='LR+'" in text:
+        return
+    log(tr("WARNING: mumps_memory low_rank heeft in deze analyse geen "
+           "effect: alle oplossingen zijn eigenwaarden, harmonisch of "
+           "expliciet, en die blijven zonder compressie.",
+           "WARNING: mumps_memory low_rank has no effect in this "
+           "analysis: every solve is an eigenvalue search, harmonic or "
+           "explicit, and those stay without compression."))
 
 
 def _write_axis_paraview(work_dir, model_data):
