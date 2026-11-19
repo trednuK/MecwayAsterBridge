@@ -123,7 +123,7 @@ thermal strain (manual §9.23–9.25):
   | Temperature | With *Quasi-static* (`<timesteps>`) and in D31 | L30 without *Quasi-static* |
   |---|---|---|
   | constant (also Node temperature) | full value from the first step | ramped linearly to the end time (Mecway only shows the final state) |
-  | time table or formula in t | follows the table: linear between the points, constant outside the range; the table points become solution times | follows the table up to t = 1 s and takes the table value there (Mecway's step time) |
+  | time table or formula in t | follows the table: linear between the points, constant outside the range; the table points become solution times | follows the table up to t = 1 s (Mecway's step time) and takes the table value there; so does every other load table (WARNING when one runs further) |
 
   A formula in t is sampled over the *Time period* (like Mecway, 10001 points, 0.01%).
   Verification NL-70..75 and DY-70..72. In D31 a sudden temperature is a step load (the bar
@@ -138,6 +138,29 @@ thermal strain (manual §9.23–9.25):
   table); Temperature and Node temperature are left out by the bridge too (INFO, DY-73).
   Nonlinear Dynamic Response (D31): Node temperature is not among Mecway's analysis types
   (manual §9.24) and is reported (ERROR, not translated).
+
+The temperature over time in L30 and D31 (table above); solid: with *Quasi-static* and
+in D31, dashed: L30 without *Quasi-static*.
+
+![Temperature over time in L30 and D31: a constant temperature (left) and a time table (right)](../img/thermal_temperature_ramp.svg)
+
+1. The reference temperature T_ref (*Thermal stress*) at the start of the calculation, t0.
+2. A constant temperature with *Quasi-static* and in D31: the full value from the first
+   step (after 1e-4 of the duration).
+3. A constant temperature in L30 without *Quasi-static*: linear from T_ref to its value
+   at the end time.
+4. The end time. L30 without *Quasi-static*: `default_time_end` (1 s by default) when
+   the model has no table, otherwise at most t = 1 s, Mecway's step time. With
+   *Quasi-static* and in D31: the *Time period*.
+5. The points of the time table; they become solution times (in L30 without
+   *Quasi-static* only those up to t = 1 s).
+6. With *Quasi-static* and in D31: from T_ref to the table value in the first step, then
+   the table, linear between the points.
+7. With *Quasi-static* and in D31 the *Time period*: the calculation ends there; a
+   table point after it is not reached.
+8. L30 without *Quasi-static*: the table up to t = 1 s, Mecway's step time; the
+   calculation ends there, also when a force table runs further (Mecway takes every
+   table at t = 1 s).
 
 ## 4. Additional checks (Code-Aster 17.4, offline)
 

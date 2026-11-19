@@ -83,7 +83,7 @@ Code-Aster-standaard als je het sleutelwoord weglaat (catalogus 17.4).
 
 | Sleutel (label) | Analyse | Wat het doet | Bridge | CA |
 |---|---|---|---|---|
-| `substeps_per_interval` (Substappen per tijdsinterval) | statisch | Alleen voor een model zonder Mecway's *Time step size*: rekenstappen per interval tussen de tijdspunten van de tijdsafhankelijke lasten (`DEFI_LIST_REEL`, `NOMBRE`); zonder tijdslast 0 tot `default_time_end`. Met een stapgrootte rekent de bridge Mecway's stappen plus de knikken van de lasttabellen (§2.1). | 10 | - |
+| `substeps_per_interval` (Substappen per tijdsinterval) | statisch | Alleen voor een model zonder Mecway's *Time step size*: rekenstappen per interval tussen de tijdspunten van de tijdsafhankelijke lasten (`DEFI_LIST_REEL`, `NOMBRE`); zonder tijdslast 0 tot `default_time_end`. Zonder *Quasi-static* (geen `<timesteps>`) alleen tot t = 1 s: Mecway neemt elke lasttabel daar (WARNING als een tabel verder loopt). Met een stapgrootte rekent de bridge Mecway's stappen plus de knikken van de lasttabellen (§2.1). | 10 | - |
 | `auto_time_stepping` (Mecway's Automatic time stepping volgen) | statisch | Alleen met Mecway's *Automatic time stepping*: aan = `DEFI_LIST_INST METHODE='AUTO'` tussen Mecway's uitvoertijden, resultaten op die tijden (§2.1); uit = vaste stappen. | aan | - |
 | `substeps_per_output` (Rekenstappen per Mecway-tijdstap) | impliciet | Rekenstappen per tijdstap van Mecway: bij Dynamic Response (D30, D20, DA0) en D31 per *Time step size*, ook met *Generate solution every n time steps* > 1 (dan n × deze waarde per uitvoerinterval; resultaten alleen op de uitvoertijden); anders (`timepointsincrement`) per uitvoerinterval. Knikpunten van lastfuncties komen er als extra tijdspunt bij. | 1 | - |
 | `default_time_end` (Eindtijd zonder tijdsbelasting) [s] | alle | Eindtijd als het model geen tijdslast (statisch) of geen `<timesteps>` (dynamisch) heeft. | 1.0 | - |
@@ -704,8 +704,10 @@ contact = DEFI_CONTACT(
       **Wrijving** (met kt als `COEF_PENA_FROT` stopte de run bij t = 0,00024 s;
       `STANDARD` w −52 %).
 
-    Niet gemeten: expliciete dynamica (`auto` geeft daar `STANDARD`, met een INFO: een stijve
-    contactveer kan de stabiele tijdstap verkleinen) en `NEWMARK` met botsingen. Een
+    Met `NEWMARK` rekent de botsing van NL-03m ook door (19 nov 2026). Expliciete
+    dynamica: Code-Aster 17.4 kan geen contact rekenen (`MECANONLINE5_22`, met `STANDARD`
+    en met `PENALISATION`); de bridge stopt voor de run met een ERROR die een impliciet
+    tijdschema aanraadt (KNOWN_BUGS 154). Een
     startscherm dat voor V2026.15 is opgeslagen, houdt ook voor dynamica zijn expliciete
     `STANDARD`: kies eenmalig `auto` op de pagina van de dynamische analyse.
   - `STANDARD` (CA-standaard): augmented-Lagrangiaan (EDF R&D, U4.44.11),
@@ -714,7 +716,7 @@ contact = DEFI_CONTACT(
     PL-40 … PL-47 vergelijken zo met Lamé).
   - `PENALISATION`: contactdruk = `COEF_PENA_CONT` × penetratie, met
     `COEF_PENA_CONT` = Mecway's *normal stiffness* (Pa/m); bij wrijving
-    `ALGO_FROT='PENALISATION'` (is de *tangential stiffness* 0, dan Lagrange-wrijving),
+    `ALGO_FROT='PENALISATION'` (met *tangential stiffness* 0 in 2D Lagrange-wrijving),
     zie **Wrijving** hieronder voor `COEF_PENA_FROT`. Zo rekent Mecway zelf de
     normaalrichting (Mecway, 2026, §9.9.2). Kies dit als
     `STANDARD` het contact verliest of stopt met `MECANONLINE9_4` met `LAGS_C` in de
@@ -791,7 +793,8 @@ contact = DEFI_CONTACT(
   10, en Tutorials/AssemblyWithContact *Friction* en *Quadratic_ramp* stopten (nu rekenen
   ze door). Impliciete dynamica plakt sinds V2026.15 op dezelfde manier star (NL-03l; de
   grens voor de kruip telt per rekenstap, ook tussenstappen en automatische halveringen).
-  Expliciete dynamica en 2D (met `PENALISATION` gekozen) schrijven nog kt (niet gemeten);
+  2D (met `PENALISATION` gekozen) schrijft nog kt (niet gemeten; expliciete dynamica kent
+  in Code-Aster geen contact, KNOWN_BUGS 154);
   stopt zo'n run, geef de zone dan een eigen `#ASTER-ZONE COEF_PENA_FROT=...` (1/m, bijv.
   1/(1e-8 × de diagonaal van de contactvlakken in m)); die gaat voor.
 
@@ -880,6 +883,15 @@ De bridge zet `CONTACT_INIT` niet, dus geldt de CA-standaard `'INTERPENETRE'`
 (catalogus 17.4, U4.44.11): aan het begin zijn alle punten met spleet nul of met
 penetratie actief. Tolerantie: 1e-6 × de kleinste ribbe (U2.04.04 §4.4.1).
 
+![Begin van een contact: een slave-deel met een spleet, een met spleet nul en een met een penetratie](img/contact_initial_gap.svg)
+
+1. Het mastervlak.
+2. Een spleet: deze slave-punten zijn aan het begin niet actief; ze kunnen later actief
+   worden, als de spleet sluit.
+3. Spleet nul (binnen de tolerantie): actief vanaf het begin.
+4. Een penetratie: actief vanaf het begin en weggedrukt.
+5. Het wegdrukken geeft krachten op beide lichamen.
+
 - Een beginpenetratie wordt weggedrukt en **geeft krachten**; het is geen
   geometrische correctie (U2.04.04 §4.4.1). Zorg dus in Mecway voor een mesh
   zonder overlap.
@@ -907,9 +919,9 @@ penetratie actief. Tolerantie: 1e-6 × de kleinste ribbe (U2.04.04 §4.4.1).
   Met de instelling *Verlijmd contact: spleet sluiten zoals CCX* (`bonded_close_gap`,
   pagina Algemeen, standaard uit) schuift de bridge de gekoppelde slave-knopen in het mesh
   voor Code-Aster op de master (de `.liml` blijft gelijk), zoals CCX doet: alleen volume op
-  volume, met een vlak mastervlak en een verschuiving tot 0,1 × de kortste aangrenzende
-  rand (de kortste afstand tot een andere knoop van een element bij de knoop; een regel van
-  de bridge, niet van CCX), in
+  volume, met een vlak mastervlak en een verschuiving tot 0,1 × de kortste afstand tot
+  een andere knoop van een element bij de knoop of de kortste rand van zijn slave-vlak (een
+  regel van de bridge, niet van CCX), in
   lineair en niet-lineair statisch, modaal en knik (niet in de thermische keten en de
   andere analyses); niet voor knopen die ook in een
   ander contact, een koppeling, een vergelijking, een oplegging of een belasting zitten,
@@ -918,6 +930,23 @@ penetratie actief. Tolerantie: 1e-6 × de kleinste ribbe (U2.04.04 §4.4.1).
   keyword*-wijziging `ADJUST` uitzet. Een slave-vlak schuift helemaal of niet; wat blijft,
   krijgt de WARNING. Verificatie LS-07o: de overlapnaad van LS-07m met 0,2 mm spleet geeft
   0,230166 mm, gelijk aan Mecway (zonder de optie +0,26 %).
+
+![Verlijmd contact over een spleet: de instelling bonded_close_gap uit (links) en aan (rechts)](img/bonded_gap_close.svg)
+
+De spleet is veel groter getekend dan de 0,1 × h tot waar de bridge een knoop verschuift.
+
+1. Het master-volume, met een vlak oppervlak.
+2. Het slave-volume; de knopen van zijn vlak zijn aan de master gekoppeld.
+3. De spleet g.
+4. Instelling uit (standaard): `LIAISON_MAIL` koppelt de slave-knopen waar ze liggen,
+   over de spleet heen. De spleet blijft, met (bij deze grote spleet) een WARNING.
+5. Instelling aan: de bridge schuift de slave-knopen loodrecht naar het vlak waarin het
+   mastervlak ligt, alleen in het mesh voor Code-Aster; de `.liml` houdt de oude plaats
+   (gestreept).
+6. h: de kortste afstand van de knoop tot een andere knoop van een element bij de knoop
+   (hier de dikte van een dunne laag; ook middenknopen, diagonalen en de randen van het
+   slave-vlak tellen mee). Een knoop schuift alleen als g ≤ 0,1 × h, en een slave-vlak
+   schuift helemaal of niet.
 
 ### 3.5 Zones die slave-knopen delen
 
@@ -928,8 +957,8 @@ Code-Aster verbiedt knopen die in de slave-vlakken van twee zones zitten
 De bridge voegt zulke paren samen tot één zone: master = unie van de masters,
 slave = unie van de slaves (`DEFI_GROUP ... UNION`, groepen `CMAIT<n>`/`CESCL<n>`).
 Wrijving: de grootste coëfficiënt; met `contact_algo` = PENALISATION ook de grootste
-normaal- en tangentiële stijfheid (de tangentiële alleen bij expliciete dynamica en 2D: 3D
-statisch en impliciet plakt star, KNOWN_BUGS 149). Elke samenvoeging zet een WARNING in
+normaal- en tangentiële stijfheid (de tangentiële alleen in 2D: 3D statisch en impliciet
+plakt star, KNOWN_BUGS 149). Elke samenvoeging zet een WARNING in
 `<model>_<run-id>_bridge_log.txt`, en nog een als de wrijvingscoëfficiënten verschilden
 (KNOWN_BUGS 10). De oplossing die `CONTACT2_16` zelf voorstelt (master en slave wisselen)
 gebruikt de bridge niet: dan wordt het stijve gereedschap slave.
@@ -968,13 +997,24 @@ vastliggen (een symmetrievlak als *Displacement* 0 door beide delen, een *Fixed 
 over de naad), dan is de voorwaarde dubbel en zou Code-Aster stoppen met een singuliere
 matrix. Bij volume op volume met de slave-knoop op het mastervlak laat de bridge de
 oplegging dan weg op die slave-knopen in die richtingen (INFO; de koppeling geeft ze
-dezelfde waarde; verificatie LS-07n); een *Fixed support* alleen op volumeknopen. Elke
-dubbele voorwaarde die de bridge niet oplost, krijgt een WARNING: masterknopen met een
-andere waarde of tijdsafhankelijk, een spleet, een schaal aan een van beide kanten, de
-eigen relaties van de bridge (`LIAISON_DDL`), een selectie die niet te splitsen is
-(schaalvlakken, elementen), twee paren die elkaar koppelen, en symmetrie- of
-frictionless-relaties op de slave- en masterknopen. Een oplegging alleen aan de slavekant
-(masters vrij) is geen dubbele voorwaarde en blijft (KNOWN_BUGS 147).
+dezelfde waarde; verificatie LS-07n); een *Fixed support* alleen op volumeknopen. Een
+*Symmetry* of *Frictionless support* op een vlak loodrecht op een globale as, zonder
+voorgeschreven normaalverplaatsing, telt als zo'n oplegging: de slave-knopen gaan daar uit
+de relatie en volgen de master (INFO; LS-07p/q, ook in Nonlinear Static en modaal,
+LS-07t/u/v). Bij de eigen relaties van de bridge (`LIAISON_DDL`, schaal op schaal met een
+kwadratische of een scheve of gekromde master) valt een koppelrelatie in een
+verplaatsing weg als de slave-knoop en alle knopen die erin meetellen in die richting met
+dezelfde constante waarde vastliggen (INFO; de oplegging blijft; LS-07r/s). Elke dubbele
+voorwaarde die de bridge niet oplost, krijgt een WARNING: masterknopen met een andere
+waarde of tijdsafhankelijk, een spleet, een schaal aan een van beide kanten
+(`LIAISON_MAIL`), een rotatie of een symmetrie-/frictionless-relatie op de
+`LIAISON_DDL`-route, een selectie die niet te splitsen is (schaalvlakken, elementen), een
+*Fixed support* op een slave-knoop in een scheve relatie, twee paren die elkaar koppelen,
+en symmetrie- of frictionless-relaties in een scheef vlak, met een normaalverplaatsing of
+op een gekromd vlak. Met een scheve of gekromde schaal als master (en met schalen met een
+element offset op eigen knopen) controleert MUMPS niet op een singuliere matrix (NPREC = -1): de WARNING zegt dan dat Code-Aster kan
+stoppen met `FACTOR_57` of een onbetrouwbaar resultaat kan geven. Een oplegging alleen
+aan de slavekant (masters vrij) is geen dubbele voorwaarde en blijft (KNOWN_BUGS 147).
 
 ### 3.8 Alternatieven in Code-Aster
 

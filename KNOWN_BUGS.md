@@ -492,7 +492,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    3.06798 m.
 
 43\. **Contact: hard and soft formulation differ from Mecway** (confirmed).
-   `contact_algo` = STANDARD (Lagrange; the default in explicit dynamics and what `auto` gives in
+   `contact_algo` = STANDARD (Lagrange; what `auto` gives in
    2D; in Nonlinear Static 3D and implicit dynamics the default before V2026.15, now
    `auto` = penalty) allows no
    penetration; Mecway computes penalty. Samples/PipeClip loses contact with STANDARD (1.1 mm penetration
@@ -919,13 +919,31 @@ Code-Aster value per node) and logs the largest difference per variable.
    Resolved for `TYPE_RACCORD='MASSIF'` (solid on solid) with the slave node on the master
    face: constant supports along global axes (*Displacement*, pinned support on nodes) and
    *Fixed* on solid nodes lose those directions on those nodes (verification LS-07n, equal
-   to Mecway/CCX). Not resolved, with a WARNING: master nodes held with another value or
-   time-dependent, a gap (Code-Aster's weights across a gap NOT verified), `MASSIF_COQUE`
-   (also the rotations of the shell master are tied), shell ties, the `LIAISON_DDL` route
-   (`_bonded_relations`), a selection that cannot be split (shell faces, element
-   selections), *Fixed* on nodes with rotations, two pairs that tie each other, and
-   symmetry/frictionless relations on slave and masters. Not looked at: node-surface
-   couplings and constraint equations on slave nodes. Thermal tie (`TEMP_IMPO` with
+   to Mecway/CCX). Symmetry and frictionless relations with value 0 along a global axis
+   (`_exact_relation_dofs`) count as such a support (measured 19 Nov 2026: `FACTOR_11`
+   linear, `MECANONLINE9_4` nonlinear): the slave nodes leave the relation
+   (`_untie_relations`: `LIAISON_OBLIQUE` groups without them, `SANS_GROUP_NO` on
+   `FACE_IMPO` DNOR; verification LS-07p/q/t/u equal to Mecway/CCX, LS-07v modal equal
+   to the model without the double condition, before the fix with the ALARMs
+   `ALGELINE3_79`/`ALGELINE5_23`). The `LIAISON_DDL` route (`_bonded_relations`, shell on
+   shell): a translation row whose slave and every weighted node are held in that DOF by a
+   constant support with the same value is left out (`_tied_rows`; measured `FACTOR_11`,
+   with NPREC = -1 `FACTOR_57`; LS-07r/s equal to the models without the extra support).
+   Not resolved, with a WARNING: master nodes held with another value or time-dependent,
+   a gap (Code-Aster's weights across a gap NOT verified), `MASSIF_COQUE` (also the
+   rotations of the shell master are tied), shell ties through `LIAISON_MAIL`, rotation
+   rows and the `LIAISON_MAIL` rotations of the `LIAISON_DDL` route (not measured), a
+   symmetry/frictionless relation on that route, a selection that cannot be split (shell
+   faces, element selections), *Fixed* on nodes with rotations or in an oblique relation,
+   two pairs that tie each other, and symmetry/frictionless relations in an oblique plane,
+   with a normal displacement or on curved faces; with NPREC = -1 the WARNING says that
+   MUMPS does not check for a singular matrix (`FACTOR_57` or an unreliable result).
+   Only linear and nonlinear static and modal measured; dynamics, buckling and the other
+   analyses NOT verified, nor XFEM (a slave node taken out of an axis-aligned
+   `LIAISON_OBLIQUE` group there also loses the `DDL_IMPO` that XFEM writes for it on its
+   XFEM DOFs) and HOMARD refinement (new slave nodes are not in the `BROV` group of
+   `SANS_GROUP_NO`). Not looked at: node-surface couplings and constraint equations
+   on slave nodes. Thermal tie (`TEMP_IMPO` with
    `LIAISON_MAIL` on TEMP, `bridge_thermal`, measured 19 Nov 2026): the same constant
    value on a slave node and on all its weighted master nodes gave `FACTOR_11`, Mecway
    solves it; resolved: such slave nodes leave the thermal tie and keep their TEMP_IMPO
@@ -956,10 +974,19 @@ Code-Aster value per node) and logs the largest difference per variable.
    steps; both AssemblyWithContact configurations complete; Mecway's own CCX result of
    *Friction* is unusable, 3.6e6 m, so not compared), with a WARNING per run. The creep stays:
    at most 1e-8 × that size per step at full friction (NL-03i, 25 shear steps: +0.1% against
-   the Lagrange stick). Implicit dynamics too since V2026.15 (NL-03l); explicit dynamics and
-   2D still write kt as `COEF_PENA_FROT` (not measured).
+   the Lagrange stick). Implicit dynamics too since V2026.15 (NL-03l); 2D still writes kt as
+   `COEF_PENA_FROT` (not measured; explicit dynamics: no contact, item 154).
    Status: limitation of Code-Aster 17.4; the bridge is stiffer in shear than Mecway by τ/kt
    (NL-03h −10% at kt 1e13).
+
+150\. **Friction with tangential stiffness 0** (confirmed, Mecway 36 with CCX and Code-Aster
+   17.4, 19 Nov 2026; `bridge_to_aster._penalty_args`, verification NL-03n). Mecway/CCX with
+   friction and kt = 0 gave no usable result (NL-03h with kt 0: stopped at t = 0.4 with
+   displacements of 1e10 m). The bridge wrote Lagrange friction (`ALGO_FROT='STANDARD'`)
+   then, which stopped AssemblyWithContact *Friction* in step 1 (`MECANONLINE9_4`); since
+   V2026.15 kt = 0 gets the same rigid penalty stick as kt > 0 (item 149) in Nonlinear
+   Static and implicit dynamics (NL-03n: the rigid result of NL-03h). 2D keeps Lagrange
+   friction (explicit dynamics: no contact, item 154). Status: works differently from Mecway, whose result is unusable.
 
 153\. **The convergence windows of earlier runs stay open** (confirmed in the Mecway 36
    window, 19 Nov 2026; `bridge_run_aster.start_convergence_monitor`). With *Convergence and
@@ -1017,11 +1044,13 @@ Code-Aster value per node) and logs the largest difference per variable.
    item 124), DIS_T does not; suspected for any spring with an axial force in Buckling and
    modal with prestress, NOT measured (STAPPENPLAN S15c).
 
-150\. **Friction with tangential stiffness 0** (question; `bridge_to_aster._penalty_args`).
-   With kt = 0 the bridge writes Lagrange friction (`ALGO_FROT='STANDARD'`); what Mecway/CCX
-   does with kt = 0 is not checked. On AssemblyWithContact *Friction* `ALGO_FROT='STANDARD'`
-   stopped in step 1 (`MECANONLINE9_4`) where the penalised rigid stick of item 149 completes
-   (19 Nov 2026). Status: open.
+155\. **Load tables past the period with *time points* but without a step size** (question,
+   `bridge_to_aster._build_listinst_block`). A model with `<timesteps>` (period) but
+   without `stepsize` (CCX *time points*) and with `auto_time_stepping` off computes every
+   point of the load tables, also after the period; `_mecway_static_times` (with a step
+   size) drops them, as Mecway does. Whether Mecway with CCX time points also stops at the
+   period is NOT verified (19 Nov 2026). Without `<timesteps>` the tables are cut at 1 s
+   like Mecway (NL-75b..d).
 
 ## Not translated (the bridge reports it at the end of the run)
 
@@ -1587,3 +1616,11 @@ Code-Aster value per node) and logs the largest difference per variable.
    allowed but not verified separately), orthotropic thermal conductivity; *stress in
    element coordinates* (`lamuu` ..) is written in linear static only (not per mode in
    modal/buckling) and not for shells.
+
+154\. **Contact in explicit dynamics** (confirmed, Code-Aster 17.4, 19 Nov 2026;
+   `bridge_to_aster._check_explicit_contact`). Code-Aster stops before the first step with
+   `MECANONLINE5_22` ("le contact n'est pas possible") for `DEFI_CONTACT` with an explicit
+   scheme (`DIFF_CENT`), with `STANDARD` and with `PENALISATION` (NL-03m as
+   `dyna_expl_3d`). The bridge stops before the run with an ERROR that advises an implicit
+   scheme (HHT or NEWMARK; contact there: NL-03j … NL-03m). Compression only
+   (`LIAISON_UNIL`) in explicit dynamics NOT verified. Status: limitation of Code-Aster.

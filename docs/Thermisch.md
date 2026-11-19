@@ -122,7 +122,7 @@ temperaturen thermische rek (manual §9.23–9.25):
   | Temperature | Met *Quasi-static* (`<timesteps>`) en in D31 | L30 zonder *Quasi-static* |
   |---|---|---|
   | constant (ook Node temperature) | volle waarde vanaf de eerste stap | lineair oplopend tot de eindtijd (Mecway toont alleen de eindtoestand) |
-  | tijdstabel of formule in t | volgt de tabel: lineair tussen de punten, constant buiten het bereik; de knikpunten worden rekentijden | volgt de tabel tot t = 1 s en neemt daar de tabelwaarde (Mecway's staptijd) |
+  | tijdstabel of formule in t | volgt de tabel: lineair tussen de punten, constant buiten het bereik; de knikpunten worden rekentijden | volgt de tabel tot t = 1 s (Mecway's staptijd) en neemt daar de tabelwaarde; elke andere lasttabel ook (WARNING als er een verder loopt) |
 
   Een formule in t wordt bemonsterd over de *Time period* (zoals Mecway, 10001 punten,
   0,01 %). Verificatie NL-70..75 en DY-70..72. In D31 is een plotselinge temperatuur een
@@ -137,6 +137,28 @@ temperaturen thermische rek (manual §9.23–9.25):
   tijdstabel); Temperature en Node temperature vallen ook in de bridge weg (INFO, DY-73).
   Nonlinear Dynamic Response (D31): Node temperature staat niet bij Mecway's
   analysetypen (manual §9.24) en wordt gemeld (ERROR, niet vertaald).
+
+De temperatuur in de tijd in L30 en D31 (tabel hierboven); doorgetrokken: met
+*Quasi-static* en in D31, gestreept: L30 zonder *Quasi-static*.
+
+![Temperatuur in de tijd in L30 en D31: een constante temperatuur (links) en een tijdstabel (rechts)](img/thermal_temperature_ramp.svg)
+
+1. De referentietemperatuur T_ref (*Thermal stress*) aan het begin van de berekening, t0.
+2. Een constante temperatuur met *Quasi-static* en in D31: de volle waarde vanaf de
+   eerste stap (na 1e-4 van de duur).
+3. Een constante temperatuur in L30 zonder *Quasi-static*: lineair van T_ref naar zijn
+   waarde op de eindtijd.
+4. De eindtijd. L30 zonder *Quasi-static*: `default_time_end` (standaard 1 s) als het
+   model geen tabel heeft, anders hoogstens t = 1 s, Mecway's staptijd. Met
+   *Quasi-static* en in D31: de *Time period*.
+5. De punten van de tijdstabel; ze worden rekentijden (in L30 zonder *Quasi-static*
+   alleen die tot t = 1 s).
+6. Met *Quasi-static* en in D31: van T_ref naar de tabelwaarde in de eerste stap, daarna
+   de tabel, lineair tussen de punten.
+7. Met *Quasi-static* en in D31 de *Time period*: daar eindigt de berekening; een
+   tabelpunt daarna wordt niet bereikt.
+8. L30 zonder *Quasi-static*: de tabel tot t = 1 s, Mecway's staptijd; daar eindigt de
+   berekening, ook als een krachttabel verder loopt (Mecway neemt elke tabel op t = 1 s).
 
 ## 4. Aanvullende controles (Code-Aster 17.4, offline)
 

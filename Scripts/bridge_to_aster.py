@@ -3024,6 +3024,17 @@ def _temperature_histories(model_data, t_cut=None):
         if not isinstance(h, list):
             continue
         if t_cut is not None:
+            if h and h[-1][0] > t_cut * (1.0 + 1.0e-9):
+                log(tr("WARNING: Temperatuurtabel op '{0}' loopt tot t = {1} "
+                       "s; zonder Quasi-static neemt Mecway de waarde op "
+                       "t = {2} s, dus de bridge ook. Zet Quasi-static aan "
+                       "om de hele tabel te volgen.",
+                       "WARNING: Temperature table on '{0}' runs up to "
+                       "t = {1} s; without Quasi-static Mecway takes the "
+                       "value at t = {2} s, so the bridge does too. Turn on "
+                       "Quasi-static to follow the whole table.").format(
+                           t.get("selection", "?"), "%g" % h[-1][0],
+                           "%g" % t_cut))
             h = [(ti, v) for ti, v in h if ti < t_cut] + [
                 (t_cut, _value_at(h, t_cut))]
         out.append(("_temp", h))
@@ -3614,6 +3625,13 @@ def _build_charges(model_data, func_names=None):
         centre = None
         if kw in ("LIAISON_OBLIQUE", "FACE_IMPO"):
             attrs.update(sans)
+            if bc.get("sans_group_no"):
+                # tied slave nodes that follow their held masters
+                # (bridge_mesh._untie_relations, KNOWN_BUGS 147), next to
+                # the fixed nodes
+                attrs["SANS_GROUP_NO"] = tuple(
+                    attrs.get("SANS_GROUP_NO", ())) + tuple(
+                        bc["sans_group_no"])
             if kw == "LIAISON_OBLIQUE" and bc.get("aster_target") == "GROUP_MA":
                 centre = _centre_node_groups(model_data).get(bc["selection"])
             if centre:
@@ -5464,6 +5482,39 @@ def _auto_listinst_block(load_funcs, analysis, model_data):
     return block, times[-1]
 
 
+# Mecway's step time in Nonlinear Static without Quasi-static (no
+# <timesteps>): Mecway computes one step and evaluates every load table at
+# t = 1 s, also when the table runs further (Mecway 36.0.9815 with CCX,
+# headless, 19 Nov 2026: force, imposed displacement and temperature
+# tables (0 s; 0), (2 s; v) all gave the effect of v/2; Mecway 34 with CCX
+# the same for a temperature table, NL-75). Independent of the bridge
+# setting default_time_end (that is the end time without any load table).
+_MECWAY_STEP_TIME = 1.0
+
+
+def _cut_at_step_time(times):
+    """
+    Time points of the load tables for Nonlinear Static without
+    Quasi-static (no <timesteps>): the points after Mecway's step time
+    _MECWAY_STEP_TIME drop out and the step time itself is added when a
+    table runs past it, so that the calculation ends at t = 1 s with the
+    table values there (the DEFI_FONCTIONs stay complete; Code-Aster
+    interpolates them at 1 s). Pure. Returns (times, last) with last the
+    last table time when one runs past 1 s, else None. A table that
+    starts at or after 1 s leaves only the step time: then 0 is the
+    start (Code-Aster holds the table at its first value, PROL_GAUCHE
+    'CONSTANT'; that Mecway does the same is NOT verified).
+    """
+    t_cut = _MECWAY_STEP_TIME
+    later = [t for t in times if t > t_cut * (1.0 + 1.0e-9)]
+    kept = set(t for t in times if t <= t_cut * (1.0 + 1.0e-9))
+    if later:
+        kept.add(t_cut)
+    if kept and min(kept) >= t_cut * (1.0 - 1.0e-9):
+        kept.add(0.0)
+    return kept, (max(later) if later else None)
+
+
 def _build_listinst_block(load_funcs, analysis, model_data=None):
     """
     Generate DEFI_LIST_REEL + DEFI_LIST_INST for the time discretisation
@@ -5473,8 +5524,9 @@ def _build_listinst_block(load_funcs, analysis, model_data=None):
     steps up to the period plus the kinks of the load tables; each
     calculation step is an output time. Without step size:
     all unique time points of the load functions with substeps_per_interval
-    steps per interval. In both cases DEFI_LIST_INST cuts a step
-    that does not converge.
+    steps per interval; without <timesteps> at all (no Quasi-static) only
+    up to Mecway's step time 1 s (_cut_at_step_time). In both cases
+    DEFI_LIST_INST cuts a step that does not converge.
 
     Returns
     -------
@@ -5502,6 +5554,23 @@ def _build_listinst_block(load_funcs, analysis, model_data=None):
     for _, history in load_funcs:
         for t, _ in history:
             all_times.add(t)
+
+    if (all_times and model_data is not None and
+            not model_data.get("timesteps")):
+        # No Quasi-static: like Mecway, every table only up to t = 1 s
+        all_times, last = _cut_at_step_time(all_times)
+        if last is not None:
+            log(tr("WARNING: Belastingstabel loopt tot t = {0} s; zonder "
+                   "Quasi-static rekent Mecway 1 stap en neemt elke "
+                   "tabel op t = {1} s, dus de bridge ook (berekening tot "
+                   "t = {1} s). Zet Quasi-static aan om de hele tabel te "
+                   "volgen.",
+                   "WARNING: Load table runs up to t = {0} s; without "
+                   "Quasi-static Mecway computes one step and takes every "
+                   "table at t = {1} s, so the bridge does too (calculation "
+                   "up to t = {1} s). Turn on Quasi-static to follow the "
+                   "whole table.").format("%g" % last,
+                                          "%g" % _MECWAY_STEP_TIME))
 
     if not all_times:
         # No time-dependent loads: 0 -> default_time_end
@@ -6235,8 +6304,9 @@ def _rigid_friction_coef(size):
 
 def _penalty_args(c, algo, friction, rigid_size=False, note=True):
     """Extra zone arguments for ALGO_CONT='PENALISATION' (or "").
-    rigid_size: False = COEF_PENA_FROT = Mecway's kt (explicit dynamics
-    and 2D, not measured with the rigid rule); else the
+    rigid_size: False = COEF_PENA_FROT = Mecway's kt (2D, not measured
+    with the rigid rule; explicit dynamics has no contact, KNOWN_BUGS 154);
+    else the
     diagonal of the zone's contact faces (m) or None: rigid stick
     (_rigid_friction_coef). note: log the friction INFO (False when the
     user's #ASTER-ZONE replaces COEF_PENA_FROT)."""
@@ -6253,18 +6323,24 @@ def _penalty_args(c, algo, friction, rigid_size=False, note=True):
     out = ", ALGO_CONT='PENALISATION', COEF_PENA_CONT={0!r}".format(kn)
     if friction and c.get("friction", 0.0) > 0.0:
         kt = c.get("kt", 0.0) or 0.0
-        if kt > 0.0 and rigid_size is not False:
+        if rigid_size is not False:
+            # also with kt = 0 (KNOWN_BUGS 150): Mecway 36 + CCX gave no
+            # usable result then (NL-03h with kt 0: stopped at t = 0.4 with
+            # displacements of 1e10 m), and Lagrange friction stopped
+            # AssemblyWithContact Friction in step 1 where the rigid
+            # penalty stick completes (19 Nov 2026, NL-03n)
             coef, sized = _rigid_friction_coef(rigid_size)
             out += ", ALGO_FROT='PENALISATION', COEF_PENA_FROT={0!r}".format(
                 coef)
             if note:
                 log("INFO: Contact {0}: friction PENALISATION, COEF_PENA_FROT="
                     "{1} 1/m ({2}; rigid sticking, Mecway's kt {3} Pa/m not "
-                    "used, KNOWN_BUGS 149).".format(
+                    "used, KNOWN_BUGS {4}).".format(
                         label, "%.4g" % coef,
                         "1 / ({0:g} x contact face size {1:.4g} m)".format(
                             _FRIC_SLIP_REL, rigid_size) if sized else
-                        "no contact face size, fixed value", "%.6g" % kt))
+                        "no contact face size, fixed value", "%.6g" % kt,
+                        149 if kt > 0.0 else 150))
         elif kt > 0.0:
             out += ", ALGO_FROT='PENALISATION', COEF_PENA_FROT={0!r}".format(
                 kt)
@@ -6380,8 +6456,8 @@ def _build_contact_block(model_data, analysis=None, rigid_stick=False,
             algo))
         algo = "AUTO"
     if explicit and algo == "AUTO":
-        # Explicit dynamics: penalty not measured, and a stiff contact
-        # spring can lower the stable time step; auto keeps STANDARD there
+        # Explicit dynamics: no contact in Code-Aster 17.4 (MECANONLINE5_22,
+        # _check_explicit_contact stops the run before); kept for safety
         # (implicit dynamics: auto measured against Mecway 36 + CCX D31,
         # 19 Nov 2026, NL-03k/NL-03l/NL-03m).
         algo = "STANDARD"
@@ -6455,7 +6531,8 @@ def _build_contact_block(model_data, analysis=None, rigid_stick=False,
             args = _penalty_args(c, zone_algo, friction, size,
                                  "COEF_PENA_FROT" not in drop)
             if rigid_stick and "COEF_PENA_FROT=" in args and \
-                    "COEF_PENA_FROT" not in drop:
+                    "COEF_PENA_FROT" not in drop and \
+                    (c.get("kt", 0.0) or 0.0) > 0.0:
                 kt_lost.append(c["slave"])
             z += _drop_keys(args, drop)
         if friction and c.get("friction", 0.0) > 0.0 and \
@@ -6640,8 +6717,9 @@ def _output_times(model_data, analysis):
         # (stepsize x keepeverynthtimestep, bridge_from_liml). D31 with CCX
         # (<timesteps timeperiod stepsize>, the form Mecway writes): Mecway
         # 36 + CCX wrote a solution every stepsize (headless, 19 Nov 2026:
-        # 1 s / 0.1 s -> 10 steps, 200 us / 2 us -> 100); keepevery-
-        # nthtimestep and automatictimestepping with D31 NOT verified.
+        # 1 s / 0.1 s -> 10 steps, 200 us / 2 us -> 100; keepeverynthtime-
+        # step 3: 0.3, 0.6, 0.9, 1 s, NL-03o); automatictimestepping with
+        # D31 NOT verified.
         inc = ts["stepsize"] * ts.get("keep_every", 1)
     inc = inc or t_end
     start = ts.get("start") or 0.0
@@ -7764,10 +7842,11 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
     load_funcs       = _collect_load_funcs(model_data)
     # Kinks of a Temperature with a time history also as calculation time
     # (only the times; no DEFI_FONCTION, _build_temperature_field)
-    # (Without Quasi-static: up to t = 1 s like Mecway, _temperature_histories.)
+    # (Without Quasi-static: up to t = 1 s like Mecway, _temperature_histories;
+    # the other load tables are cut in _build_listinst_block.)
     temp_times = _temperature_histories(
         model_data, None if dynamic or model_data.get("timesteps") else
-        analysis.get("default_time_end", 1.0))
+        _MECWAY_STEP_TIME)
 
     # --------------------------------------------------
     # BLOCK F-pre2: DEFI_LIST_REEL
@@ -9400,6 +9479,8 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
         return None
     if not _check_aster_contact_lines(model_data, solver_cmd):
         return None
+    if not _check_explicit_contact(model_data, analysis, solver_cmd):
+        return None
     if mechanical:
         if not _check_gd_beams(model_data, analysis):
             return None
@@ -9460,6 +9541,33 @@ def _write_axis_paraview(work_dir, model_data):
     except (IOError, OSError) as e:
         log("INFO: ParaView script for the revolved view not written "
             "({0}); the ParaView button opens the section flat.".format(e))
+
+
+def _check_explicit_contact(model_data, analysis, solver_cmd):
+    """
+    Contact (contact2 pairs, DEFI_CONTACT) in explicit dynamics: Code-Aster
+    17.4 stops before the first step with <EXCEPTION> MECANONLINE5_22
+    ("Schema en dynamique explicite. Le contact n'est pas possible"),
+    measured 19 Nov 2026 with DIFF_CENT and both STANDARD and PENALISATION
+    (NL-03m as dyna_expl_3d). ERROR before the run (False), with the way
+    out: an implicit scheme. Compression only (LIAISON_UNIL) in explicit
+    dynamics NOT verified.
+    """
+    if solver_cmd != "DYNA_NON_LINE" or not model_data.get("contacts"):
+        return True
+    if (analysis or {}).get("schema", "HHT") not in ("DIFF_CENT", "TCHAMWA"):
+        return True
+    log(tr("ERROR: Contact in een expliciete dynamische analyse: Code-Aster "
+           "kan dat niet (MECANONLINE5_22, 'le contact n'est pas possible'). "
+           "Kies op de pagina van de dynamische analyse een impliciet "
+           "tijdschema (HHT of NEWMARK); contact is daar gemeten tegen "
+           "Mecway (contactmethode auto).",
+           "ERROR: Contact in an explicit dynamic analysis: Code-Aster "
+           "cannot do that (MECANONLINE5_22, 'le contact n'est pas "
+           "possible'). Choose an implicit time scheme (HHT or NEWMARK) on "
+           "the page of the dynamic analysis; contact is measured against "
+           "Mecway there (contact method auto)."))
+    return False
 
 
 def _check_aster_contact_lines(model_data, solver_cmd):

@@ -538,7 +538,12 @@ def test_friction_coef():
               "outside static 3D kt: {0}".format(args))
         c["kt"] = 0.0
         args = b._penalty_args(c, "PENALISATION", True, size)
-        check("ALGO_FROT" not in args, "kt 0: Lagrange friction: " + args)
+        coef = float(args.split("COEF_PENA_FROT=")[1].split(",")[0])
+        check(abs(coef - 2e9) < 1.0,
+              "kt 0 (KNOWN_BUGS 150): rigid stick too: " + args)
+        args = b._penalty_args(c, "PENALISATION", True)
+        check("ALGO_FROT" not in args,
+              "kt 0 outside static/implicit 3D: Lagrange friction: " + args)
     finally:
         b.log = saved
 
@@ -573,13 +578,40 @@ def test_no_resistance():
     check(got == u"", u"normal residual: {0!r}".format(got))
 
 
+def test_explicit_contact():
+    """KNOWN_BUGS 154: contact in explicit dynamics -> ERROR (False);
+    implicit dynamics, static and a model without contact pass."""
+    import bridge_to_aster as b
+    saved = b.log
+    b.log = _log
+    try:
+        md = {"contacts": [{"master": "M", "slave": "S"}]}
+        del LOG[:]
+        check(not b._check_explicit_contact(md, {"schema": "DIFF_CENT"},
+                                            "DYNA_NON_LINE"),
+              "explicit with contact: stop")
+        check([x for x in LOG if "MECANONLINE5_22" in x],
+              "explicit: ERROR names MECANONLINE5_22: {0}".format(LOG))
+        check(b._check_explicit_contact(md, {"schema": "HHT"},
+                                        "DYNA_NON_LINE"), "implicit: ok")
+        check(b._check_explicit_contact(md, {}, "STAT_NON_LINE"),
+              "static: ok")
+        check(b._check_explicit_contact({"contacts": []},
+                                        {"schema": "DIFF_CENT"},
+                                        "DYNA_NON_LINE"),
+              "explicit without contact: ok")
+    finally:
+        b.log = saved
+
+
 def main():
     for test in (test_harm_check_model, test_harm_comm, test_harm_report,
                  test_acoustic_density, test_factor57, test_log_errors,
                  test_bonded_offset, test_harm_stress_eta,
                  test_constraint_constant, test_bonded_gap, test_alarm_hint,
                  test_ccx_keywords, test_zone_keys,
-                 test_friction_coef, test_no_resistance):
+                 test_friction_coef, test_no_resistance,
+                 test_explicit_contact):
         test()
     if FAILS:
         for f in FAILS:

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Nonlinear static without *Quasi-static*: load tables up to t = 1 s, like Mecway
+  (results change).** Without `<timesteps>` Mecway computes one step and takes every table
+  (force, imposed displacement, temperature) at t = 1 s, also when the table runs further
+  (Mecway 36 with CCX, measured headless). The bridge computed up to the last table point;
+  it now stops at t = 1 s with a WARNING, and a constant temperature ramps up to 1 s too.
+  Turn on *Quasi-static* to follow the whole table. Verification NL-75b..d.
 - **Result route `tabel` removed.** The results now always go through the `.liml`:
   Code-Aster writes Mecway's own results and the bridge puts them into the model (all time
   steps or modes, values per element, every analysis type). The old table route (POST_RELEVE_T
@@ -55,11 +61,26 @@
   time step (nonlinear); now they give Mecway's result (verification LS-07n). Their `.comm`
   changes: the support goes to a node group without those nodes. Double conditions it
   cannot resolve get a WARNING.
+- **Bonded contact with a symmetry or frictionless support on slave and master nodes, and
+  on the bridge's own shell ties** (rest of KNOWN_BUGS 147): a *Symmetry* or *Frictionless
+  support* on a plane perpendicular to a global axis, without a prescribed normal
+  displacement, on the faces of both bonded solids no longer
+  stops Code-Aster with `FACTOR_11` (linear) or `MECANONLINE9_4` (nonlinear): the tied
+  slave nodes leave the relation there and follow the master (INFO; verification LS-07p/q
+  and in Nonlinear Static LS-07t/u, equal to Mecway; modal LS-07v without the singular
+  matrix ALARM). For shell on shell with a quadratic or an oblique/curved master (the
+  bridge's own `LIAISON_DDL`) a tie relation in a translation whose nodes are all held the
+  same way is left out (INFO; LS-07r/s, which previously stopped with `FACTOR_57` or
+  `FACTOR_11`). The `.comm` of
+  such models changes (node groups without those nodes, `SANS_GROUP_NO` on `FACE_IMPO`,
+  fewer `LIAISON_DDL` rows). What stays double gets a WARNING, which with NPREC = -1 now
+  says that MUMPS does not check for a singular matrix (`FACTOR_57` or an unreliable
+  result). Dynamics and buckling NOT verified.
 - **Behaviour change: contact method `auto` is the new default in Nonlinear Static**
   (`contact_algo`, page Contact). Every unilateral contact with Mecway's *normal stiffness*
   in a 3D Nonlinear Static analysis is now computed with penalty (`PENALISATION`), as Mecway
-  does; before it was Lagrange (`STANDARD`) unless you chose otherwise. Explicit dynamics
-  and 2D models keep `STANDARD` (not measured with penalty; implicit dynamics: see below). Your own `ALGO_CONT`, `COEF_PENA_*` or
+  does; before it was Lagrange (`STANDARD`) unless you chose otherwise. 2D models keep
+  `STANDARD` (not measured with penalty; implicit dynamics and explicit dynamics: see below). Your own `ALGO_CONT`, `COEF_PENA_*` or
   `ALGO_FROT` in `#ASTER-ZONE` now take precedence over the bridge's (before: `SyntaxError`
   with *Contact method* = PENALISATION). Measured against Mecway 36 with CCX: the contact patch tests now agree to
   2e-5 (before 50 %, no penetration p/kn), Voorbeeld_C 3.2 % (before 7.0 %), and line contact
@@ -70,8 +91,8 @@
 - **Option: close bonded gaps like CCX** (*Bonded contact: close gaps like CCX*, page
   General, off by default). On: the tied slave nodes of a solid-on-solid bonded contact are
   moved onto the master in the mesh for Code-Aster, as CCX does; the `.liml` stays as it is.
-  Only with a flat master face and a move up to 0.1 × the shortest neighbouring edge, in
-  linear and nonlinear static, modal and buckling analyses, not for nodes in another
+  Only with a flat master face and a move up to 0.1 × the shortest distance to another node
+  of an element at the node, in linear and nonlinear static, modal and buckling analyses, not for nodes in another
   contact, coupling, equation, support or load. LS-07o (0.2 mm gap) now equals Mecway.
 - **`#ASTER` contact lines are checked, and `#ASTER-BONDED` is new.** `#ASTER-ZONE`,
   `#ASTER-CONTACT` and the new `#ASTER-BONDED` (extra keywords for the `LIAISON_MAIL` of
@@ -94,8 +115,13 @@
   friction sticks rigidly (also when you chose `PENALISATION`: kt is no longer written as
   `COEF_PENA_FROT` there). Measured against Mecway 36 with CCX: a force pulse with release
   within 4.7 % of the largest displacement (Lagrange: 59 % too stiff, then it stopped), an impact across a gap completes
-  where Lagrange and CCX stopped (verification NL-03j/k/l/m). Explicit dynamics keeps
-  `STANDARD`. A saved start screen keeps its `STANDARD` for dynamics: choose `auto` once.
+  where Lagrange and CCX stopped (verification NL-03j/k/l/m). Explicit dynamics has no
+  contact in Code-Aster (below). A saved start screen keeps its `STANDARD` for dynamics: choose `auto` once.
+- **Contact in explicit dynamics stops with a clear ERROR before the run**: Code-Aster
+  cannot compute it (`MECANONLINE5_22`, KNOWN_BUGS 154); choose an implicit scheme.
+- **Friction with tangential stiffness 0** now sticks rigidly like kt > 0 (KNOWN_BUGS 150;
+  Lagrange friction stopped AssemblyWithContact *Friction*; Mecway/CCX gives no usable
+  result with kt = 0; verification NL-03n).
 - **Nonlinear dynamics (D31) with a *Time step size*: the bridge now uses it** (bug fix,
   changes results). Before, a D31 model in the form Mecway writes for CCX (`stepsize`) got only
   the points of its load tables as time steps (a 200 µs pulse: 4 steps instead of 100); now

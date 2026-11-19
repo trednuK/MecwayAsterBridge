@@ -1145,6 +1145,161 @@ TESTS += [
 
 
 # ------------------------------------------------------------------
+# LS-07p..v The rest of KNOWN_BUGS 147: relations and the LIAISON_DDL route
+# ------------------------------------------------------------------
+# (p, t, v) LS-07n with Mecway's Symmetry on the face selections x = 0 and
+# y = 0 of both blocks (LIAISON_OBLIQUE per node group), (q, u) with
+# Frictionless support (FACE_IMPO DNOR). The slave nodes on the planes are
+# held twice (relation and tie): before the fix FACTOR_11 (linear) and
+# MECANONLINE9_4 (nonlinear, no step); the bridge takes them out of the
+# relation (bridge_mesh._untie_relations). Mecway 36 with CCX (headless,
+# 19 Nov 2026) on (p) and (q): 9.540648e-7 m. (v) modal: the reference is
+# the same model with Displacement 0 on the plane nodes except the tied
+# slave nodes (no double condition; Code-Aster 17.4, 19 Nov 2026).
+# (r) LS-07f (oblique shell master, LIAISON_DDL, NPREC = -1) with
+# Displacement X = 0 on all nodes: the membrane u of this plate in pure
+# bending is 0, so the extra support changes nothing; before the fix
+# FACTOR_57. (s) LS-07i (quad8 master, translations with LIAISON_DDL) with
+# Displacement X, Y, Z = 0 on the rib's foot node on the clamped edge
+# (weight 1 on a clamped mid-side node): before the fix FACTOR_11. The
+# bridge removes the redundant tie rows (bridge_mesh._tied_rows).
+MW_LS07P = 9.540648e-7
+DENS7 = '<density type="Simple" density="7850 kg/m³" />'
+
+
+def build_ls07n_rel(kind, modal=False):
+    """kind: 'sym' or 'fric' (relation on the face selections), 'ref'
+    (Displacement 0 on the plane nodes without the tied slave nodes: the
+    model without the double condition). modal: with density, no force."""
+    def build():
+        m = Model("S30", solver="ccx")
+        _steel(m, extra=(DENS7,) if modal else ())
+        m.elset("Onderblok", "Staal")
+        lo = hexmesh(m, "Onderblok", 2, 2, 1,
+                     box(0, 0.02, 0, 0.02, -0.01, 0), order=2)
+        m._index = {}                    # upper block: own nodes
+        m.elset("Bovenblok", "Staal")
+        up = hexmesh(m, "Bovenblok", 3, 3, 1, box(0, 0.02, 0, 0.02, 0, 0.01),
+                     order=2)
+        m.node_selection("Bodem", sorted(lo["nodes"]["w0"]))
+        m.node_selection("Top", sorted(up["nodes"]["w1"]))
+        if kind == "ref":
+            seam = up["nodes"]["w0"]
+            m.node_selection("SymX", sorted(lo["nodes"]["u0"] |
+                                            (up["nodes"]["u0"] - seam)))
+            m.node_selection("SymY", sorted(lo["nodes"]["v0"] |
+                                            (up["nodes"]["v0"] - seam)))
+            for name, ax in (("SymX", "x"), ("SymY", "y")):
+                d = dict((a, 1 if a == ax else 0) for a in "xyz")
+                m.add('<displacement selection="{0}"><value>0 mm</value>'
+                      '<x>{x}</x><y>{y}</y><z>{z}</z></displacement>'.format(
+                          name, **d))
+        else:
+            m.face_selection("SymX", lo["faces"]["u0"] + up["faces"]["u0"])
+            m.face_selection("SymY", lo["faces"]["v0"] + up["faces"]["v0"])
+            for name, ax in (("SymX", (1, 0, 0)), ("SymY", (0, 1, 0))):
+                if kind == "sym":
+                    m.add('<symmetry selection="%s"><x>%d</x><y>%d</y>'
+                          '<z>%d</z></symmetry>' % ((name,) + ax))
+                else:
+                    m.add('<frictionless selection="%s" />' % name)
+        m.add('<displacement selection="Bodem"><value>0 mm</value><x>0</x>'
+              '<y>0</y><z>1</z></displacement>')
+        m.face_selection("Lijm_A", lo["faces"]["w1"])
+        m.face_selection("Lijm_B", up["faces"]["w0"])
+        m.add(BOND.format("Lijm_A", "Lijm_B"))
+        if not modal:
+            m.face_selection("Bovenkant", up["faces"]["w1"])
+            m.add('<force selection="Bovenkant"><x>0 N</x><y>0 N</y>'
+                  '<z>-4000 N</z></force>')
+        return m
+    return build
+
+
+def _ls07p_checks():
+    return [Check("indrukking bovenkant t.o.v. Mecway",
+                  lambda r: -_mean(r, "displz", "Top"), ref=MW_LS07P,
+                  tol=0.005, unit="m", source="Mecway 36 (CCX), headless",
+                  in_series=False)]
+
+
+def build_ls07r():
+    """LS-07f with Displacement X = 0 on all nodes."""
+    m = build_ls07_strip_rot()()
+    m.node_selection("AlleX", list(range(1, len(m.nodes) + 1)))
+    m.add('<displacement selection="AlleX"><value>0 mm</value><x>1</x>'
+          '<y>0</y><z>0</z></displacement>')
+    return m
+
+
+def build_ls07s():
+    """LS-07i with the rib's foot node at x = 0 held in X, Y and Z."""
+    m = build_ls07_quad8_rib(True)()
+    nid = [i + 1 for i, p in enumerate(m.nodes)
+           if abs(p[0]) < 1e-12 and abs(p[1] - Y9) < 1e-12
+           and abs(p[2]) < 1e-12]
+    # the plate's node at the same spot comes first (own nodes of the rib):
+    # the rib's node is the last one
+    m.node_selection("Voet", [max(nid)])
+    for ax in ((1, 0, 0), (0, 1, 0), (0, 0, 1)):
+        m.add('<displacement selection="Voet"><value>0 mm</value>'
+              '<x>%d</x><y>%d</y><z>%d</z></displacement>' % ax)
+    return m
+
+
+# Code-Aster 17.4 on build_ls07n_rel("ref", modal=True) (19 Nov 2026); before
+# the fix LS-07v gave the same values with the ALARMs ALGELINE3_79 (singular
+# matrix) and ALGELINE5_23 (Sturm count)
+F_LS07V = (56659.69, 56726.25, 56734.77)
+
+
+TESTS += [
+    Case("LS-07p", GROUP, "Als LS-07n met Symmetry op de vlakselecties "
+         "(LIAISON_OBLIQUE op slave en master, KNOWN_BUGS 147)",
+         "lin_static_3d", build_ls07n_rel("sym"), _ls07p_checks(),
+         note="De slave-knopen op de vlakken gaan uit de LIAISON_OBLIQUE "
+              "(zonder: FACTOR_11)."),
+    Case("LS-07q", GROUP, "Als LS-07n met Frictionless support op de "
+         "vlakselecties (FACE_IMPO DNOR, KNOWN_BUGS 147)", "lin_static_3d",
+         build_ls07n_rel("fric"), _ls07p_checks(),
+         note="SANS_GROUP_NO met de slave-knopen op de vlakken (zonder: "
+              "FACTOR_11)."),
+    Case("LS-07r", GROUP, "LS-07f met Displacement X = 0 op alle knopen "
+         "(LIAISON_DDL-route, KNOWN_BUGS 147)", "lin_static_3d", build_ls07r,
+         [Check("doorbuiging tip t.o.v. LS-07f", lambda r: _w_rot(r, "Tip"),
+                ref=9.4220e-4, tol=0.001, unit="m",
+                source="LS-07f (zelfde model zonder de extra oplegging)",
+                in_series=False)],
+         note="De DX-rijen van de koppeling vallen weg (zonder: FACTOR_57 "
+              "met NPREC = -1)."),
+    Case("LS-07s", GROUP, "LS-07i met de voetknoop van de rib vast in X, Y "
+         "en Z (LIAISON_DDL-route, KNOWN_BUGS 147)", "lin_static_3d",
+         build_ls07s,
+         [Check("zijdelingse verplaatsing ribtop t.o.v. LS-07i", _rib_y,
+                ref=REF_I, tol=0.001, unit="m",
+                source="LS-07i (zelfde model zonder de extra oplegging)",
+                in_series=False)],
+         note="De drie rijen van de voetknoop vallen weg (zonder: "
+              "FACTOR_11)."),
+    Case("LS-07t", GROUP, "LS-07p in Nonlinear Static", "nonlin_static_3d",
+         build_ls07n_rel("sym"), _ls07p_checks(),
+         note="Zonder de oplossing: MECANONLINE9_4 (matrix niet "
+              "inverteerbaar), geen stap."),
+    Case("LS-07u", GROUP, "LS-07q in Nonlinear Static", "nonlin_static_3d",
+         build_ls07n_rel("fric"), _ls07p_checks(),
+         note="Zonder de oplossing: MECANONLINE9_4."),
+    Case("LS-07v", GROUP, "LS-07p modaal (CALC_MODES, KNOWN_BUGS 147)",
+         "modal_3d", build_ls07n_rel("sym", modal=True),
+         [Check("f%d t.o.v. model zonder dubbele voorwaarde" % (k + 1),
+                lambda r, k=k: r.mode(k + 1), ref=F_LS07V[k], tol=0.001,
+                unit="Hz", source="Code-Aster 17.4 op hetzelfde model met "
+                "Displacement 0 zonder de slave-knopen", in_series=False)
+          for k in range(3)],
+         note="Symmetry op slave en master in een modale analyse."),
+]
+
+
+# ------------------------------------------------------------------
 # LS-08 Node temperature (Mecway temperature3) voor thermische spanning
 # ------------------------------------------------------------------
 # Mecway Node temperature (manual v34 par. 9.24): een temperatuur per

@@ -271,7 +271,7 @@ pagina toont alleen de instellingen die bij die analyse horen:
 | Convergentiecriterium (RELA / MAXI / RELA of MAXI) | niet-lineair statisch, dynamisch impliciet | `RELA` (keuze `RELA`, `MAXI`, `RELA_OF_MAXI`) |
 | Convergentie RESI_GLOB_RELA | niet-lineair statisch, dynamisch impliciet, thermisch (alleen `THER_NON_LINE`) | 1e-5 (niet-lineair statisch, dynamisch impliciet; Code-Aster-standaard 1e-6), 1e-6 (thermisch) |
 | Convergentie RESI_GLOB_MAXI [N] | niet-lineair statisch, dynamisch impliciet (bij `MAXI` en `RELA_OF_MAXI`) | 1e-3 |
-| Contactmethode (auto / STANDARD / PENALISATION) | niet-lineair statisch, dynamisch | `auto` (niet-lineair statisch, impliciet dynamisch), `STANDARD` (expliciet dynamisch) |
+| Contactmethode (auto / STANDARD / PENALISATION) | niet-lineair statisch, dynamisch | `auto` (niet-lineair statisch, impliciet dynamisch), expliciet dynamisch: geen contact (ERROR, KNOWN_BUGS 154) |
 | Rekdefinitie hardingscurve | niet-lineair statisch, dynamisch | `auto` |
 | COMPORTEMENT DEFORMATION | niet-lineair statisch, dynamisch | `GROT_GDEP` |
 | Tijdschema (SCHEMA_TEMPS) | dynamisch | `HHT` (impliciet; keuze `HHT`/`NEWMARK`), `DIFF_CENT` (expliciet; keuze `DIFF_CENT`/`TCHAMWA`) |

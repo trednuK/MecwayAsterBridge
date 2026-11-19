@@ -84,7 +84,7 @@ when you omit the keyword (catalogue 17.4).
 
 | Key (label) | Analysis | What it does | Bridge | CA |
 |---|---|---|---|---|
-| `substeps_per_interval` (Substeps per time interval) | static | Only for a model without Mecway's *Time step size*: solver steps per interval between the time points of the time-dependent loads (`DEFI_LIST_REEL`, `NOMBRE`); without a time load 0 to `default_time_end`. With a step size the bridge computes Mecway's steps plus the kinks of the load tables (§2.1). | 10 | - |
+| `substeps_per_interval` (Substeps per time interval) | static | Only for a model without Mecway's *Time step size*: solver steps per interval between the time points of the time-dependent loads (`DEFI_LIST_REEL`, `NOMBRE`); without a time load 0 to `default_time_end`. Without *Quasi-static* (no `<timesteps>`) only up to t = 1 s: Mecway takes every load table there (WARNING when a table runs further). With a step size the bridge computes Mecway's steps plus the kinks of the load tables (§2.1). | 10 | - |
 | `auto_time_stepping` (Follow Mecway's Automatic time stepping) | static | Only with Mecway's *Automatic time stepping*: on = `DEFI_LIST_INST METHODE='AUTO'` between Mecway's output times, results at those times (§2.1); off = fixed steps. | on | - |
 | `substeps_per_output` (Solver steps per Mecway time step) | implicit | Solver steps per Mecway time step: with Dynamic Response (D30, D20, DA0) and D31 per *Time step size*, also with *Generate solution every n time steps* > 1 (then n × this value per output interval; results only at the output times); otherwise (`timepointsincrement`) per output interval. Kinks of load functions are added as extra time points. | 1 | - |
 | `default_time_end` (End time without time load) [s] | all | End time when the model has no time load (static) or no `<timesteps>` (dynamic). | 1.0 | - |
@@ -694,8 +694,10 @@ contact = DEFI_CONTACT(
       **Friction** (with kt as `COEF_PENA_FROT` the run stopped at t = 0.00024 s;
       `STANDARD` w −52 %).
 
-    Not measured: explicit dynamics (`auto` gives `STANDARD` there, with an INFO: a stiff
-    contact spring can lower the stable time step) and `NEWMARK` with impacts. A start
+    With `NEWMARK` the impact of NL-03m completes too (19 Nov 2026). Explicit dynamics:
+    Code-Aster 17.4 cannot compute contact (`MECANONLINE5_22`, with `STANDARD` and with
+    `PENALISATION`); the bridge stops before the run with an ERROR that advises an
+    implicit scheme (KNOWN_BUGS 154). A start
     screen saved before V2026.15 keeps its explicit `STANDARD` for dynamics too: choose
     `auto` once on the page of the dynamic analysis.
   - `STANDARD` (CA default): augmented Lagrangian (EDF R&D, U4.44.11), with
@@ -704,7 +706,7 @@ contact = DEFI_CONTACT(
     cases PL-40 … PL-47 compare with Lamé this way).
   - `PENALISATION`: contact pressure = `COEF_PENA_CONT` × penetration, with
     `COEF_PENA_CONT` = Mecway's *normal stiffness* (Pa/m); with friction
-    `ALGO_FROT='PENALISATION'` (if the *tangential stiffness* is 0, Lagrange friction),
+    `ALGO_FROT='PENALISATION'` (with *tangential stiffness* 0 in 2D, Lagrange friction),
     see **Friction** below for `COEF_PENA_FROT`. This is how Mecway itself computes the
     normal direction (Mecway, 2026, §9.9.2). Choose this if `STANDARD` loses the contact or stops with
     `MECANONLINE9_4` with `LAGS_C` in the message (line contact). Verified: the
@@ -778,7 +780,8 @@ contact = DEFI_CONTACT(
   instead of 10, and Tutorials/AssemblyWithContact *Friction* and *Quadratic_ramp* stopped
   (now they complete). Implicit dynamics sticks rigidly the same way since V2026.15 (NL-03l;
   the creep bound counts per solver step, including substeps and automatic step cuts).
-  Explicit dynamics and 2D (with `PENALISATION` chosen) still write kt (not measured); if
+  2D (with `PENALISATION` chosen) still writes kt (not measured; explicit dynamics has no
+  contact in Code-Aster, KNOWN_BUGS 154); if
   such a run stops, give the zone your own `#ASTER-ZONE COEF_PENA_FROT=...` (1/m, e.g.
   1/(1e-8 × the diagonal of the contact faces in m)); it takes precedence.
 
@@ -866,6 +869,15 @@ The bridge does not set `CONTACT_INIT`, so the CA default `'INTERPENETRE'` appli
 (catalogue 17.4, U4.44.11): at the start, all points with zero gap or with penetration
 are active. Tolerance: 1e-6 × the smallest edge (U2.04.04 §4.4.1).
 
+![Start of a contact: a slave part with a gap, one with zero gap and one with a penetration](../img/contact_initial_gap.svg)
+
+1. The master face.
+2. A gap: these slave points are not active at the start; they can become active later,
+   when the gap closes.
+3. Zero gap (within the tolerance): active from the start.
+4. A penetration: active from the start and pushed out.
+5. Pushing out gives forces on both bodies.
+
 - An initial penetration is pushed out and **produces forces**; it is not a geometric
   correction (U2.04.04 §4.4.1). So make sure the mesh in Mecway has no overlap.
 - Other values (not via the bridge): `'OUI'` activates all points, also with a gap
@@ -891,14 +903,30 @@ are active. Tolerance: 1e-6 × the smallest edge (U2.04.04 §4.4.1).
   With the setting *Bonded contact: close gaps like CCX* (`bonded_close_gap`, page General,
   off by default) the bridge moves the tied slave nodes onto the master in the mesh for
   Code-Aster (the `.liml` is not changed), as CCX does: only solid on solid, with a flat
-  master face and a move up to 0.1 × the shortest neighbouring edge (the shortest distance
-  to another node of an element at the node; a bridge rule, not CCX's), in linear and
+  master face and a move up to 0.1 × the shortest distance to another node of an element
+  at the node or the shortest edge of its slave face (a bridge rule, not CCX's), in linear and
   nonlinear static, modal and buckling analyses (not in the thermal chain and the other
   analyses); not for nodes that are also in another contact, a coupling, a constraint
   equation, a support or a load, not with cyclic symmetry, in 2D or with adaptive refinement, and
   not when a *CCX keyword* modification turns `ADJUST` off. A slave face moves as a whole
   or not at all; what stays gets the WARNING. Verification LS-07o: the lap of LS-07m with
   a 0.2 mm gap gives 0.230166 mm, equal to Mecway (without the option +0.26 %).
+
+![Bonded contact across a gap: the setting bonded_close_gap off (left) and on (right)](../img/bonded_gap_close.svg)
+
+The gap is drawn much larger than the 0.1 × h up to which the bridge moves a node.
+
+1. The master solid, with a flat face.
+2. The slave solid; the nodes of its face are tied to the master.
+3. The gap g.
+4. Setting off (default): `LIAISON_MAIL` ties the slave nodes where they are, across the
+   gap. The gap stays, with (for this large gap) a WARNING.
+5. Setting on: the bridge moves the slave nodes perpendicular onto the plane of the master
+   face, only in the mesh for Code-Aster; the `.liml` keeps the old position (dashed).
+6. h: the shortest distance from the node to another node of an element at the node
+   (here the thickness of a thin layer; mid-side nodes, diagonals and the edges of the
+   slave face count too). A node moves only if g ≤ 0.1 × h, and a slave face moves as a
+   whole or not at all.
 
 ### 3.5 Zones sharing slave nodes
 
@@ -909,8 +937,8 @@ that is slave against a blade and against a contour).
 The bridge merges such pairs into one zone: master = union of the masters, slave =
 union of the slaves (`DEFI_GROUP ... UNION`, groups `CMAIT<n>`/`CESCL<n>`). Friction:
 the largest coefficient; with `contact_algo` = PENALISATION also the largest normal and
-tangential stiffness (the tangential one only in explicit dynamics and 2D: 3D static and implicit
-stick rigidly, KNOWN_BUGS 149). Every merge writes a WARNING to `<model>_<run-id>_bridge_log.txt`,
+tangential stiffness (the tangential one only in 2D: 3D static and implicit stick rigidly,
+KNOWN_BUGS 149). Every merge writes a WARNING to `<model>_<run-id>_bridge_log.txt`,
 with an extra one if the friction coefficients differed (KNOWN_BUGS 10). The solution
 suggested by `CONTACT2_16` itself (swapping master and slave) is not used by the bridge:
 the stiff tool would then become slave.
@@ -949,12 +977,22 @@ that weigh in its tie are held with the same constant value (a symmetry plane as
 is double and Code-Aster would stop with a singular matrix. For a solid-on-solid tie with
 the slave node on the master face, the bridge leaves the support out on those slave
 nodes in those directions (INFO; the tie gives them the same value; verification LS-07n);
-a *Fixed support* only on solid nodes. Every double condition it does not resolve gets a
-WARNING: master nodes held with another value or time-dependent, a gap, a shell on
-either side, the bridge's own relations (`LIAISON_DDL`), a selection that cannot be split
-(shell faces, elements), two pairs that tie each other, and symmetry or frictionless
-relations on the slave and master nodes. A support only on the slave side (masters free)
-is no double condition and stays (KNOWN_BUGS 147).
+a *Fixed support* only on solid nodes. A *Symmetry* or *Frictionless support* on a plane
+perpendicular to a global axis, without a prescribed normal displacement, counts as such a
+support: the slave nodes leave the relation there and follow the master (INFO; LS-07p/q,
+also in Nonlinear Static and modal, LS-07t/u/v). With the bridge's own relations
+(`LIAISON_DDL`, shell on shell with a quadratic or a skewed or curved master) a tie relation in a translation is left out when the slave node and every node that weighs
+in it are held in that direction with the same constant value (INFO; the support stays;
+LS-07r/s). Every double condition it does not resolve gets a WARNING: master nodes held
+with another value or time-dependent, a gap, a shell on either side (`LIAISON_MAIL`), a
+rotation or a symmetry/frictionless relation on the `LIAISON_DDL` route, a selection that
+cannot be split (shell faces, elements), a *Fixed support* on a slave node in an oblique
+relation, two pairs that tie each other, and symmetry or frictionless relations in an
+oblique plane, with a normal displacement or on a curved face. With a skewed or curved
+shell master (and with shells with an element offset on their own nodes) MUMPS does not
+check for a singular matrix (NPREC = -1): the WARNING then says that Code-Aster may stop with `FACTOR_57` or give an unreliable result.
+A support only on the slave side (masters free) is no double condition and stays
+(KNOWN_BUGS 147).
 
 ### 3.8 Alternatives in Code-Aster
 

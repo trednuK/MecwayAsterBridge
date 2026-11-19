@@ -159,8 +159,9 @@ no value that moves more than 1e-6 relative compared with the stored results.
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 
 Added since this regression and run on their own (19 Nov 2026, not yet in a full
-regression): LS-07n (2 OK), LS-07o (1 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
-149), NL-03i (1 OK), NL-03j (5 OK), NL-03k (3 OK), NL-03l (1 OK, 1 BEKEND: KNOWN_BUGS 149), NL-03m (3 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK).
+regression): LS-07n (2 OK), LS-07o (1 OK), LS-07p (1 OK), LS-07q (1 OK), LS-07r (1 OK), LS-07s
+(1 OK), LS-07t (1 OK), LS-07u (1 OK), LS-07v (3 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
+149), NL-03i (1 OK), NL-03j (5 OK), NL-03k (3 OK), NL-03l (1 OK, 1 BEKEND: KNOWN_BUGS 149), NL-03m (3 OK), NL-03n (2 OK), NL-03o (5 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK).
 
 **Known limitations** (status BEKEND):
 - KNOWN_BUGS 149: Mecway's tangential stiffness kt is not modelled, Code-Aster sticks
@@ -455,6 +456,34 @@ meshes is given below.
   non-matching meshes); 7 slave nodes per symmetry plane lose the support (INFO). One-off check
   (18 Nov 2026, not a case): the same model in Nonlinear Static gives 0.954130 µm, equal to
   Mecway's 0.954130 µm.
+
+### LS-07p–v Double conditions with relations and on the LIAISON_DDL route (KNOWN_BUGS 147)
+
+- **Purpose**: the rest of KNOWN_BUGS 147. (p, q) A *Symmetry* (`LIAISON_OBLIQUE` per
+  node group) or *Frictionless support* (`FACE_IMPO` DNOR) on slave and master nodes is
+  the same double condition as in LS-07n; before the fix `FACTOR_11` (linear) and
+  `MECANONLINE9_4` (nonlinear, no step). The bridge takes the slave nodes out of the
+  relation (a node group without them, or `SANS_GROUP_NO`). (r, s) With the bridge's own
+  relations (`LIAISON_DDL`) a tie relation in a translation is left out when all its nodes
+  are held with the same value; before the fix `FACTOR_57` (r, NPREC = -1) and
+  `FACTOR_11` (s).
+- **Model**: (p) LS-07n with *Symmetry* on the face selections x = 0 and y = 0 of both
+  blocks, (q) the same with *Frictionless support*; (t, u) (p) and (q) in Nonlinear
+  Static; (v) (p) modal (density 7850 kg/m³, no force). (r) LS-07f with *Displacement*
+  X = 0 on all nodes (the membrane displacement of this strip in pure bending is 0); (s)
+  LS-07i with the rib's foot node on the clamped edge held in X, Y and Z (weight 1 on a
+  clamped mid-side node).
+- **Reference**: (p, q, t, u) Mecway 36 with CCX, headless, on (p) and (q): 0.9540648 µm.
+  (r, s) the same model without the extra support (LS-07f 0.94220 mm, LS-07i
+  1.134186e-5 m). (v) Code-Aster 17.4 on the same model with *Displacement* 0 on the plane
+  nodes without the tied slave nodes (no double condition): 56659.69, 56726.25 and
+  56734.77 Hz.
+- **Result**: (p, q) 0.954065 µm, (t, u) 0.954133 µm, equal to Mecway (0.00% and +0.01%);
+  7 slave nodes per plane leave the relation (INFO). (r) 0.94220 mm, 8 DX rows left out;
+  (s) 1.1342e-5 m, 3 rows left out (INFO); both equal to the model without the support.
+  (v) the three frequencies equal to the reference; without the fix CALC_MODES gave the
+  same frequencies, but with the ALARMs `ALGELINE3_79` (singular matrix) and
+  `ALGELINE5_23` (Sturm count). Other analyses (dynamics, buckling) NOT verified.
 
 ### LS-08 Node temperature (thermal stress per node)
 
@@ -2143,6 +2172,10 @@ samples) plus the kinks of the load tables (NL-20).
   Mecway writes for CCX), loaded slowly, `PENALISATION`: top 1.9524 µm, penetration
   1.000 µm and 10 output steps, equal to Mecway 36 with CCX (D31, headless). Before
   V2026.15 the bridge ignored the step size of a D31 model (one step at t = 1 s).
+- **NL-03n** (friction with tangential stiffness 0): NL-03h with kt = 0: u = 1.8641 µm, the
+  rigid stick (KNOWN_BUGS 150; Mecway/CCX gave no usable result with kt = 0).
+- **NL-03o** (D31 with *Generate solution every n time steps* = 3): as NL-03j; output at
+  0.3, 0.6, 0.9 and 1 s as Mecway 36 with CCX, the same top displacement.
 - **NL-03k/l/m** (contact in implicit dynamics, default `contact_algo` = `auto`, D31 with
   steel's density and *Time step size* 2 µs, against Mecway 36 with CCX, headless): k: a
   force pulse (4000 N on in 20 µs, held to 50 µs, off at 70 µs; then the upper block comes
@@ -2189,7 +2222,12 @@ samples) plus the kinks of the load tables (NL-20).
   `GROT_GDEP` the thermal strain counts as Green-Lagrange strain (0.03–0.06% less
   elongation than Mecway/CCX, NL-70b). Without *Quasi-static* Mecway/CCX takes the table
   value at t = 1 s (the step time), also when the table runs further; the bridge then
-  computes up to t = 1 s (NL-75: 1.2e-4 m, exact and equal to Mecway/CCX).
+  computes up to t = 1 s (NL-75: 1.2e-4 m, exact and equal to Mecway/CCX). NL-75b..d: a
+  force table (0 s; 0 N), (2 s; 2100 N) on the end nodes without *Quasi-static*, with
+  +100 K (b), with the temperature table (c) or alone (d): Mecway 36 with CCX takes it at
+  t = 1 s too (headless: 1.24994e-4 / 1.24994e-4 / 4.99963e-6 m; an imposed displacement
+  table likewise); the bridge computes up to t = 1 s with a WARNING (1.2500e-4 / 1.2500e-4 /
+  5.0000e-6 m, = α·ΔT·L + F(1 s)·L/(EA)).
 ### NL-40 Formula in y and t
 
 - **Purpose**: a formula in x, y, z and t in `STAT_NON_LINE` (`FORMULE` of Y and

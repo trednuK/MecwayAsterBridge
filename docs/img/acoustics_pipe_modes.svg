@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 310" width="720" height="310">
+  <rect width="720" height="310" fill="#ffffff"/>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#333"/>
+    </marker>
+    <marker id="as" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a0522d"/>
+    </marker>
+  </defs>
+  <!-- pressure p along a pipe of length L: top closed-closed (n = 0 constant, dashed; n = 1 half wave), bottom closed at the left, p = 0 at the right (quarter wave) -->
+  <rect x="120" y="40" width="480" height="80" fill="#f3f7fb" stroke="#333" stroke-width="1.5"/>
+  <line x1="120" y1="40" x2="120" y2="120" stroke="#333" stroke-width="4"/>
+  <line x1="120" y1="44" x2="111" y2="36" stroke="#333" stroke-width="1.2"/>
+  <line x1="120" y1="54" x2="111" y2="46" stroke="#333" stroke-width="1.2"/>
+  <line x1="120" y1="64" x2="111" y2="56" stroke="#333" stroke-width="1.2"/>
+  <line x1="120" y1="74" x2="111" y2="66" stroke="#333" stroke-width="1.2"/>
+  <line x1="120" y1="84" x2="111" y2="76" stroke="#333" stroke-width="1.2"/>
+  <line x1="120" y1="94" x2="111" y2="86" stroke="#333" stroke-width="1.2"/>
+  <line x1="120" y1="104" x2="111" y2="96" stroke="#333" stroke-width="1.2"/>
+  <line x1="120" y1="114" x2="111" y2="106" stroke="#333" stroke-width="1.2"/>
+  <line x1="600" y1="40" x2="600" y2="120" stroke="#333" stroke-width="4"/>
+  <line x1="600" y1="44" x2="609" y2="36" stroke="#333" stroke-width="1.2"/>
+  <line x1="600" y1="54" x2="609" y2="46" stroke="#333" stroke-width="1.2"/>
+  <line x1="600" y1="64" x2="609" y2="56" stroke="#333" stroke-width="1.2"/>
+  <line x1="600" y1="74" x2="609" y2="66" stroke="#333" stroke-width="1.2"/>
+  <line x1="600" y1="84" x2="609" y2="76" stroke="#333" stroke-width="1.2"/>
+  <line x1="600" y1="94" x2="609" y2="86" stroke="#333" stroke-width="1.2"/>
+  <line x1="600" y1="104" x2="609" y2="96" stroke="#333" stroke-width="1.2"/>
+  <line x1="600" y1="114" x2="609" y2="106" stroke="#333" stroke-width="1.2"/>
+  <line x1="120" y1="80" x2="600" y2="80" stroke="#999" stroke-width="1" stroke-dasharray="2 3"/>
+  <line x1="120" y1="52" x2="600" y2="52" stroke="#2c5d8a" stroke-width="2.2" stroke-dasharray="8 5"/>
+  <polyline points="120,52 128,52.0384 136,52.1534 144,52.3447 152,52.6119 160,52.9541 168,53.3704 176,53.8597 184,54.4207 192,55.0518 200,55.7513 208,56.5172 216,57.3475 224,58.2399 232,59.1919 240,60.201 248,61.2643 256,62.379 264,63.542 272,64.7501 280,66 288,67.2883 296,68.6114 304,69.9657 312,71.3475 320,72.7531 328,74.1785 336,75.6198 344,77.0732 352,78.5346 360,80 368,81.4654 376,82.9268 384,84.3802 392,85.8215 400,87.2469 408,88.6525 416,90.0343 424,91.3886 432,92.7117 440,94 448,95.2499 456,96.458 464,97.621 472,98.7357 480,99.799 488,100.808 496,101.76 504,102.652 512,103.483 520,104.249 528,104.948 536,105.579 544,106.14 552,106.63 560,107.046 568,107.388 576,107.655 584,107.847 592,107.962 600,108" fill="none" stroke="#2c5d8a" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M 120 170 H 600 M 120 250 H 600" stroke="#333" stroke-width="1.5" fill="none"/>
+  <rect x="120" y="170" width="480" height="80" fill="#f3f7fb"/>
+  <path d="M 120 170 H 600 M 120 250 H 600" stroke="#333" stroke-width="1.5" fill="none"/>
+  <line x1="120" y1="170" x2="120" y2="250" stroke="#333" stroke-width="4"/>
+  <line x1="120" y1="174" x2="111" y2="166" stroke="#333" stroke-width="1.2"/>
+  <line x1="120" y1="184" x2="111" y2="176" stroke="#333" stroke-width="1.2"/>
+  <line x1="120" y1="194" x2="111" y2="186" stroke="#333" stroke-width="1.2"/>
+  <line x1="120" y1="204" x2="111" y2="196" stroke="#333" stroke-width="1.2"/>
+  <line x1="120" y1="214" x2="111" y2="206" stroke="#333" stroke-width="1.2"/>
+  <line x1="120" y1="224" x2="111" y2="216" stroke="#333" stroke-width="1.2"/>
+  <line x1="120" y1="234" x2="111" y2="226" stroke="#333" stroke-width="1.2"/>
+  <line x1="120" y1="244" x2="111" y2="236" stroke="#333" stroke-width="1.2"/>
+  <line x1="600" y1="170" x2="600" y2="250" stroke="#a0522d" stroke-width="2.5" stroke-dasharray="5 4"/>
+  <line x1="120" y1="210" x2="600" y2="210" stroke="#999" stroke-width="1" stroke-dasharray="2 3"/>
+  <polyline points="120,182 128,182.01 136,182.038 144,182.086 152,182.153 160,182.24 168,182.345 176,182.469 184,182.612 192,182.774 200,182.954 208,183.153 216,183.37 224,183.606 232,183.86 240,184.131 248,184.421 256,184.728 264,185.052 272,185.393 280,185.751 288,186.126 296,186.517 304,186.924 312,187.348 320,187.786 328,188.24 336,188.709 344,189.192 352,189.69 360,190.201 368,190.726 376,191.264 384,191.815 392,192.379 400,192.955 408,193.542 416,194.141 424,194.75 432,195.37 440,196 448,196.64 456,197.288 464,197.946 472,198.611 480,199.285 488,199.966 496,200.653 504,201.348 512,202.048 520,202.753 528,203.464 536,204.178 544,204.897 552,205.62 560,206.345 568,207.073 576,207.803 584,208.535 592,209.267 600,210" fill="none" stroke="#2c5d8a" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="600" cy="210" r="5" fill="#a0522d" stroke="#ffffff" stroke-width="1.2"/>
+  <line x1="120" y1="262" x2="120" y2="280" stroke="#333" stroke-width="1.2"/>
+  <line x1="600" y1="262" x2="600" y2="280" stroke="#333" stroke-width="1.2"/>
+  <line x1="120" y1="272" x2="600" y2="272" stroke="#333" stroke-width="1.3" marker-end="url(#ah)" marker-start="url(#ah)"/>
+  <text x="390" y="292" font-family="serif" font-style="italic" font-size="16" fill="#333" text-anchor="middle">L</text>
+  <g font-family="sans-serif" font-weight="bold" font-size="14" fill="#ffffff" text-anchor="middle">
+    <line x1="90" y1="30" x2="112" y2="50" stroke="#c0392b" stroke-width="1.5"/>
+    <circle cx="90" cy="30" r="11" fill="#c0392b"/><text x="90" y="35">1</text>
+    <line x1="640" y1="210" x2="606" y2="210" stroke="#c0392b" stroke-width="1.5"/>
+    <circle cx="640" cy="210" r="11" fill="#c0392b"/><text x="640" y="215">2</text>
+    <line x1="360" y1="34" x2="360" y2="50" stroke="#c0392b" stroke-width="1.5"/>
+    <circle cx="360" cy="34" r="11" fill="#c0392b"/><text x="360" y="39">3</text>
+    <line x1="420" y1="136" x2="420" y2="94" stroke="#c0392b" stroke-width="1.5"/>
+    <circle cx="420" cy="136" r="11" fill="#c0392b"/><text x="420" y="141">4</text>
+    <line x1="300" y1="236" x2="300" y2="190" stroke="#c0392b" stroke-width="1.5"/>
+    <circle cx="300" cy="236" r="11" fill="#c0392b"/><text x="300" y="241">5</text>
+    <line x1="360" y1="292" x2="360" y2="274" stroke="#c0392b" stroke-width="1.5"/>
+    <circle cx="360" cy="292" r="11" fill="#c0392b"/><text x="360" y="297">6</text>
+  </g>
+</svg>
