@@ -1627,6 +1627,11 @@ def penetration_report(mess_path):
     return [msg]
 
 
+# Effective out-of-core choice of a factorization (bridge_convergence
+# _LIN_OOC_RE; the request line has "(1=on, off otherwise)=" instead)
+_MESS_OOC_RE = re.compile(r"Out-of-core option\s*=\s*1\b")
+
+
 def mumps_memory_report(mess_path, memory_limit=None):
     """
     Did MUMPS put its factorization on disk by itself? Only the main
@@ -1645,7 +1650,9 @@ def mumps_memory_report(mess_path, memory_limit=None):
         text = _read_mess(mess_path)
     except Exception:
         return []
-    if u"Out-of-core option" not in text:
+    # Every static MUMPS run prints the option; parse only when a
+    # factorization actually ran out of core (value 1)
+    if not _MESS_OOC_RE.search(text):
         return []
     parser = ConvergenceParser()
     parser.feed(text)
@@ -1687,14 +1694,27 @@ def mumps_memory_report(mess_path, memory_limit=None):
         # compression than reached; measured 1558 MB estimated, the
         # in-core attempt within 2048 MB failed (MUMPS INFO(1) = -19) and
         # Code-Aster factored again out of core.
-        msg = tr(u"MUMPS paste ook met low_rank niet in het geheugen en "
+        msg = tr(u"Ook met low_rank paste MUMPS niet in het geheugen en "
                  u"zette de factorisatie op schijf (trager). Verhoog "
                  u"memory_limit (nu {1} MB) als de pc meer vrij geheugen "
                  u"heeft.",
-                 u"Also with low_rank MUMPS did not fit in memory and put "
+                 u"Even with low_rank MUMPS did not fit in memory and put "
                  u"the factorization on disk (slower). Raise memory_limit "
                  u"(now {1} MB) if the PC has more free "
                  u"memory.").format(need, memory_limit)
+    elif not need:                          # no INFOG(17) in the .mess
+        msg = tr(u"MUMPS paste niet in het geheugen en zette de "
+                 u"factorisatie op schijf (trager, veel schijfruimte; "
+                 u"memory_limit nu {1} MB). Verhoog memory_limit als de pc "
+                 u"meer vrij geheugen heeft, of kies mumps_memory = "
+                 u"low_rank (gecomprimeerde factorisatie: sneller, veel "
+                 u"minder schijfruimte, maar meer piekgeheugen).",
+                 u"MUMPS did not fit in memory and put the factorization on "
+                 u"disk (slower, a lot of disk space; memory_limit now {1} "
+                 u"MB). Raise memory_limit if the PC has more free memory, "
+                 u"or choose mumps_memory = low_rank (compressed "
+                 u"factorization: faster, much less disk space, but more "
+                 u"peak memory).").format(need, memory_limit)
     else:
         msg = tr(u"MUMPS paste niet in het geheugen en zette de "
                  u"factorisatie op schijf (trager, veel schijfruimte). In "
@@ -1702,14 +1722,14 @@ def mumps_memory_report(mess_path, memory_limit=None):
                  u"{1} MB). Verhoog memory_limit als de pc zoveel vrij "
                  u"geheugen heeft, of kies mumps_memory = low_rank "
                  u"(gecomprimeerde factorisatie: sneller, veel minder "
-                 u"schijfruimte).",
+                 u"schijfruimte, maar meer piekgeheugen).",
                  u"MUMPS did not fit in memory and put the factorization on "
                  u"disk (slower, a lot of disk space). In memory it needs "
                  u"about {0} MB (memory_limit now {1} MB). Raise "
                  u"memory_limit if the PC has that much free memory, or "
                  u"choose mumps_memory = low_rank (compressed "
-                 u"factorization: faster, much less disk "
-                 u"space).").format(need, memory_limit)
+                 u"factorization: faster, much less disk space, but more "
+                 u"peak memory).").format(need, memory_limit)
     log(u"WARNING: " + msg)
     return [msg]
 

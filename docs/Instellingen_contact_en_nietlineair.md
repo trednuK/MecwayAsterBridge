@@ -497,7 +497,7 @@ elastische model (de tangentiële stijfheid zou het verkleinen). De bridge zet h
 sleutelwoord niet en verandert de standaard niet (er is geen instelling of
 `#ASTER`-regel voor `'TANGENTE'`).
 
-### 2.6 Lineaire solver: `solver_nprec`, `lin_solver`, `lin_solver_resi`
+### 2.6 Lineaire solver: `solver_nprec`, `mumps_memory`, `lin_solver`, `lin_solver_resi`
 
 `SOLVEUR=_F(METHODE='MUMPS', NPREC=...)`. NPREC is het aantal decimalen dat bij
 de factorisatie verloren mag gaan voor Code-Aster de matrix singulier noemt.
@@ -557,8 +557,9 @@ bij, zodat de statistiek van de oplosser in de `.mess` komt (convergentiescherm,
 **Grote modellen: `mumps_memory` (MUMPS-geheugen, alle analyses).** MUMPS houdt de
 factorisatie in het geheugen als die past in het geheugen van de job (`memory_limit`,
 §2.7). Past ze niet, dan zet Code-Aster haar zelf op schijf (`GESTION_MEMOIRE='AUTO'`),
-zonder melding: trager en veel schijfruimte in de werkmap van de job. Bij een statische
-analyse meldt de bridge dat na de run (WARNING met het geheugen dat MUMPS nodig had).
+zonder melding: trager en veel schijfruimte in de werkmap van de job. Na een lineair
+statische run (analyse *Statisch*) meldt de bridge dat (WARNING met het geheugen dat
+MUMPS nodig had).
 
 | Waarde | Code-Aster | Waar |
 |---|---|---|
@@ -572,23 +573,28 @@ Gemeten met Code-Aster 17.4 (MUMPS 5.6.2), `MECA_STATIQUE` op een hex8-blok, `me
 | Model | Instelling | Job | Op schijf (werkmap) | Piekgeheugen (VmPeak) |
 |---|---|---|---|---|
 | 217 000 vgl. | `auto` (MUMPS wil 3,8 GB, gaat naar schijf) | 59 s | 2,1 GB | 1,3 GB |
-| | `low_rank` | 57 s | 0,4 GB | 2,9 GB |
+| | `low_rank` (probeert eerst in het geheugen, gaat dan naar schijf) | 57 s | 0,4 GB | 2,9 GB |
 | | `out_of_core` | 87 s | 2,1 GB | 1,4 GB |
 | | `auto` met `memory_limit` 8192 (in het geheugen) | 55 s | 0,3 GB | 3,3 GB |
 | 680 000 vgl. | `auto` (MUMPS wil 18,8 GB, gaat naar schijf) | 240 s | 10,6 GB | 4,9 GB |
-| | `low_rank` | 160 s | 1,5 GB | 11,2 GB |
+| | `low_rank` (ook naar schijf) | 160 s | 1,5 GB | 11,2 GB |
 
-De resultaten van `low_rank` waren gelijk aan die van `auto` op 1e-13 na: in
+Het piekgeheugen kwam boven `memory_limit` uit: `memory_limit` is waarmee MUMPS rekent bij
+de keuze geheugen of schijf, geen harde grens voor het proces (NIET geverifieerd). De
+resultaten van `low_rank` weken relatief minder dan 1e-13 af van die van `auto`: in
 `MECA_STATIQUE` verfijnt MUMPS de oplossing tot de foutgrens `RESI_RELA`. In
 `STAT_NON_LINE`, impliciet `DYNA_NON_LINE` en thermisch niet-lineair controleert MUMPS de
 foutgrens niet (`RESI_RELA` -1); daar bepaalt het evenwicht van Newton
-(`convergence_resi_rela`) de nauwkeurigheid, en kan `low_rank` hooguit een iteratie meer
-kosten. Volgorde bij een groot model:
+(`convergence_resi_rela`) de nauwkeurigheid, en kan `low_rank` extra Newton-iteraties
+kosten (NIET gemeten). Volgorde bij een groot model:
 
 1. Verhoog `memory_limit` tot wat de pc vrij heeft (niet meer dan het vrije RAM).
-2. Past het dan nog niet: `low_rank` (sneller, veel minder schijfruimte, meer piekgeheugen).
-3. `out_of_core` alleen als `memory_limit` hoger staat dan het geheugen dat echt vrij is:
-   bij `auto` gaat MUMPS zelf al naar schijf als het niet past.
+2. Heeft de pc wel geheugen voor de piek van `low_rank` (tabel: 11,2 GB bij 680 000
+   vgl.), maar niet voor de factorisatie in het geheugen: `low_rank` (sneller, veel
+   minder schijfruimte).
+3. `out_of_core` alleen als `memory_limit` hoger staat dan het geheugen dat echt vrij is
+   (`auto` probeert het dan in het geheugen en de pc gaat swappen); anders gaat `auto`
+   zelf al naar schijf als het nodig is.
 
 Op Windows houdt Code-Aster complexe matrices altijd in het geheugen (`factor.py` melding
 86): in harmonische analyses heeft `out_of_core` op de harmonische oplossing geen effect

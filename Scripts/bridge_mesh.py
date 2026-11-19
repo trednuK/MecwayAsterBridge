@@ -1856,7 +1856,9 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     model_data["cell_names"] = [name for items in by_type.values()
                                 for name, _cn in items]
     # Written to a temporary file next to it, which replaces the .mail
-    # only when complete: a failure keeps an existing .mail untouched.
+    # only when complete: a failure while writing keeps an existing .mail
+    # (a failing rename after the remove loses it; write_mesh then returns
+    # False with the ERROR, so the run stops either way).
     tmp_path = mail_path + ".tmp"
     f = None
     try:
@@ -1902,12 +1904,18 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     except Exception as e:
         log(tr("ERROR: Schrijven van '{0}' mislukt: {1}",
                "ERROR: Writing '{0}' failed: {1}").format(mail_path, str(e)))
+        # Each on its own: on a full disk close() raises again (flush), and
+        # the large partial .tmp must still go. The ERROR above is the
+        # message.
         try:
             if f is not None:
                 f.close()
+        except Exception:
+            pass
+        try:
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
-        except Exception:         # the ERROR above is the message
+        except Exception:
             pass
         return False
 

@@ -482,8 +482,10 @@ def test_linear_mumps():
     p.feed(text[cut:])
     p.close()
     check(lin.finished() and lin.status == "klaar", lin.status)
+    # ACCELERATION (and GESTION_MEMOIRE when echoed) for mumps_memory
     check(lin.solver == {"METHODE": "MUMPS", "NPREC": -1,
-                         "POSTTRAITEMENTS": "AUTO", "RESI_RELA": 1e-6},
+                         "POSTTRAITEMENTS": "AUTO", "RESI_RELA": 1e-6,
+                         "ACCELERATION": "AUTO"},
           lin.solver)
     check((lin.dofs, lin.dofs_phys, lin.nodes, lin.lagr_pairs, lin.relations,
            lin.equations, lin.nnz, lin.fill_pct) ==

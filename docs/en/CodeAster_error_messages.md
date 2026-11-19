@@ -1361,7 +1361,7 @@ Memory or time limit messages did not occur during testing. The limits are in th
 - **Cause**: *Linear solver* = GCPC with an ill-conditioned model (e.g. slender beams made
   of solid elements).
 - **Seen**: NOT in a saved run; mentioned in
-  [Settings §2.6](Settings_contact_and_nonlinear.md#26-linear-solver-solver_nprec-lin_solver-lin_solver_resi).
+  [Settings §2.6](Settings_contact_and_nonlinear.md#26-linear-solver-solver_nprec-mumps_memory-lin_solver-lin_solver_resi).
 - **Solution**: *Linear solver* = MUMPS.
 - **Status**: model / setting.
 

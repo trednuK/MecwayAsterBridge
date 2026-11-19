@@ -12,8 +12,9 @@
   `LOW_RANK_SEUIL=1.0e-9`, not in eigenvalue searches, harmonic solves and explicit
   dynamics) and `out_of_core` (`GESTION_MEMOIRE='OUT_OF_CORE'`); also per model with
   `#ASTER-OPTIE mumps_memory = ...`. Measured on 680,000 equations with `memory_limit` 2048:
-  `low_rank` 160 s instead of 240 s and 1.5 instead of 10.6 GB on disk, results equal up to
-  1e-13. After a static run the bridge now warns when MUMPS put its factorization on disk
+  `low_rank` 160 s instead of 240 s and 1.5 instead of 10.6 GB on disk, but peak memory 11.2
+  instead of 4.9 GB; results differ by less than 1e-13 relative. After a linear static run
+  (*Static*) the bridge now warns when MUMPS put its factorization on disk
   because it did not fit in `memory_limit` (Code-Aster does that without a message).
   Settings §2.6.
 - **Start screen: *Follow Mecway's Automatic time stepping* under *Steps and convergence*.**

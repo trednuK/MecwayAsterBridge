@@ -1092,10 +1092,10 @@ def mumps_memory_note(analysis, name=None):
         log(tr("WARNING: mumps_memory out_of_core: Code-Aster houdt "
                "complexe matrices op Windows toch in het geheugen "
                "(IN_CORE); de harmonische oplossing gebruikt dus evenveel "
-               "geheugen.",
+               "geheugen als met auto.",
                "WARNING: mumps_memory out_of_core: on Windows Code-Aster "
                "keeps complex matrices in memory anyway (IN_CORE); the "
-               "harmonic solve uses the same memory.").format())
+               "harmonic solve uses the same memory as with auto.").format())
     return mode
 
 
