@@ -76,9 +76,13 @@ Verwante documenten:
    [`README.md`](../README.md)).
 3. Het **hoofdvenster** verschijnt (§3). Controleer de instellingen en klik
    *Starten* (*Sluiten* stopt de bridge zonder run).
-4. De bridge slaat het model op (`mw.save()`; met route `tabel` en Mecway 36 of later
-   niet: dan leest hij een kopie van het open model, `<model>_<run-id>_model.liml`), leest
-   de `.liml`, schrijft het mesh,
+4. De bridge slaat het model op (`mw.save()`). Met Mecway 36 of later niet: dan leest hij
+   een kopie van het open model, `<model>_<run-id>_model.liml`, en slaat route `liml` het
+   model pas op vlak voordat de resultaten erin gaan; een run zonder resultaten laat je
+   `.liml` dan zoals hij was (met *Samenvatting ook als Saved monitor in de .liml* aan wordt hij voor de monitor wel
+   opgeslagen). Wijzigingen die je nog niet hebt opgeslagen, blijven tijdens de run dus
+   onopgeslagen: loopt Mecway vast, dan ben je ze kwijt. Een alleen-lezen model of een
+   verdwenen map stopt de run meteen. Daarna leest hij de `.liml`, schrijft het mesh,
    `<model>_<run-id>.comm` en `.export` in de werkmap (§5) en start Code-Aster in een
    **apart venster**. Met route `tabel` controleert hij eerst of de Mecway-solution
    bij het mesh past; zo niet, dan stopt hij met een melding. Route `tabel` vraagt dus een
@@ -180,7 +184,7 @@ schuiven de lijst en de pagina (de lijst met het muiswiel of de balk rechts erva
 | 7 | Doorsnede ▾ | Een menu voor de vorm van General sections (§4.3). *Doorsnede tonen* slaat de instellingen en het model op (het model met Mecway 36 of later niet) en toont de vorm op de balken als tijdelijke elementen, vóór een berekening; *Doorsnede verbergen* haalt ze weer weg. *Doorsnede in resultaten* slaat de instellingen en het model op, zet die vorm met zijn waarden in de resultaten in de `.liml` en opent het model opnieuw; na een Code-Aster-run gebeurt dat vanzelf |
 | 8 | Convergentiescherm | Opent het convergentie- en meldingenscherm als apart venster (blijft open naast Mecway) voor de nieuwste run van het open model in de werkmap die het venster toont (veld *Werkmap*, of met *Werkmap naast het model* de map naast het model); is er geen run van dit model, dan de nieuwste `.mess` in die map. Zonder run meldt het statusvak dat er niets te tonen is |
 | 9 | Sluiten | Sluit de bridge. Instellingen die je na de laatste *Starten*, *Resultaten...* of actie in het menu *Doorsnede* hebt gewijzigd, worden niet opgeslagen |
-| 10 | Starten | Slaat de instellingen op, slaat het model op (met route `tabel` en Mecway 36 of later niet) en start Code-Aster (§2). Daarna komt het venster terug |
+| 10 | Starten | Slaat de instellingen op, slaat het model op (met Mecway 36 of later pas als de resultaten erin gaan, met route `tabel` niet) en start Code-Aster (§2). Daarna komt het venster terug |
 
 - **Tooltips:** ga met de muis over een instelling voor uitleg; bij een keuzelijst
   staat ook de betekenis van elke optie erbij.
@@ -783,7 +787,7 @@ volgende run niets. In meldingen staat de echte naam. De werkmap is de map uit h
 | `<model>_<run-id>_results.xml` | **de resultaten** in Mecway's eigen formaat (route `liml`); de bridge zet ze in de `.liml` en laat het bestand staan, zodat je ze later opnieuw kunt inladen (§5.1) |
 | `<model>.liml.bak` | de `.liml` van vóór het inlezen of verwijderen van resultaten, of van vóór het toevoegen van de vorm aan de resultaten (met de hand of aan het eind van een run) |
 | `<model>_<run-id>.resu` | resultaattabellen, alleen bij route `tabel` |
-| `<model>_<run-id>_model.liml` | het model zoals de run het las (zonder resultaten), alleen bij route `tabel` met Mecway 36 of later: de bridge slaat het model dan niet op. Mag weg |
+| `<model>_<run-id>_model.liml` | het model zoals de run het las (zonder resultaten), met Mecway 36 of later. Na een run zonder fouten verwijderd; na een mislukte of gestopte run blijft hij staan, want de `.comm` leest hem bij opnieuw draaien met `run_aster.bat` |
 | `<model>_<run-id>.rmed` | resultaten in MED (ParaView/Salome), alleen met *MED-bestand voor ParaView*; de knoppen *ParaView* (als er geen `.pvd` is) en *AsterStudy* in het resultatenscherm en het convergentiescherm openen hem (§5.1) |
 | `<model>_<run-id>.pvd`, `_<k>.vtu` | resultaten in VTK (ParaView), alleen met *VTU/PVD-bestanden voor ParaView*; de knop *ParaView* opent de `.pvd` (§5.1); met bezwijken ook de celvelden `failed` (0 intact, 1 bezweken) en `T_BEZWIJK`; met balkkrachten ook de snedekrachten per element-uiteinde als celvelden `EFGE_<N/VY/VZ/MT/MFY/MFZ>_1/_2` |
 | `<model>_<run-id>_paraview_launch.log` | uitvoer van de ParaView die de knop *ParaView* startte (§5.1) |

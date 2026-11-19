@@ -22,9 +22,11 @@
 # Without it, or when the call fails, every function returns None and the
 # caller saves the model as before (Mecway 33-35).
 #
-# Users: MecwayAsterBridgeMain (route 'tabel': the snapshot is the model the
-# run reads, also model_data["liml_path"] for the job; Show section: a
-# temporary snapshot).
+# Users: MecwayAsterBridgeMain (a run: the snapshot is the model the run
+# reads, also model_data["liml_path"] for the job; route 'liml' saves the
+# user's file only right before the results go into it; Show section: a
+# temporary snapshot). The decisions of a run are the pure functions
+# saved_path, wants_snapshot, save_problem, same_text and clean_end.
 
 import os
 import tempfile
@@ -43,6 +45,83 @@ def available(mw):
         return hasattr(mw, "liml_text")
     except Exception:
         return False
+
+
+def saved_path(file_name):
+    """
+    The path of the open model (mw.file_name()), or None for a model that
+    was never saved: empty, None, or a bare name without a folder (the rule
+    of bridge_utils.set_model_path).
+    """
+    if not file_name or not os.path.dirname(u"{0}".format(file_name)):
+        return None
+    return file_name
+
+
+def wants_snapshot(has_api, route, file_name):
+    """
+    True if a run reads a model-only copy instead of saving the user's
+    file first: with mw.liml_text() (has_api), route 'tabel' always (it
+    writes into Mecway's own solution, never into the file; also an
+    untitled model) and route 'liml' for a saved model (it saves only
+    right before the results go into the file). Otherwise the model is
+    saved first, as before.
+    """
+    if not has_api:
+        return False
+    if route == "tabel":
+        return True
+    return route == "liml" and saved_path(file_name) is not None
+
+
+def save_problem(path):
+    """
+    Why mw.save() would fail for path, checked without saving (route
+    'liml' with a snapshot saves at the end of the run, so this keeps
+    the stop before Code-Aster): "folder" (the folder no longer exists),
+    "readonly" (the file is read-only), or None.
+    """
+    folder = os.path.dirname(path or "")
+    if folder and not os.path.isdir(folder):
+        return "folder"
+    if path and os.path.exists(path) and not os.access(path, os.W_OK):
+        return "readonly"
+    return None
+
+
+def same_text(model, snapshot_path):
+    """
+    True if model (model_text of the open model, LF) equals the snapshot
+    file (CRLF, write_snapshot): the model did not change during the run.
+    False when it differs or the file cannot be read; None when model is
+    None (no text to compare).
+    """
+    if model is None:
+        return None
+    try:
+        f = open(snapshot_path, "rb")
+        try:
+            data = f.read()
+        finally:
+            f.close()
+        return data.decode("utf-8").replace(u"\r\n", u"\n") == model
+    except Exception:
+        return False
+
+
+def clean_end(state, exit_code, mess_errors, mess_done):
+    """
+    True if the Code-Aster job ran to its end without errors, so that the
+    snapshot (the .comm's liml_path) may be removed: state "finished", or
+    "confirmed" (wait_for_aster confirm) with a finished .mess (mess_done),
+    exit code 0 and no errors in the .mess. Otherwise the snapshot stays
+    for a run of the .export by hand (docs: Code-Aster error messages).
+    """
+    if exit_code or mess_errors:
+        return False
+    if state == "finished":
+        return True
+    return state == "confirmed" and bool(mess_done)
 
 
 def _solution_start(text):

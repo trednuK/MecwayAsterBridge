@@ -939,14 +939,21 @@ Code-Aster value per node) and logs the largest difference per variable.
    with `LIAISON_MAIL` on TEMP, probably the same, NOT verified). How CCX resolves the
    double condition is NOT verified. Status: partly fixed.
 
-148\. **Route `tabel`: beam variables look like Mecway's own to the beam analysis**
-   (suspected, from the contract; `bridge_from_aster.AsterToMecway_results`). Route `tabel`
-   writes the beam forces (`tensileforce`, `sheary`, ... per node, merged over the elements)
-   with `solution.set_variable()` into Mecway's own solution, without the empty
-   `<nodes />`/`<values />` tails of route `liml` (contract with MecwayAdvancedBeamAnalysis),
-   so the beam analysis takes them as Mecway's own; the values per element node of Mecway's
-   beam variables stay Mecway's (`bridge_element_node` leaves beam variables alone on
-   purpose). Not measured with the beam analysis. Status: open; use route `liml` for beams.
+148\. **Route `tabel`: the beam analysis reads Mecway's own beam forces, labelled Mecway internal**
+   (measured headless, Mecway 36.0.9815, 19 Nov 2026, LS-51a: Mecway solve, then
+   `set_variable` of the six beam forces as route `tabel` does; MecwayAdvancedBeamAnalysis
+   V2026.3 read, not run). After the `set_variable`, `node_value` gives the bridge's value but
+   `element_node_value` of `tensileforce`, `sheary`, `torsion`, `bendingmomv`, `bendingmomw`
+   gives Mecway's own force per element end (computed on demand; `shearz` gave None there).
+   The beam analysis takes the forces per element end when all six exist at both ends
+   (`beam_mecway.pick_route`, route "element"), else the node values: where all six exist it
+   shows Mecway's own beam forces; in LS-51a (`shearz` None) it falls back to the bridge's node
+   values merged over the elements (derived from its code, not run). It decides "Code-Aster" only from
+   the saved file (`beam_utils.scan_head`/`_from_bridge`, the empty `<nodes />` tails of route
+   `liml`), which route `tabel` never writes: label Mecway internal, no `#ASTER-SECTIE` offset, no
+   refusal to write over it. `bridge_element_node` leaves beam variables alone on purpose: route
+   `tabel` has the beam forces only per node, merged over the elements, which is wrong per
+   element end at a joint or a point load. Status: open; use route `liml` for beams.
 
 149\. **Contact with friction: Mecway's tangential stiffness kt is not modelled** (confirmed,
    Code-Aster 17.4 source and runs, Mecway 36 with CCX headless, 19 Nov 2026;

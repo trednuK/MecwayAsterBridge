@@ -2435,12 +2435,13 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 "stays open next to Mecway."))
             ok_btn = add_button(tr("Starten", "Start"), 130, on_ok, tr(
                 "Instellingen opslaan, het model opslaan en Code-Aster "
-                "starten (route 'tabel' met Mecway 36 en later: het "
-                "model wordt niet opgeslagen). Na de run komt dit "
-                "venster terug.",
+                "starten (Mecway 36 en later: het model wordt pas "
+                "opgeslagen als de resultaten erin gaan, met route "
+                "'tabel' niet). Na de run komt dit venster terug.",
                 "Save the settings, save the model and start Code-Aster "
-                "(route 'tabel' with Mecway 36 and later: the model is "
-                "not saved). This window returns after the run."),
+                "(Mecway 36 and later: the model is saved only when the "
+                "results go into it, not with route 'tabel'). This window "
+                "returns after the run."),
                 right=True,
                 primary=True)
             cancel_btn = add_button(tr("Sluiten", "Close"), 100,

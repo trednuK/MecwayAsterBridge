@@ -202,6 +202,75 @@ def test_temp_snapshot():
           set(glob.glob(pattern)) == before)
 
 
+def test_decisions(tmp):
+    saved = os.path.join(tmp, "m.liml")
+    check("saved_path: a full path", blt.saved_path(saved) == saved)
+    check("saved_path: untitled (None, empty, bare name)",
+          blt.saved_path(None) is None and blt.saved_path("") is None and
+          blt.saved_path("Untitled") is None)
+    check("wants_snapshot: no API -> save first (Mecway 33-35)",
+          not blt.wants_snapshot(False, "tabel", saved) and
+          not blt.wants_snapshot(False, "liml", saved))
+    check("wants_snapshot: route tabel, saved and untitled",
+          blt.wants_snapshot(True, "tabel", saved) and
+          blt.wants_snapshot(True, "tabel", None) and
+          blt.wants_snapshot(True, "tabel", "Untitled"))
+    check("wants_snapshot: route liml only for a saved model",
+          blt.wants_snapshot(True, "liml", saved) and
+          not blt.wants_snapshot(True, "liml", None) and
+          not blt.wants_snapshot(True, "liml", "Untitled"))
+    check("save_problem: folder gone",
+          blt.save_problem(os.path.join(tmp, "gone", "m.liml")) == "folder")
+    check("save_problem: new file in an existing folder",
+          blt.save_problem(saved) is None)
+    with io.open(saved, "w", encoding="utf-8") as f:
+        f.write(u"<liml />")
+    check("save_problem: writable file", blt.save_problem(saved) is None)
+    os.chmod(saved, 0o444)
+    try:
+        check("save_problem: read-only file",
+              blt.save_problem(saved) == "readonly")
+    finally:
+        os.chmod(saved, 0o666)
+    snap = os.path.join(tmp, "snap.liml")
+    text = u'<liml version="36">\n  <node nid="1" x="0" />\n</liml>'
+    blt.write_snapshot(FakeMw(text), snap)
+    check("same_text: unchanged model", blt.same_text(text, snap) is True)
+    check("same_text: changed model", blt.same_text(
+        text.replace(u'x="0"', u'x="1"'), snap) is False)
+    check("same_text: no text -> None", blt.same_text(None, snap) is None)
+    check("same_text: missing snapshot -> False",
+          blt.same_text(text, os.path.join(tmp, "none.liml")) is False)
+    check("clean_end: finished, no errors",
+          blt.clean_end("finished", 0, [], False))
+    check("clean_end: errors or exit code keep the copy",
+          not blt.clean_end("finished", 0, ["x"], False) and
+          not blt.clean_end("finished", 1, [], False))
+    check("clean_end: stopped, closed, running keep the copy",
+          not blt.clean_end("stopped", 0, [], True) and
+          not blt.clean_end("closed", 0, [], True) and
+          not blt.clean_end("running", 0, [], True))
+    check("clean_end: confirmed follows the .mess",
+          blt.clean_end("confirmed", 0, [], True) and
+          not blt.clean_end("confirmed", 0, [], False))
+
+
+def test_run_files_model(tmp):
+    import bridge_results_liml as brl
+    stem = "Plaat_20261119_101500"
+    comm = os.path.join(tmp, stem + ".comm")
+    for liml, expect in (
+            (os.path.join(tmp, stem + "_model.liml"), "Plaat.liml"),
+            (os.path.join(tmp, "elsewhere", "Plaat.liml"),
+             os.path.join(tmp, "elsewhere", "Plaat.liml"))):
+        with io.open(comm, "w", encoding="utf-8") as f:
+            f.write(u"export_results(res, r'frag.xml', r'{0}')\n".format(
+                liml))
+        got = brl.run_files(os.path.join(tmp, stem + "_results.xml"))
+        check("run_files names the model, not the copy ({0})".format(
+            os.path.basename(liml)), got["model"] == expect, got["model"])
+
+
 def run_in_ironpython():
     ps = os.path.join(_HERE, "..", "TestFiles", "Tools", "run_ipy.ps1")
     if not (sys.platform == "win32" and os.path.isdir(
@@ -241,6 +310,8 @@ def main():
         test_model_data(tmp)
         test_write_failure(tmp)
         test_temp_snapshot()
+        test_decisions(tmp)
+        test_run_files_model(tmp)
         with io.open(os.path.join(tmp, bridge_utils.log_file_name()),
                      encoding="utf-8") as f:
             text = f.read()
