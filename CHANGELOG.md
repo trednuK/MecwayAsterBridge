@@ -53,6 +53,21 @@
   time step (nonlinear); now they give Mecway's result (verification LS-07n). Their `.comm`
   changes: the support goes to a node group without those nodes. Double conditions it
   cannot resolve get a WARNING.
+- **Bonded contact with a symmetry or frictionless support on slave and master nodes, and
+  on the bridge's own shell ties** (rest of KNOWN_BUGS 147): a *Symmetry* or *Frictionless
+  support* on a plane perpendicular to a global axis, without a prescribed normal
+  displacement, on the faces of both bonded solids no longer
+  stops Code-Aster with `FACTOR_11` (linear) or `MECANONLINE9_4` (nonlinear): the tied
+  slave nodes leave the relation there and follow the master (INFO; verification LS-07p/q
+  and in Nonlinear Static LS-07t/u, equal to Mecway; modal LS-07v without the singular
+  matrix ALARM). For shell on shell with a quadratic or an oblique/curved master (the
+  bridge's own `LIAISON_DDL`) a tie relation in a translation whose nodes are all held the
+  same way is left out (INFO; LS-07r/s, which previously stopped with `FACTOR_57` or
+  `FACTOR_11`). The `.comm` of
+  such models changes (node groups without those nodes, `SANS_GROUP_NO` on `FACE_IMPO`,
+  fewer `LIAISON_DDL` rows). What stays double gets a WARNING, which with NPREC = -1 now
+  says that MUMPS does not check for a singular matrix (`FACTOR_57` or an unreliable
+  result). Dynamics and buckling NOT verified.
 - **Behaviour change: contact method `auto` is the new default in Nonlinear Static**
   (`contact_algo`, page Contact). Every unilateral contact with Mecway's *normal stiffness*
   in a 3D Nonlinear Static analysis is now computed with penalty (`PENALISATION`), as Mecway

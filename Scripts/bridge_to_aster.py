@@ -3614,6 +3614,13 @@ def _build_charges(model_data, func_names=None):
         centre = None
         if kw in ("LIAISON_OBLIQUE", "FACE_IMPO"):
             attrs.update(sans)
+            if bc.get("sans_group_no"):
+                # tied slave nodes that follow their held masters
+                # (bridge_mesh._untie_relations, KNOWN_BUGS 147), next to
+                # the fixed nodes
+                attrs["SANS_GROUP_NO"] = tuple(
+                    attrs.get("SANS_GROUP_NO", ())) + tuple(
+                        bc["sans_group_no"])
             if kw == "LIAISON_OBLIQUE" and bc.get("aster_target") == "GROUP_MA":
                 centre = _centre_node_groups(model_data).get(bc["selection"])
             if centre:

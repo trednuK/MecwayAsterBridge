@@ -997,13 +997,24 @@ vastliggen (een symmetrievlak als *Displacement* 0 door beide delen, een *Fixed 
 over de naad), dan is de voorwaarde dubbel en zou Code-Aster stoppen met een singuliere
 matrix. Bij volume op volume met de slave-knoop op het mastervlak laat de bridge de
 oplegging dan weg op die slave-knopen in die richtingen (INFO; de koppeling geeft ze
-dezelfde waarde; verificatie LS-07n); een *Fixed support* alleen op volumeknopen. Elke
-dubbele voorwaarde die de bridge niet oplost, krijgt een WARNING: masterknopen met een
-andere waarde of tijdsafhankelijk, een spleet, een schaal aan een van beide kanten, de
-eigen relaties van de bridge (`LIAISON_DDL`), een selectie die niet te splitsen is
-(schaalvlakken, elementen), twee paren die elkaar koppelen, en symmetrie- of
-frictionless-relaties op de slave- en masterknopen. Een oplegging alleen aan de slavekant
-(masters vrij) is geen dubbele voorwaarde en blijft (KNOWN_BUGS 147).
+dezelfde waarde; verificatie LS-07n); een *Fixed support* alleen op volumeknopen. Een
+*Symmetry* of *Frictionless support* op een vlak loodrecht op een globale as, zonder
+voorgeschreven normaalverplaatsing, telt als zo'n oplegging: de slave-knopen gaan daar uit
+de relatie en volgen de master (INFO; LS-07p/q, ook in Nonlinear Static en modaal,
+LS-07t/u/v). Bij de eigen relaties van de bridge (`LIAISON_DDL`, schaal op schaal met een
+kwadratische of een scheve of gekromde master) valt een koppelrelatie in een
+verplaatsing weg als de slave-knoop en alle knopen die erin meetellen in die richting met
+dezelfde constante waarde vastliggen (INFO; de oplegging blijft; LS-07r/s). Elke dubbele
+voorwaarde die de bridge niet oplost, krijgt een WARNING: masterknopen met een andere
+waarde of tijdsafhankelijk, een spleet, een schaal aan een van beide kanten
+(`LIAISON_MAIL`), een rotatie of een symmetrie-/frictionless-relatie op de
+`LIAISON_DDL`-route, een selectie die niet te splitsen is (schaalvlakken, elementen), een
+*Fixed support* op een slave-knoop in een scheve relatie, twee paren die elkaar koppelen,
+en symmetrie- of frictionless-relaties in een scheef vlak, met een normaalverplaatsing of
+op een gekromd vlak. Met een scheve of gekromde schaal als master (en met schalen met een
+element offset op eigen knopen) controleert MUMPS niet op een singuliere matrix (NPREC = -1): de WARNING zegt dan dat Code-Aster kan
+stoppen met `FACTOR_57` of een onbetrouwbaar resultaat kan geven. Een oplegging alleen
+aan de slavekant (masters vrij) is geen dubbele voorwaarde en blijft (KNOWN_BUGS 147).
 
 ### 3.8 Alternatieven in Code-Aster
 

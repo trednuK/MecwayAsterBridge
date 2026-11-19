@@ -977,12 +977,22 @@ that weigh in its tie are held with the same constant value (a symmetry plane as
 is double and Code-Aster would stop with a singular matrix. For a solid-on-solid tie with
 the slave node on the master face, the bridge leaves the support out on those slave
 nodes in those directions (INFO; the tie gives them the same value; verification LS-07n);
-a *Fixed support* only on solid nodes. Every double condition it does not resolve gets a
-WARNING: master nodes held with another value or time-dependent, a gap, a shell on
-either side, the bridge's own relations (`LIAISON_DDL`), a selection that cannot be split
-(shell faces, elements), two pairs that tie each other, and symmetry or frictionless
-relations on the slave and master nodes. A support only on the slave side (masters free)
-is no double condition and stays (KNOWN_BUGS 147).
+a *Fixed support* only on solid nodes. A *Symmetry* or *Frictionless support* on a plane
+perpendicular to a global axis, without a prescribed normal displacement, counts as such a
+support: the slave nodes leave the relation there and follow the master (INFO; LS-07p/q,
+also in Nonlinear Static and modal, LS-07t/u/v). With the bridge's own relations
+(`LIAISON_DDL`, shell on shell with a quadratic or a skewed or curved master) a tie relation in a translation is left out when the slave node and every node that weighs
+in it are held in that direction with the same constant value (INFO; the support stays;
+LS-07r/s). Every double condition it does not resolve gets a WARNING: master nodes held
+with another value or time-dependent, a gap, a shell on either side (`LIAISON_MAIL`), a
+rotation or a symmetry/frictionless relation on the `LIAISON_DDL` route, a selection that
+cannot be split (shell faces, elements), a *Fixed support* on a slave node in an oblique
+relation, two pairs that tie each other, and symmetry or frictionless relations in an
+oblique plane, with a normal displacement or on a curved face. With a skewed or curved
+shell master (and with shells with an element offset on their own nodes) MUMPS does not
+check for a singular matrix (NPREC = -1): the WARNING then says that Code-Aster may stop with `FACTOR_57` or give an unreliable result.
+A support only on the slave side (masters free) is no double condition and stays
+(KNOWN_BUGS 147).
 
 ### 3.8 Alternatives in Code-Aster
 

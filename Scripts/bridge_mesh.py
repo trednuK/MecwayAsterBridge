@@ -4702,7 +4702,8 @@ def _tied_fixed_temp(b, fixed, unsure, nodes):
     return drop, warn
 
 
-def _tied_overlaps(ties, held, nodes, held_other=None, relation_nodes=None):
+def _tied_overlaps(ties, held, nodes, held_other=None, relation_nodes=None,
+                   rel_held=None):
     """
     (redundant, warn): per tied slave node the translations its support
     holds that all master nodes with a weight in its tie hold with the same
@@ -4713,34 +4714,58 @@ def _tied_overlaps(ties, held, nodes, held_other=None, relation_nodes=None):
     slave node on the master face (gap at most the CCX in-face tolerance;
     across a gap Code-Aster's weights are NOT verified); 'MASSIF_COQUE'
     also ties the rotations of the shell master (U4.44.01), other raccords
-    and the LIAISON_DDL route (_bonded_relations) only warn. A slave whose
-    weighted master is itself redundant in that DOF (two pairs tying each
-    other) is not resolved either: both supports would go. A slave held
-    where its masters are free is no double condition (the support acts on
-    the masters through the tie) and gives nothing.
+    only warn. The LIAISON_DDL route (b["relations"], _bonded_relations) is
+    left to _tied_rows. A slave whose weighted master is itself redundant
+    in that DOF (two pairs tying each other) is not resolved either: both
+    supports would go. A slave held where its masters are free is no double
+    condition (the support acts on the masters through the tie) and gives
+    nothing.
     ties: bonded dicts with tie_masters (and tie_gap, tie_tolloc); held:
     {nid: {DOF: value}} of the constant supports; held_other: {nid:
-    set(DOF)} of the time-dependent DDL_IMPO; relation_nodes: nodes of a
-    symmetry or frictionless support (relations, not looked at: WARNING
-    when slave and masters are all in one). Pure (no model_data).
+    set(DOF)} of the time-dependent DDL_IMPO; rel_held: {nid: {DOF: 0.0}}
+    that a symmetry or frictionless relation fixes exactly along a global
+    axis (_exact_relation_dofs): counted as a constant support 0, the
+    caller takes such a slave out of the relation; relation_nodes: nodes of
+    a relation that is not that simple (an oblique plane, a normal
+    displacement, curved): WARNING when the slave is in one and every
+    weighted master is in a relation or held in a translation (support,
+    fixed, time-dependent), or when a master is in one and all of them are
+    in a relation. Pure (no model_data).
     """
     held_other = held_other or {}
     relation_nodes = relation_nodes or set()
+    rel_held = rel_held or {}
+    merged = dict((n, dict(v)) for n, v in rel_held.items())
+    for n, v in held.items():
+        merged.setdefault(n, {}).update(v)
+    rel_any = set(relation_nodes) | set(rel_held)
     redundant = {}
     warn = OrderedDict()
     weigh = {}
     for b in ties:
-        tie_ok = b["raccord"] == "MASSIF" and "relations" not in b
+        if "relations" in b:
+            continue            # LIAISON_DDL route: _tied_rows
+        tie_ok = b["raccord"] == "MASSIF"
         gaps = b.get("tie_gap", {})
         touch = b.get("tie_tolloc", 0.0)
         label = "'{0}' / '{1}'".format(*b.get("selections", ("?", "?")))
         for s, face in b["tie_masters"].items():
-            mine = held.get(s, {})
+            mine = merged.get(s, {})
             other = held_other.get(s, set())
             masters = None
-            if s in relation_nodes:
+            if s in rel_any:
                 masters = _tie_weight_nodes(face, nodes, nodes[s])
-                if all(m in relation_nodes for m in masters):
+                if s in relation_nodes:
+                    # the relation's direction is not a global axis: a
+                    # double condition as soon as every master is held in
+                    # some way (relation, support, fixed)
+                    if all(m in rel_any or any(
+                            d in merged.get(m, {}) or
+                            d in held_other.get(m, ())
+                            for d in _TRANSLATIONS) for m in masters):
+                        warn.setdefault(label, set()).add(s)
+                elif all(m in rel_any for m in masters) and any(
+                        m in relation_nodes for m in masters):
                     warn.setdefault(label, set()).add(s)
             if not any(d in mine or d in other for d in _TRANSLATIONS):
                 continue
@@ -4750,11 +4775,11 @@ def _tied_overlaps(ties, held, nodes, held_other=None, relation_nodes=None):
             for d in _TRANSLATIONS:
                 if d not in mine and d not in other:
                     continue
-                if not all(d in held.get(m, {}) or
+                if not all(d in merged.get(m, {}) or
                            d in held_other.get(m, ()) for m in masters):
                     continue        # masters free in d: no double condition
                 if tie_ok and on_face and d in mine and d not in other and all(
-                        d in held.get(m, {}) and held[m][d] == mine[d]
+                        d in merged.get(m, {}) and merged[m][d] == mine[d]
                         and d not in held_other.get(m, ())
                         for m in masters):
                     redundant.setdefault(s, set()).add(d)
@@ -4770,7 +4795,72 @@ def _tied_overlaps(ties, held, nodes, held_other=None, relation_nodes=None):
     return redundant, warn
 
 
-def _drop_bonded_redundant(model_data, group_integrals=None):
+def _tied_rows(relations, held, held_other=None, rel_held=None,
+               relation_nodes=None, rot_ddl=None):
+    """
+    KNOWN_BUGS 147, LIAISON_DDL route (_bonded_relations, shell on shell):
+    (kept, removed, warn) for the rows of one bonded pair. A translation
+    row u_s - sum w_i u_i = 0 (one DOF) whose slave s and every node with a
+    weight in it are held in that DOF by a constant support (DDL_IMPO or
+    fixed) with the same value is a double condition: Code-Aster 17.4
+    stopped with FACTOR_11, with NPREC = -1 with FACTOR_57 (LS-07f with
+    Displacement X = 0 on all nodes, LS-07i with the rib's foot node held;
+    measured 19 Nov 2026). The row adds nothing (the weights sum to 1), so
+    it is removed (removed: the number); the supports stay. Other double
+    conditions stay and are reported per slave node (warn): another or
+    time-dependent value or a symmetry/frictionless relation (rel_held)
+    in a translation row, a rotation row whose every term is held (not
+    measured), a rotation of the LIAISON_MAIL part (rot_ddl, quadratic
+    master) held on the slave and on every node of its translation rows,
+    and a slave in a symmetry/frictionless relation (relation_nodes) whose
+    row nodes are all in one or held in a translation. relations: [(nids, ddl, coef)] with the
+    slave first; held, held_other, rel_held as _tied_overlaps (no
+    tie_masters needed). Pure.
+    """
+    held_other = held_other or {}
+    rel_held = rel_held or {}
+    relation_nodes = relation_nodes or set()
+
+    def timed(n, d):
+        return d in held_other.get(n, ())
+
+    def any_hold(n, d):
+        return d in held.get(n, {}) or timed(n, d) or d in rel_held.get(n, {})
+
+    kept, removed, warn = [], 0, set()
+    row_nodes = OrderedDict()           # slave -> nodes of its translation rows
+    for row in relations:
+        nids, ddl = row[0], row[1]
+        s = nids[0]
+        terms = list(zip(nids, ddl))
+        if len(set(ddl)) == 1 and ddl[0] in _TRANSLATIONS:
+            d = ddl[0]
+            row_nodes.setdefault(s, set()).update(n for n in nids if n != s)
+            if all(any_hold(n, d) for n in nids):
+                v = held.get(s, {}).get(d)
+                if v is not None and all(
+                        not timed(n, d) and d in held.get(n, {}) and
+                        held[n][d] == v for n in nids):
+                    removed += 1
+                    continue
+                warn.add(s)
+        elif all(any_hold(n, d) for n, d in terms):
+            warn.add(s)
+        kept.append(row)
+    for s, ms in row_nodes.items():
+        for d in rot_ddl or ():
+            if d.startswith("DR") and any_hold(s, d) and all(
+                    any_hold(m, d) for m in ms):
+                warn.add(s)
+        if s in relation_nodes and all(
+                m in relation_nodes or
+                any(any_hold(m, d) for d in _TRANSLATIONS) for m in ms):
+            warn.add(s)
+    return kept, removed, warn
+
+
+def _drop_bonded_redundant(model_data, group_integrals=None,
+                           group_faces=None):
     """
     KNOWN_BUGS 147: a tied slave node of a bonded contact (LIAISON_MAIL,
     translations) that a support also holds in a direction in which all
@@ -4786,34 +4876,100 @@ def _drop_bonded_redundant(model_data, group_integrals=None):
     Resolved (see _tied_overlaps): constant supports along global axes
     (displacement, pinned support on nodes) and fixed supports on solid
     nodes (never split), on node selections, solid faces, shell edges and
-    beam ends (as _drop_covered_ddl). Every double condition that stays
-    gets a WARNING (with the reason), also for symmetry/frictionless
-    relations on tied slave nodes whose masters are in one too.
+    beam ends (as _drop_covered_ddl), and symmetry/frictionless relations
+    with value 0 along a global axis (_exact_relation_dofs; the same as a
+    support 0, measured with Code-Aster 17.4 on LS-07n with symmetry and
+    with frictionless faces: FACTOR_11 and MECANONLINE9_4 before, Mecway's
+    CCX result after): the slave leaves the relation, as a LIAISON_OBLIQUE
+    group without it (other ddls stay) or SANS_GROUP_NO on the FACE_IMPO /
+    LIAISON_OBLIQUE of the faces (bc["sans_group_no"], bridge_to_aster
+    _build_charges, next to the SANS_* of fixed supports). Relations do not
+    hold the nodes of fixed supports (SANS_* of the fixed selections). The
+    LIAISON_DDL route (b["relations"]): redundant translation rows are
+    removed (_tied_rows), the supports stay. Every double condition that
+    stays gets a WARNING (with the reason).
     """
-    ties = [b for b in model_data.get("bonded", []) if b.get("tie_masters")]
-    if not ties:
+    bonded = model_data.get("bonded", [])
+    ties = [b for b in bonded
+            if b.get("tie_masters") and "relations" not in b]
+    # a pair with relations == [] (_bonded: no slave node to tie, with a
+    # WARNING there) ties nothing, so it holds nothing twice
+    row_ties = [b for b in bonded if b.get("relations")]
+    if not ties and not row_ties:
         return
     bcs = model_data.get("bcs", [])
-    held, held_other, relation_nodes = {}, {}, set()
+    group_faces = group_faces or {}
+    extra_groups = model_data.get("extra_node_groups", {})
+
+    def nodes_of(sel):
+        return _bc_nodes(model_data, sel, group_integrals)
+
+    held, held_other, fixed_nodes, rels = {}, {}, set(), []
     for bc in bcs:
         if bc.get("skip"):
             continue
         vals = _held_dofs(bc)
         if not vals:
             if _ddl_kind(bc) == "timed":
-                for n in _bc_nodes(model_data, bc["selection"],
-                                   group_integrals):
+                for n in nodes_of(bc["selection"]):
                     held_other.setdefault(n, set()).update(
                         _ddl_values([bc]))
             elif bc["type"] in ("symmetry", "frictionless"):
-                relation_nodes |= _bc_nodes(model_data, bc["selection"],
-                                            group_integrals)
+                rels.append((bc, _exact_relation_dofs(
+                    model_data, bc, nodes_of,
+                    group_faces.get(bc["selection"]))))
             continue
-        for n in _bc_nodes(model_data, bc["selection"],
-                           group_integrals):
+        nodes = nodes_of(bc["selection"])
+        if bc["type"] == "fixed":
+            fixed_nodes |= nodes
+        for n in nodes:
             held.setdefault(n, {}).update(vals)
-    redundant, warn = _tied_overlaps(ties, held, model_data["mesh_nodes"],
-                                     held_other, relation_nodes)
+    # a fixed support wins on its nodes (SANS_GROUP_* of the other
+    # conditions in bridge_to_aster._build_charges)
+    for n in fixed_nodes:
+        held[n].update((d, 0.0) for d in _ALL_DOFS)
+    rel_held, unknown_all, rel_nodes = {}, set(), set()
+    for bc, ex in rels:
+        if bc.get("oblique") is not None:
+            ns = set(n for item in bc["oblique"]
+                     for n in extra_groups.get(item[0], ()))
+        else:
+            ns = nodes_of(bc["selection"])
+        rel_nodes |= ns
+        if ex is None:
+            unknown_all |= ns
+            continue
+        for n, dofs in ex.items():
+            if n not in fixed_nodes:
+                rel_held.setdefault(n, {}).update((d, 0.0) for d in dofs)
+    rel_nodes -= fixed_nodes
+    # bridge_to_aster.bonded_nprec does not change NPREC with GCPC or a
+    # negative solver_nprec: hence "if"
+    nprec = tr(" Als MUMPS met NPREC = -1 rekent (verlijmde "
+               "schaalkoppeling), controleert het niet op een singuliere "
+               "matrix: Code-Aster kan dan stoppen met FACTOR_57 of een "
+               "onbetrouwbaar resultaat geven.",
+               " If MUMPS runs with NPREC = -1 (bonded shell tie), it does "
+               "not check for a singular matrix: Code-Aster may then stop "
+               "with FACTOR_57 or give an unreliable result.") if model_data.get("_bonded_nprec_off") else ""
+    warn = OrderedDict()
+    for b in row_ties:
+        label = "'{0}' / '{1}'".format(*b.get("selections", ("?", "?")))
+        kept, removed, w = _tied_rows(b["relations"], held, held_other,
+                                      rel_held, rel_nodes, b.get("ddl"))
+        if removed:
+            b["relations"] = kept
+            log("INFO: {0}: {1} tie relation(s) (LIAISON_DDL) left out: the "
+                "slave node and every node with a weight in it are held in "
+                "that direction with the same value (double condition, "
+                "KNOWN_BUGS 147).".format(label, removed))
+        if w:
+            warn.setdefault(label, set()).update(w)
+    redundant, w = _tied_overlaps(ties, held, model_data["mesh_nodes"],
+                                  held_other, unknown_all - fixed_nodes,
+                                  rel_held)
+    for label, nids in w.items():
+        warn.setdefault(label, set()).update(nids)
     conn = model_data.get("_conn", {})
     rot_nodes = set(n for e in conn.values()
                     if not any(e[0].startswith(s) for s in _SOLID_TYPES)
@@ -4831,12 +4987,15 @@ def _drop_bonded_redundant(model_data, group_integrals=None):
         if sel not in node_groups and sel not in extra and not (
                 kinds and kinds <= set(["solid", "shelledge", "beam"])):
             continue
-        nodes = _bc_nodes(model_data, sel, group_integrals)
+        nodes = nodes_of(sel)
         hit = dict((n, redundant[n] & set(vals)) for n in nodes
                    if redundant.get(n, set()) & set(vals))
         if bc["type"] == "fixed":
+            # not on a node in an oblique relation: without the fixed
+            # support (SANS_*) that relation would hold it next to the tie
             hit = dict((n, h) for n, h in hit.items()
-                       if h == set(_TRANSLATIONS) and n not in rot_nodes)
+                       if h == set(_TRANSLATIONS) and n not in rot_nodes
+                       and n not in unknown_all)
         if not hit:
             continue
         rest = nodes - set(hit)
@@ -4868,36 +5027,106 @@ def _drop_bonded_redundant(model_data, group_integrals=None):
     # Redundant directions a support still holds (a selection that cannot
     # be split, fixed on nodes with rotations or only partly redundant)
     left_over = set()
+    fixed_after = set()
     for bc in bcs:
         vals = _held_dofs(bc)
         if not vals:
             continue
-        for n in _bc_nodes(model_data, bc["selection"], group_integrals):
+        ns = nodes_of(bc["selection"])
+        if bc["type"] == "fixed":
+            fixed_after |= ns
+        for n in ns:
             if redundant.get(n, set()) & set(vals):
                 left_over.add(n)
+    left_over |= _untie_relations(model_data, rels, redundant, fixed_after,
+                                  nodes_of)
     if left_over:
         warn.setdefault("", set()).update(left_over)
     for label, nids in warn.items():
         log(tr("WARNING: Verlijmd contact {0}: {1} slave-knopen worden door "
                "een oplegging vastgehouden in een richting die de koppeling "
-               "ook vastlegt, terwijl hun masterknopen ook vastliggen; die "
-               "dubbele voorwaarde lost de bridge hier niet op (andere of "
-               "tijdsafhankelijke waarde, een spleet, schaal of een "
-               "symmetrie-/frictionless-relatie). Code-Aster kan stoppen met "
-               "een singuliere matrix (FACTOR_11 of nul-pivot). Haal de "
-               "oplegging van de slave-knopen af (KNOWN_BUGS 147). Knopen: "
-               "{2}.",
+               "ook vastlegt, terwijl de knopen waaraan ze gekoppeld zijn "
+               "ook vastliggen; die dubbele voorwaarde lost de bridge hier "
+               "niet op (andere of tijdsafhankelijke waarde, een spleet, een "
+               "koppeling met schalen of rotaties, een selectie die niet te "
+               "splitsen is, of een symmetrie-/frictionless-relatie die "
+               "scheef ligt, een normaalverplaatsing heeft of op een "
+               "gekromd vlak ligt). Code-Aster kan stoppen met een "
+               "singuliere matrix (FACTOR_11 of nul-pivot).{3} Haal de oplegging van de slave-knopen af "
+               "(KNOWN_BUGS 147). Knopen: {2}.",
                "WARNING: Bonded contact {0}: {1} slave nodes are held by a "
-               "support in a direction that the tie also fixes, while their "
-               "master nodes are held as well; the bridge does not resolve "
-               "that double condition here (another or time-dependent "
-               "value, a gap, a shell, or a symmetry/frictionless "
-               "relation). Code-Aster can stop with a singular matrix "
-               "(FACTOR_11 or a zero pivot). Take the support off the slave "
-               "nodes (KNOWN_BUGS 147). Nodes: {2}.").format(
+               "support in a direction that the tie also fixes, while the "
+               "nodes they are tied to are held as well; the bridge does "
+               "not resolve that double condition here (another or "
+               "time-dependent value, a gap, a tie with shells or "
+               "rotations, a selection that cannot be split, or a "
+               "symmetry/frictionless relation that is oblique, has a "
+               "normal displacement or is on a curved face). Code-Aster "
+               "can stop with a singular matrix (FACTOR_11 or a zero "
+               "pivot).{3} Take the support off "
+               "the slave nodes (KNOWN_BUGS 147). Nodes: {2}.").format(
                    label or "-", len(nids), ", ".join(
                        str(n) for n in sorted(nids)[:20]) + (
-                       " ..." if len(nids) > 20 else "")))
+                       " ..." if len(nids) > 20 else ""), nprec))
+
+
+def _untie_relations(model_data, rels, redundant, fixed_after, nodes_of):
+    """
+    KNOWN_BUGS 147, part of _drop_bonded_redundant: tied slave nodes whose
+    redundant translations (_tied_overlaps) a symmetry/frictionless
+    relation with value 0 along a global axis also fixes leave that
+    relation there. LIAISON_OBLIQUE per node group (bc["oblique"]): the
+    group is split per kept ddls (_regroup_oblique_item; other ddls such as
+    the rotations of beam ends stay). FACE_IMPO DNOR and LIAISON_OBLIQUE on
+    the faces (GROUP_MA): a node group in bc["sans_group_no"] (SANS_GROUP_NO
+    in bridge_to_aster._build_charges), only for nodes whose every relation
+    DOF is redundant; a relation without nodes left is skipped. Nodes of a
+    fixed support (fixed_after) are left alone: the SANS_* of the fixed
+    selections already take them out. rels: [(bc, _exact_relation_dofs or
+    None)]. Returns the slave nodes whose redundant DOF stays in a
+    relation (WARNING).
+    """
+    left = set()
+    for bc, ex in rels:
+        if ex is None or bc.get("skip"):
+            continue
+        hit = set(n for n, dofs in ex.items() if n not in fixed_after
+                  and dofs & redundant.get(n, set()))
+        if not hit:
+            continue
+        if bc.get("oblique") is not None:
+            new, out = [], set()
+            for item in bc["oblique"]:
+                angl, ddls = item[1], tuple(item[2])
+                items, t = _regroup_oblique_item(
+                    model_data, item, lambda n: tuple(
+                        d for d in ddls if n not in hit or not (
+                            _aligned_dofs([d], angl) <=
+                            redundant.get(n, set()))), "BROV")
+                new.extend(items)
+                out |= t
+            if out:
+                bc["oblique"] = new
+                if not new:
+                    bc["skip"] = True
+        else:
+            out = set(n for n in hit if ex[n] <= redundant[n])
+            left |= hit - out
+            if out:
+                if nodes_of(bc["selection"]) - fixed_after - out:
+                    bc.setdefault("sans_group_no", []).append(
+                        _extra_node_group(model_data, "BROV", out))
+                else:
+                    bc["skip"] = True
+        if out:
+            log("INFO: {0} '{1}': {2} tied slave node(s) of a bonded "
+                "contact already follow master nodes held the same way; "
+                "they leave the relation there in {3} (double condition, "
+                "KNOWN_BUGS 147).".format(
+                    bc["type"], bc["selection"], len(out), "/".join(sorted(
+                        set(d for n in out for d in ex[n] &
+                            redundant.get(n, set()))))))
+    return left
 
 
 def _ddl_kind(bc):
@@ -4942,7 +5171,11 @@ def _exact_relation_dofs(model_data, bc, nodes_of, faces):
     d = bc.get("aster_dict") or {}
     out = {}
     if bc.get("oblique") is not None:
-        for group, angl, ddls in bc["oblique"]:
+        for item in bc["oblique"]:
+            group, angl, ddls = item[:3]
+            values = item[3] if len(item) > 3 and item[3] else {}
+            if any(values.get(k, 0.0) != 0.0 for k in ddls):
+                return None
             dofs = _aligned_dofs(ddls, angl)
             if dofs is None:
                 return None
@@ -5065,7 +5298,6 @@ def _trim_covered_relations(model_data, nodes_of):
                 per[kind].append(vec)
     if not rows:
         return
-    extra = model_data.setdefault("extra_node_groups", OrderedDict())
 
     def covered(n, kind_vec):
         base = rows.get(n, {}).get(kind_vec[0]) or []
@@ -5077,36 +5309,17 @@ def _trim_covered_relations(model_data, nodes_of):
             continue
         new, n_trim = [], set()
         for item in bc["oblique"]:
-            group, angl, ddls = item[0], item[1], tuple(item[2])
+            angl, ddls = item[1], tuple(item[2])
             values = item[3] if len(item) > 3 and item[3] else {}
             if any(values.get(d, 0.0) != 0.0 for d in ddls):
                 new.append(item)
                 continue
             unit = dict(zip(ddls, _unit_rows(ddls, angl)))
-            regroup = OrderedDict()           # kept ddls -> [node]
-            for n in extra.get(group, ()):
-                keep = tuple(d for d in ddls if not covered(n, unit[d]))
-                regroup.setdefault(keep, []).append(n)
-            if list(regroup) == [ddls]:
-                new.append(item)
-                continue
-            # The original group keeps the unchanged nodes (else the first
-            # remaining subset); if every node is fully covered it stays
-            # unused (never emptied: an empty NOEUD list is not allowed in
-            # DEFI_GROUP).
-            reuse = group
-            order = sorted(regroup.items(), key=lambda kv: kv[0] != ddls)
-            for keep, ns in order:
-                if keep != ddls:
-                    n_trim.update(ns)
-                if not keep:
-                    continue
-                if reuse:
-                    extra[reuse] = sorted(ns)
-                    name, reuse = reuse, None
-                else:
-                    name = _extra_node_group(model_data, "BRTR", ns)
-                new.append((name, angl, keep) + tuple(item[3:]))
+            items, trimmed = _regroup_oblique_item(
+                model_data, item, lambda n: tuple(
+                    d for d in ddls if not covered(n, unit[d])), "BRTR")
+            new.extend(items)
+            n_trim.update(trimmed)
         if not n_trim:
             continue
         bc["oblique"] = new
@@ -5117,6 +5330,41 @@ def _trim_covered_relations(model_data, nodes_of):
             "is reduced there (double condition, singular matrix; Mecway "
             "reduces it the same way, manual par. 9.6).".format(
                 bc["type"], bc["selection"], len(n_trim)))
+
+
+def _regroup_oblique_item(model_data, item, keep_of, prefix):
+    """
+    (items, trimmed) for one LIAISON_OBLIQUE item (group, angl, ddls[,
+    values]) of bc["oblique"] whose ddls are reduced per node: keep_of(n)
+    gives the ddls node n keeps. The nodes are regrouped per kept tuple;
+    the 4th element (values) is carried over. The original group keeps the
+    unchanged nodes (else the first remaining subset); nodes that keep
+    nothing leave the relation, and a group of only those stays unused
+    (never emptied: an empty NOEUD list is not allowed in DEFI_GROUP).
+    trimmed: the nodes that lost a ddl.
+    """
+    extra = model_data.setdefault("extra_node_groups", OrderedDict())
+    group, angl, ddls = item[0], item[1], tuple(item[2])
+    regroup = OrderedDict()           # kept ddls -> [node]
+    for n in extra.get(group, ()):
+        regroup.setdefault(tuple(keep_of(n)), []).append(n)
+    if list(regroup) == [ddls]:
+        return [item], set()
+    out, trimmed = [], set()
+    reuse = group
+    order = sorted(regroup.items(), key=lambda kv: kv[0] != ddls)
+    for keep, ns in order:
+        if keep != ddls:
+            trimmed.update(ns)
+        if not keep:
+            continue
+        if reuse:
+            extra[reuse] = sorted(ns)
+            name, reuse = reuse, None
+        else:
+            name = _extra_node_group(model_data, prefix, ns)
+        out.append((name, angl, keep) + tuple(item[3:]))
+    return out, trimmed
 
 
 def _unit_rows(ddls, angl=None):
@@ -6002,7 +6250,7 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
         if b is not None:
             bonded.append(b)
     model_data["bonded"] = bonded
-    _drop_bonded_redundant(model_data, group_integrals)
+    _drop_bonded_redundant(model_data, group_integrals, group_faces)
     model_data["temperatures"] = [
         dict(t, selection=rn(t["selection"]))
         for t in model_data.get("temperatures", [])]

@@ -919,13 +919,31 @@ Code-Aster value per node) and logs the largest difference per variable.
    Resolved for `TYPE_RACCORD='MASSIF'` (solid on solid) with the slave node on the master
    face: constant supports along global axes (*Displacement*, pinned support on nodes) and
    *Fixed* on solid nodes lose those directions on those nodes (verification LS-07n, equal
-   to Mecway/CCX). Not resolved, with a WARNING: master nodes held with another value or
-   time-dependent, a gap (Code-Aster's weights across a gap NOT verified), `MASSIF_COQUE`
-   (also the rotations of the shell master are tied), shell ties, the `LIAISON_DDL` route
-   (`_bonded_relations`), a selection that cannot be split (shell faces, element
-   selections), *Fixed* on nodes with rotations, two pairs that tie each other, and
-   symmetry/frictionless relations on slave and masters. Not looked at: node-surface
-   couplings and constraint equations on slave nodes. Thermal tie (`TEMP_IMPO` with
+   to Mecway/CCX). Symmetry and frictionless relations with value 0 along a global axis
+   (`_exact_relation_dofs`) count as such a support (measured 19 Nov 2026: `FACTOR_11`
+   linear, `MECANONLINE9_4` nonlinear): the slave nodes leave the relation
+   (`_untie_relations`: `LIAISON_OBLIQUE` groups without them, `SANS_GROUP_NO` on
+   `FACE_IMPO` DNOR; verification LS-07p/q/t/u equal to Mecway/CCX, LS-07v modal equal
+   to the model without the double condition, before the fix with the ALARMs
+   `ALGELINE3_79`/`ALGELINE5_23`). The `LIAISON_DDL` route (`_bonded_relations`, shell on
+   shell): a translation row whose slave and every weighted node are held in that DOF by a
+   constant support with the same value is left out (`_tied_rows`; measured `FACTOR_11`,
+   with NPREC = -1 `FACTOR_57`; LS-07r/s equal to the models without the extra support).
+   Not resolved, with a WARNING: master nodes held with another value or time-dependent,
+   a gap (Code-Aster's weights across a gap NOT verified), `MASSIF_COQUE` (also the
+   rotations of the shell master are tied), shell ties through `LIAISON_MAIL`, rotation
+   rows and the `LIAISON_MAIL` rotations of the `LIAISON_DDL` route (not measured), a
+   symmetry/frictionless relation on that route, a selection that cannot be split (shell
+   faces, element selections), *Fixed* on nodes with rotations or in an oblique relation,
+   two pairs that tie each other, and symmetry/frictionless relations in an oblique plane,
+   with a normal displacement or on curved faces; with NPREC = -1 the WARNING says that
+   MUMPS does not check for a singular matrix (`FACTOR_57` or an unreliable result).
+   Only linear and nonlinear static and modal measured; dynamics, buckling and the other
+   analyses NOT verified, nor XFEM (a slave node taken out of an axis-aligned
+   `LIAISON_OBLIQUE` group there also loses the `DDL_IMPO` that XFEM writes for it on its
+   XFEM DOFs) and HOMARD refinement (new slave nodes are not in the `BROV` group of
+   `SANS_GROUP_NO`). Not looked at: node-surface couplings and constraint equations
+   on slave nodes. Thermal tie (`TEMP_IMPO` with
    `LIAISON_MAIL` on TEMP, `bridge_thermal`, measured 19 Nov 2026): the same constant
    value on a slave node and on all its weighted master nodes gave `FACTOR_11`, Mecway
    solves it; resolved: such slave nodes leave the thermal tie and keep their TEMP_IMPO

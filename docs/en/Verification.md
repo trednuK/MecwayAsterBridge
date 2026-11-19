@@ -159,7 +159,8 @@ no value that moves more than 1e-6 relative compared with the stored results.
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 
 Added since this regression and run on their own (19 Nov 2026, not yet in a full
-regression): LS-07n (2 OK), LS-07o (1 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
+regression): LS-07n (2 OK), LS-07o (1 OK), LS-07p (1 OK), LS-07q (1 OK), LS-07r (1 OK), LS-07s
+(1 OK), LS-07t (1 OK), LS-07u (1 OK), LS-07v (3 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
 149), NL-03i (1 OK), NL-03j (5 OK), NL-03k (3 OK), NL-03l (1 OK, 1 BEKEND: KNOWN_BUGS 149), NL-03m (3 OK), NL-03n (2 OK), NL-03o (5 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK).
 
 **Known limitations** (status BEKEND):
@@ -455,6 +456,34 @@ meshes is given below.
   non-matching meshes); 7 slave nodes per symmetry plane lose the support (INFO). One-off check
   (18 Nov 2026, not a case): the same model in Nonlinear Static gives 0.954130 µm, equal to
   Mecway's 0.954130 µm.
+
+### LS-07p–v Double conditions with relations and on the LIAISON_DDL route (KNOWN_BUGS 147)
+
+- **Purpose**: the rest of KNOWN_BUGS 147. (p, q) A *Symmetry* (`LIAISON_OBLIQUE` per
+  node group) or *Frictionless support* (`FACE_IMPO` DNOR) on slave and master nodes is
+  the same double condition as in LS-07n; before the fix `FACTOR_11` (linear) and
+  `MECANONLINE9_4` (nonlinear, no step). The bridge takes the slave nodes out of the
+  relation (a node group without them, or `SANS_GROUP_NO`). (r, s) With the bridge's own
+  relations (`LIAISON_DDL`) a tie relation in a translation is left out when all its nodes
+  are held with the same value; before the fix `FACTOR_57` (r, NPREC = -1) and
+  `FACTOR_11` (s).
+- **Model**: (p) LS-07n with *Symmetry* on the face selections x = 0 and y = 0 of both
+  blocks, (q) the same with *Frictionless support*; (t, u) (p) and (q) in Nonlinear
+  Static; (v) (p) modal (density 7850 kg/m³, no force). (r) LS-07f with *Displacement*
+  X = 0 on all nodes (the membrane displacement of this strip in pure bending is 0); (s)
+  LS-07i with the rib's foot node on the clamped edge held in X, Y and Z (weight 1 on a
+  clamped mid-side node).
+- **Reference**: (p, q, t, u) Mecway 36 with CCX, headless, on (p) and (q): 0.9540648 µm.
+  (r, s) the same model without the extra support (LS-07f 0.94220 mm, LS-07i
+  1.134186e-5 m). (v) Code-Aster 17.4 on the same model with *Displacement* 0 on the plane
+  nodes without the tied slave nodes (no double condition): 56659.69, 56726.25 and
+  56734.77 Hz.
+- **Result**: (p, q) 0.954065 µm, (t, u) 0.954133 µm, equal to Mecway (0.00% and +0.01%);
+  7 slave nodes per plane leave the relation (INFO). (r) 0.94220 mm, 8 DX rows left out;
+  (s) 1.1342e-5 m, 3 rows left out (INFO); both equal to the model without the support.
+  (v) the three frequencies equal to the reference; without the fix CALC_MODES gave the
+  same frequencies, but with the ALARMs `ALGELINE3_79` (singular matrix) and
+  `ALGELINE5_23` (Sturm count). Other analyses (dynamics, buckling) NOT verified.
 
 ### LS-08 Node temperature (thermal stress per node)
 
