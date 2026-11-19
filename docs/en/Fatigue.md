@@ -45,7 +45,10 @@ General operation of the bridge: [`UserGuide.md`](UserGuide.md).
 
 ### 1.2 The Wöhler curve: `#ASTER-WOHLER`
 
-One line per material (`*` = all materials without a line of their own):
+One line per material (`*` = all materials without a line of their own), typed in a
+free text field such as *CCX* > *custom model definition* (prefix per field:
+[`ASTER_lines_examples.md`](ASTER_lines_examples.md) §1); the `#ASTER-BLOCK`,
+`#ASTER-SIGNAL` and `#ASTER-FATIGUE` lines below go in the same place:
 
 ```
 #ASTER-WOHLER Steel: S = [160, 200, 280, 400] MPa, N = [2e6, 1e6, 1e5, 1e4]

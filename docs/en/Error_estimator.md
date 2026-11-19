@@ -39,9 +39,9 @@ elements** get an estimate. General working of the bridge:
 |---|---|---|---|
 | Error estimator (CALC_ERREUR, solids only) | `error_estimator` | on | off when every second counts or the extra fields in the `.liml` (four variables) get too large; the estimate costs only element computations, no extra solution of the system |
 
-For a single model you can also use an `#ASTER-OPTIE` line in Mecway's custom input
-(`#ASTER-OPTIE error_estimator = no`, see
-[`ASTER_lines_examples.md`](ASTER_lines_examples.md)).
+For a single model you can also use an `#ASTER-OPTIE` line in a free text field such as
+*CCX* > *custom model definition* (`#ASTER-OPTIE error_estimator = no`; where and with
+which prefix: [`ASTER_lines_examples.md`](ASTER_lines_examples.md) §1).
 
 **Why on by default:** the estimate uses the displacements already computed (only
 element computations, no second solution of Ku = F) and always gives an impression
@@ -310,7 +310,8 @@ and constraints on faces, materials and components along. Code:
    cannot be undone through the API. The model itself is refined and saved after the
    loop.
 
-For a single model it also works with `#ASTER-OPTIE` lines, e.g.
+For a single model it also works with `#ASTER-OPTIE` lines (where to type them:
+[`ASTER_lines_examples.md`](ASTER_lines_examples.md) §1), e.g.
 `#ASTER-OPTIE adapt_refine = yes` and `#ASTER-OPTIE adapt_target_error = 1.5`.
 
 ### 6.2 Settings
@@ -323,7 +324,7 @@ For a single model it also works with `#ASTER-OPTIE` lines, e.g.
 | Element selection | `adapt_select` | `dorfler` | `fraction` or `factor` if you want a fixed amount per loop |
 | Selection value | `adapt_fraction` | 0.5 | dorfler: smaller (0.3) = fewer elements per loop and more loops; fraction: e.g. 0.1 (10% of the elements); factor: e.g. 2 (error > 2 x the mean) |
 | Also refine the neighbours (thin elements) | `adapt_neighbours` | off | on for thin elements (thickness much smaller than the width), see §6.5 |
-| Max. number of elements after refining | `adapt_max_elements` | 200000 | according to the memory of the computer; also set the memory limit of the run (`memory_limit`) high enough |
+| Max. number of elements after refining | `adapt_max_elements` | 200000 | according to the memory of the computer; also set the memory limit of the run (`memory_limit`, heading *Code-Aster run*) high enough |
 
 **Selection `dorfler`** (Dörfler 1996, *bulk criterion*): the elements with the largest
 error η_e, as many as needed until together they carry the fraction 0.5 of Σ η_e². So
@@ -390,7 +391,7 @@ with a hole (`tests_adaptief.py`, outside the regression):
 | tet10 (Kuhn split of the same mesh, thick and thin) | after the first loop the global error rises (5.8 → 6.7%): the loop stops; continuing gave Kt −5.4% at 16 307 elements after 5 loops |
 
 So: use **hex20** with elements that are not much thinner than wide; for a thin-walled
-model switch on *Also refine the neighbours*. The bridge reports hex elements with a
+model switch on *Also refine the neighbours* (page *Static*, heading *Adaptive refinement*; §6.2). The bridge reports hex elements with a
 scaled Jacobian < 0.1 (WARNING) and stops the loop when the global error no longer
 decreases. With a tet mesh: rather refine with Mecway's automesh (*Point/Surface
 refinement*) where `errorestimate` is large.
@@ -413,7 +414,7 @@ These limits are also in `KNOWN_BUGS.md` (item 65).
 |---|---|---|
 | Adaptive refinement: target reached | global error <= target | done |
 | Adaptive refinement: maximum number of loops reached | target not reached yet | more loops (`adapt_max_loops`) or accept a higher target |
-| WARNING: Adaptive refinement stopped: the global error no longer decreases | singularity, a load the estimator does not know (§2.3), or poor transition elements (§6.5) | look at `errorestimate` in Mecway; round the corner, use hex20, or switch on *Also refine the neighbours* |
+| WARNING: Adaptive refinement stopped: the global error no longer decreases | singularity, a load the estimator does not know (§2.3), or poor transition elements (§6.5) | look at `errorestimate` in Mecway; round the corner, use hex20, or switch on *Also refine the neighbours* (page *Static*, heading *Adaptive refinement*; §6.2) |
 | WARNING: ... element(s) with a poor shape | flat hex elements after refining | see §6.5; start again from the original model (`_voor_verfijning.liml`) |
 | ERROR: ... the node selection(s) ... lie on edges that would be refined | constraint/load on a node selection | apply it to a face selection |
 | Adaptive refinement stopped: ... the model would have about ... elements | limit `adapt_max_elements` | a higher limit (and `memory_limit`), or a looser target |
@@ -466,8 +467,9 @@ keeps the Mecway route of §6. Code: `Scripts/bridge_homard.py` (bridge) and
 
 The page *Nonlinear static* has the same four settings.
 
-For a single model it also works with `#ASTER-OPTIE`, e.g. `#ASTER-OPTIE adapt_homard = yes`
-and `#ASTER-OPTIE adapt_homard_target = 0.3`.
+For a single model it also works with `#ASTER-OPTIE` (where to type it:
+[`ASTER_lines_examples.md`](ASTER_lines_examples.md) §1), e.g.
+`#ASTER-OPTIE adapt_homard = yes` and `#ASTER-OPTIE adapt_homard_target = 0.3`.
 
 ### 7.2 Settings
 

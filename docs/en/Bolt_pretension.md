@@ -24,7 +24,9 @@ with a prism of solid elements (in Mecway the CCX variant) in **Linear static**
    be constant, a table in time or a formula in t.
 4. Mecway itself only computes the section with CCX; for the bridge the solver
    choice in Mecway does not matter. Choose the analysis Static 3D, Nonlinear
-   static 3D or (Nonlinear) Dynamic Response 3D and start the bridge as usual.
+   static 3D or (Nonlinear) Dynamic Response 3D in Mecway's *Analysis settings* and start
+   the bridge as usual (with *Active analysis* = `auto`, start screen, page *General*, it
+   follows Mecway).
 5. Spring element instead of a prism (Mecway's internal-solver variant): select the
    face of **one** spring element (line element with a *Spring* material) and give a
    *Length adjustment*. Mecway always uses the length adjustment for a spring, also

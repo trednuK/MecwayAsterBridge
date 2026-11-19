@@ -376,8 +376,9 @@ Example: `TestFiles/Verificatie/modellen/WE-10.liml` (open it in Mecway): a half
 4. **Thermal stress** with the initial temperature as *Reference temperature*
    (WARNING if different: there is then thermal strain at t = 0 already). Mecway may
    only offer Thermal stress, Fixed support and Displacement for a mechanical analysis
-   type: then first set the analysis to *Static 3D*, add them, and set the analysis back
-   to *Thermal transient* (Mecway keeps them; checked headless with Mecway 33 on WE-08:
+   type: then first set the analysis type in Mecway's *Analysis settings* to *Static 3D*,
+   add them, and set the analysis back to *Thermal transient* (Mecway keeps them;
+   checked headless with Mecway 33 on WE-08:
    the constraints stay in the saved `.liml` and Mecway solves the thermal part without
    a message). That the GUI shows them this way is NOT checked in the Mecway GUI.
 5. Optionally `#ASTER-MATERIAL` in *Custom model definition* (§9.2).
@@ -560,7 +561,7 @@ qualitative pattern.
 | `ERROR: ...: ET >= E at ... K` | tangent modulus too large at a high temperature (small E) | use `H`, or a smaller ET |
 | `ERROR: ...: H/ET without SY` | hardening without a yield strength | give `SY` |
 | `WARNING: #ASTER-MATERIAL only works ...; ignored here` | the line is in a mechanical model or a thermal model without Thermal stress | add a Thermal stress (T31), or remove the line |
-| `BRIDGE_ONVOLLEDIG <t>` / `MECANONLINE` in the `.mess` | the mechanical step does not converge, even after cutting | set `TC_CUT`, E and SY above 1200 °C not extremely small, `convergence_resi_rela` 1e-5, smaller *Time step* |
+| `BRIDGE_ONVOLLEDIG <t>` / `MECANONLINE` in the `.mess` | the mechanical step does not converge, even after cutting | set `TC_CUT` in the `#ASTER-MATERIAL` line (§9.2), E and SY above 1200 °C not extremely small, `convergence_resi_rela` 1e-5 (page *Thermal*, heading *Steps and convergence*, §9.3), smaller *Time step* |
 | `WARNING: Thermomechanical: the time steps ... differ` | (should not happen) | report it; the temperature in Mecway may belong to another step |
 
 ## 10. Metallurgy: phases, hardness and the effect on residual stress
@@ -979,7 +980,7 @@ A section along the path; the source moves to the right.
 | `ERROR: ... no element of the filler material is born` | the source does not pass the filler, or starts after the end of the analysis | check path/`t0` (coordinates in m) |
 | `WARNING: ... n filler element(s) are never born` | filler more than the lead beyond the end of the path, or the source or the analysis stops earlier | intended (the bead is longer than the weld)? Otherwise adjust `length`, `t1` or *Time period* |
 | `WARNING: ... lead without birth=...; ignored` | `lead` without `birth` | add `birth=` or remove `lead` |
-| `BRIDGE_ONVOLLEDIG` in the `.mess` with birth | the mechanical step after a birth does not converge | set `TC_CUT`, smaller *Time step*, E/SY above 1200 °C not extremely small (§9.8) |
+| `BRIDGE_ONVOLLEDIG` in the `.mess` with birth | the mechanical step after a birth does not converge | set `TC_CUT` in the `#ASTER-MATERIAL` line (§9.2), smaller *Time step*, E/SY above 1200 °C not extremely small (§9.8) |
 
 ## 12. Verification
 

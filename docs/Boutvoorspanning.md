@@ -25,7 +25,9 @@ variant met één **veerelement** (in Mecway de variant voor de interne solver) 
    mogen constant zijn, een tabel in de tijd of een formule in t.
 4. Mecway rekent de doorsnede zelf alleen met CCX; voor de bridge maakt de
    solverkeuze in Mecway niet uit. Kies de analyse Static 3D, Nonlinear static 3D of
-   (Nonlinear) Dynamic Response 3D en start de bridge zoals gewoonlijk.
+   (Nonlinear) Dynamic Response 3D in Mecway's *Analysis settings* en start de bridge zoals
+   gewoonlijk (met *Actieve analyse* = `auto`, startscherm, pagina *Algemeen*, volgt hij
+   Mecway).
 5. Veerelement in plaats van een prisma (Mecway's variant voor de interne solver):
    selecteer het vlak van **één** veerelement (lijnelement met een *Spring*-materiaal)
    en geef een *Length adjustment*. Mecway gebruikt bij een veer altijd de

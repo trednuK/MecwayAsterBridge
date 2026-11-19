@@ -102,8 +102,10 @@ alleen iets als het model `SCHEUR_`-selecties heeft.
 
 R_INF en R_SUP zijn de binnen- en buitenstraal van de ring rond het front waarover
 `CALC_G` integreert (theta-methode). Voor één model kan het ook met `#ASTER-OPTIE`
-in Mecway's custom input, bijv. `#ASTER-OPTIE fracture_r_inf = 0.002` en `#ASTER-OPTIE fracture_r_sup = 0.004`
-([`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md) voorbeeld 16).
+in een vrij tekstveld zoals *CCX* > *custom model definition*, bijv.
+`#ASTER-OPTIE fracture_r_inf = 0.002` en `#ASTER-OPTIE fracture_r_sup = 0.004`
+([`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md) §1 voor het veld en zijn
+voorvoegsel, voorbeeld 16).
 
 De figuur hieronder is een doorsnede loodrecht op het front. De scheur is voor de
 duidelijkheid open getekend; in de mesh liggen de twee lippen op dezelfde plaats (§1.2).

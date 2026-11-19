@@ -233,7 +233,7 @@ Mecway's lineaire *Dynamic Response* (D30): met de optie *Mode superposition* ki
 DEFORMATION* `PETIT` voor hetzelfde schema als Mecway (verificatie MD-07: gelijk aan
 Mecway); met andere waarden geeft de bridge een WARNING. De stationaire respons op een
 sinusvormige last per frequentie (amplitude, fase) heeft geen Mecway-analysetype: kies
-zelf *Harmonische respons* (`harmonic_3d`) voor een *Frequency*- of
+zelf *Harmonische respons* (`harmonic_3d`) als *Actieve analyse* voor een *Frequency*- of
 *Dynamic Response*-model ([`Respons_op_modale_basis.md`](Respons_op_modale_basis.md) §7).
 
 **Pagina Elementen** (alle mechanische analyses)
@@ -486,7 +486,8 @@ Gemeten op een vlakke plaat (lineair statisch, de standaardvelden met en zonder
 
 De hele run (7 tot 10 s, vooral het opstarten van Code-Aster) verschilde niet meetbaar;
 het openen van een grotere `.liml` in Mecway duurt langer (niet gemeten). Niet nodig?
-Vink `shell_forces` uit op de pagina van de analyse, *Resultaatvelden naar Mecway*.
+Vink `shell_forces` uit op de pagina van de analyse, kop *Resultaten*, *Resultaatvelden naar
+Mecway*.
 
 Bij modaal en knik geeft de bridge alleen de vormen (`displacements`), zoals Mecway;
 bij modaal kunnen `stresses`, `vonmises`, `strain`, `beam_forces`, `shell_stresses` en

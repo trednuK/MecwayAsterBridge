@@ -306,8 +306,8 @@ steady state, but for many frequencies at once.
 
 ### 7.2 In the bridge main window
 
-1. **Active analysis:** choose *Harmonic response* (`harmonic_3d`) yourself; `auto`
-   picks the modal analysis for V30 and the transient one for D30.
+1. **Active analysis** (page *General*): choose *Harmonic response* (`harmonic_3d`)
+   yourself; `auto` picks the modal analysis for V30 and the transient one for D30.
 2. Page **Harmonic response**:
 
 | Setting (label) | Default | When to change |

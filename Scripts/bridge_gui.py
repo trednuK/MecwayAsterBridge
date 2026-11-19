@@ -283,6 +283,11 @@ ANALYSIS_SPECS = [
     ("line_search", ("Lijnzoeken RECH_LINEAIRE (auto = kabels)",
                      "Line search RECH_LINEAIRE (auto = cables)"), "choice",
      ("auto", "on", "off")),
+    # Mecway's Automatic time stepping: with the steps (heading Steps and
+    # convergence), not under Contact
+    ("auto_time_stepping", ("Mecway's Automatic time stepping volgen",
+                            "Follow Mecway's Automatic time stepping"),
+     "bool", None),
     ("contact_algo", ("Contactmethode (auto / STANDARD / PENALISATION)",
                       "Contact method (auto / STANDARD / PENALISATION)"),
      "choice", ("auto", "STANDARD", "PENALISATION")),
@@ -290,9 +295,6 @@ ANALYSIS_SPECS = [
     ("contact_smoothing", ("Normalen gladstrijken (LISSAGE, gebogen vlakken)",
                            "Smooth normals (LISSAGE, curved faces)"), "bool",
      None),
-    ("auto_time_stepping", ("Mecway's Automatic time stepping volgen",
-                            "Follow Mecway's Automatic time stepping"),
-     "bool", None),
     ("contact_pene_maxi", ("Penetratiegrens penalty (x kortste rand, 0 = uit)",
                            "Penalty penetration limit (x shortest edge, "
                            "0 = off)"), "float_range", (0.0, 1.0)),
@@ -508,6 +510,12 @@ SECTION_BEFORE = {
     "solver_nprec": ("Oplosser", "Solver"),
     "substeps_per_interval": ("Stappen en convergentie",
                               "Steps and convergence"),
+    # pages without substeps_per_interval (Dynamic (implicit), Thermal,
+    # Dynamic (explicit)): the same heading before the Newton/convergence
+    # fields (shown once per page)
+    "newton_max_iter": ("Stappen en convergentie", "Steps and convergence"),
+    # Dynamic (explicit): only default_time_end of this group
+    "default_time_end": ("Stappen en convergentie", "Steps and convergence"),
     "contact_algo": ("Contact", "Contact"),
     "plastic_strain_definition": ("Materiaal en kinematica",
                                   "Material and kinematics"),

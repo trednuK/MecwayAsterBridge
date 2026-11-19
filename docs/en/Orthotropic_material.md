@@ -27,11 +27,13 @@ laminates, other analyses and a fully anisotropic matrix are not possible yet (�
    **both** U and V: with only one of them, or with V parallel to U, Mecway does not solve
    the model and the bridge gives an ERROR; an angle without vectors has no effect. The
    orientation may be a formula of the element centre (x, y, z).
-3. Choose *Static 3D*, *Frequency*, *Buckling*, *Nonlinear static 3D* or *Dynamic response 3D*
-   (implicit) and start the bridge as usual. Mecway itself only allows the matrix types in
-   Static 3D (manual §8.5), and solves the nonlinear and dynamic types with CCX. With large
-   displacements the solids use `GREEN_LAGRANGE` (Saint Venant-Kirchhoff, orthotropic); Rayleigh
-   damping goes into `ELAS_ORTH` as `AMOR_ALPHA`/`AMOR_BETA` (not verified separately).
+3. In Mecway's *Analysis settings* choose *Static 3D*, *Frequency*, *Buckling*, *Nonlinear
+   static 3D* or *Dynamic response 3D* (implicit) and start the bridge as usual (with
+   *Active analysis* = `auto`, start screen, page *General*, it follows Mecway). Mecway
+   itself only allows the matrix types in Static 3D (manual §8.5), and solves the
+   nonlinear and dynamic types with CCX. With large displacements the solids use
+   `GREEN_LAGRANGE` (Saint Venant-Kirchhoff, orthotropic); Rayleigh damping goes into
+   `ELAS_ORTH` as `AMOR_ALPHA`/`AMOR_BETA` (not verified separately).
 
 ![Material axes U, V, W from the element orientation](../img/orthotropic_axes.svg)
 

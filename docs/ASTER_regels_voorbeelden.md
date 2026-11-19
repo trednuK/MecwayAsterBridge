@@ -30,6 +30,14 @@ daarom begint de regel met het commentaarteken van die solver:
 | OpenRadioss > Custom engine input (`radiossengineinput`) | `#ASTER` |
 | Mystran > Custom bulk data (`nastranbulkdata`) | `$ASTER` |
 
+![Mecway 36: de outline-boom met CCX > custom model definition en het veld met twee regels](img/mecway_custom_model_definition.png)
+
+1. Outline-boom: *CCX* > *custom model definition* (aanwezig als CCX de solver is in
+   *Analysis settings*); dubbelklik erop om het veld te openen.
+2. Elke regel begint met het voorvoegsel van dat veld, hier `**` (CCX-commentaar), gevolgd
+   door `ASTER-...`.
+3. Eén regel per sleutelwoord; meerdere regels in één veld.
+
 - De bridge leest alle vijf velden, welke solver er ook gekozen is. Praktisch:
   statica in een Mystran-analyse (`$ASTER`), niet-lineair/contact/dynamica in een
   OpenRadioss- of CCX-analyse.

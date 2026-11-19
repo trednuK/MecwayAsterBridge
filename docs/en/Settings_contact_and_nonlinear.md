@@ -63,7 +63,7 @@ What the nonlinear analyses support:
 |---|---|---|
 | Code-Aster run | `time_limit`, `memory_limit` | all |
 | Solver | `solver_nprec`; `lin_solver`, `lin_solver_resi` | all; `lin_solver` static only, `lin_solver_resi` static and the static step of modal, buckling and the imperfection |
-| Steps and convergence | `substeps_per_interval` (static), `newton_max_iter`, `newton_reac_iter`, `default_time_end`, `convergence_criterion`, `convergence_resi_rela`, `convergence_resi_maxi`, `line_search`, `auto_time_stepping` (static) | nonlinear static, dynamic implicit; `default_time_end` also explicit |
+| Steps and convergence | `substeps_per_interval` (static), `newton_max_iter`, `newton_reac_iter`, `default_time_end`, `convergence_criterion`, `convergence_resi_rela`, `convergence_resi_maxi`, `line_search`, `auto_time_stepping` (static) | nonlinear static, dynamic implicit (Newton and convergence also thermal); `default_time_end` also explicit |
 | Contact | `contact_algo`, `contact_smoothing`, `contact_pene_maxi` | nonlinear static, dynamic implicit (`contact_algo` also explicit) |
 | Material and kinematics | `plastic_strain_definition`, `deformation` | nonlinear static, dynamic |
 | Time scheme | `schema`, `hht_alpha`, `substeps_per_output` (implicit), `explicit_dt_factor` (explicit) | dynamic |
@@ -72,6 +72,17 @@ What the nonlinear analyses support:
 | Nonlinear buckling | `crit_stab`, `gd_step_limit`, `imperfection_amplitude`, `imperfection_mode`, `imperfection_unit` | nonlinear static ([Modal_and_buckling.md](Modal_and_buckling.md) §5) |
 
 - **Per model**: `#ASTER-OPTIE key = value` (§3.9).
+
+![Start screen, page Nonlinear static: the headings Steps and convergence and Contact](../img/nonlin_static_steps_en.png)
+
+1. The page *Nonlinear static* in the navigation list (the other analyses have their own
+   page, with the same headings where they have these fields).
+2. Heading *Steps and convergence*.
+3. *Substeps per time interval* (`substeps_per_interval`).
+4. *Convergence criterion* (`convergence_criterion`), with `convergence_resi_rela` and
+   `convergence_resi_maxi` below it.
+5. *Follow Mecway's Automatic time stepping* (`auto_time_stepping`).
+6. Heading *Contact*, *Contact method* (`contact_algo`).
 
 ---
 
@@ -97,9 +108,32 @@ Mecway: all archived solver steps up to the last time reached (the
 bridge sets no `ARCHIVAGE`). Except with CCX *time points* without *Automatic time
 stepping*: Mecway then stores only the end state, and the bridge sends only the first
 step and the end state at the period (every step if the run stops earlier, with element
-failure or with fatigue; NL-75e..g). To see the whole load path, set a *Time step size*
-or turn on *Automatic time stepping*. The solver steps
-are Mecway's (*Time step size*, `<timesteps stepsize>`: dt, 2 dt, ... up to the period),
+failure or with fatigue; NL-75e..g). To see the whole load path, do one of these in
+Mecway's *Analysis settings* (figure below):
+
+- tick *Automatic time stepping* (item 6): the results come at the *Regular time points*
+  (item 7), as long as the bridge setting *Follow Mecway's Automatic time stepping*
+  (`auto_time_stepping`, start screen, page *Nonlinear static*, heading *Steps and
+  convergence*) is on (default; off: fixed steps, every step goes to Mecway);
+- or give a *Time step* > 0 (item 5; *Time step size* in older Mecway versions): Mecway
+  writes it as the step size, and every step goes to Mecway.
+
+![Mecway 36, Analysis settings of a nonlinear static analysis with CCX time points](../img/mecway_analysis_settings_l30.png)
+
+1. *Solver*: the solver Mecway would use (here CCX); the bridge always computes with
+   Code-Aster.
+2. The analysis type, here *Nonlinear Static 3D*.
+3. *Quasi-static*: on gives `<timesteps>`; off: one step up to t = 1 s (Mecway's step
+   time, see above).
+4. *Time period*: the end time.
+5. *Time step*: > 0 gives Mecway's steps (`stepsize`), each sent to Mecway; 0 with item 6
+   off: only the end state.
+6. *Automatic time stepping*: on: results at the time points of item 7.
+7. *Generate solution at* > *Regular time points* (*Start*, *Increment*): the time points;
+   available only with item 6 on.
+
+The solver steps are Mecway's (*Time step size*, `<timesteps stepsize>`: dt, 2 dt, ... up
+to the period),
 plus the kinks of the load tables that fall in between; so Mecway shows the same times
 as with Mecway's own solver. Load times after the period are dropped. If Mecway's
 *Automatic time stepping* is on (`automatictimestepping="true"`, with the internal
@@ -389,10 +423,11 @@ G = 2(C10 + C01), E = 2G(1 + ν) with ν from K and G. Messages:
 | hex8 with *Hex8* = `3D_SI` | WARNING: that elset gets `3D` (Code-Aster has no `GREEN_LAGRANGE` on under-integrated linear elements, `ELEMENTSSI_1`) |
 | CCX > *custom element type* (e.g. C3D8R) | WARNING: CalculiX only, not translated (see below) |
 
-**Choose *Hex8* = `LINE_QUAD` for rubber on hex8.** Nearly incompressible material on a
-fully integrated linear hex8 or tet4 'locks' volumetrically: the element cannot deform at
-constant volume and is far too stiff, also without bending. Measured on a bonded rubber
-cylinder (GitHub issue #5: quarter model R 16 × H 18 mm, 684 hex8, Neo Hooke
+**Choose *Hex8* = `LINE_QUAD` for rubber on hex8** (start screen, page *Elements*,
+heading *Element formulation*, *Hex8 solid elements*, `elem_hex8`). Nearly incompressible
+material on a fully integrated linear hex8 or tet4 'locks' volumetrically: the element
+cannot deform at constant volume and is far too stiff, also without bending. Measured on
+a bonded rubber cylinder (GitHub issue #5: quarter model R 16 × H 18 mm, 684 hex8, Neo Hooke
 C10 = 0.348 MPa, D1 = 0.005 mm²/N, so K/G = 575, compressed 3 mm):
 
 | Element | Force at 3 mm | vs. reference |
@@ -941,9 +976,10 @@ are active. Tolerance: 1e-6 × the smallest edge (U2.04.04 §4.4.1).
   tie (§3.9). Mecway's *CCX keyword* modifications such as `ADJUST` on
   `*CONTACT PAIR` only change the CalculiX input; the bridge reports them and uses them
   only to see whether `ADJUST` is turned off (then it does not close the gap either).
-  With the setting *Bonded contact: close gaps like CCX* (`bonded_close_gap`, page General,
-  off by default) the bridge moves the tied slave nodes onto the master in the mesh for
-  Code-Aster (the `.liml` is not changed), as CCX does: only solid on solid, with a flat
+  With the setting *Bonded contact: close gaps like CCX* (`bonded_close_gap`, start
+  screen, page *General*, heading *Results and display*, off by default) the bridge moves
+  the tied slave nodes onto the master in the mesh for Code-Aster (the `.liml` is not
+  changed), as CCX does: only solid on solid, with a flat
   master face and a move up to 0.1 × the shortest distance to another node of an element
   at the node or the shortest edge of its slave face (a bridge rule, not CCX's), in linear and
   nonlinear static, modal and buckling analyses (not in the thermal chain and the other
@@ -1214,8 +1250,9 @@ contact against plate A and by the nut contact) and the upper part of the bolt (
 and the pre-tension force). With a weak elastic support on both (1e8 Pa/m on the top face of
 plate B, 1e9 Pa/m on the nut face) the zero pivots on DX/DY/DZ are gone. The friction contact
 (coefficient 0.5) itself then still does not converge in Code-Aster: with
-*Contact method* = PENALISATION a zero pivot on the friction degrees of freedom (`LAGS_F`) of
-plate-B nodes with zero contact pressure, with `CONTACT_INIT='NON'`, `ALGO_FROT` standard or
+*Contact method* (`contact_algo`, heading *Contact*) = PENALISATION a zero pivot on the
+friction degrees of freedom (`LAGS_F`) of plate-B nodes with zero contact pressure, with
+`CONTACT_INIT='NON'`, `ALGO_FROT` standard or
 penalised, `ALGO_RESO_FROT='POINT_FIXE'`, `INTEGRATION='GAUSS'`, a smaller friction penalty,
 a ramped pretension or `solver_nprec` −1 no convergence in the first step (KNOWN_BUGS 43).
 Without friction (coefficient 0) and with the two weak supports the model runs; the
@@ -1287,7 +1324,7 @@ cause, not a numerical one.
    §4.1).
 6. **Contact method.** With line contact, contact that is lost or `MECANONLINE9_4`
    with `LAGS_C`: `contact_algo` = `auto` (default in Nonlinear Static and implicit dynamics) or `PENALISATION`
-   (§3.1, NL-03b).
+   (page of the analysis, heading *Contact*; §3.1, NL-03b).
 7. **Smaller steps.** Reduce Mecway's *Time step size* (static; without a step size
    increase `substeps_per_interval`) or increase `substeps_per_output` (implicit; or reduce Mecway's *Time step size*). Code-Aster already cuts a failed step itself
    (`DECOUPE`, up to 6 levels, §2.1); smaller initial steps help when it keeps getting
