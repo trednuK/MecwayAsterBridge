@@ -160,7 +160,7 @@ No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Offi
 
 Added since this regression and run on their own (19 Nov 2026, not yet in a full
 regression): LS-07n (2 OK), LS-07o (1 OK), LS-07p (1 OK), LS-07q (1 OK), LS-07r (1 OK), LS-07s
-(1 OK), LS-07t (1 OK), LS-07u (1 OK), LS-07v (3 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
+(1 OK), LS-07t (1 OK), LS-07u (1 OK), LS-07v (3 OK), LS-07w (3 OK), LS-07x (3 OK), LS-07y (3 OK), LS-07z (3 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
 149), NL-03i (1 OK), NL-03j (5 OK), NL-03k (3 OK), NL-03l (1 OK, 1 BEKEND: KNOWN_BUGS 149), NL-03m (3 OK), NL-03n (2 OK), NL-03o (5 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK).
 
 **Known limitations** (status BEKEND):
@@ -483,7 +483,39 @@ meshes is given below.
   (s) 1.1342e-5 m, 3 rows left out (INFO); both equal to the model without the support.
   (v) the three frequencies equal to the reference; without the fix CALC_MODES gave the
   same frequencies, but with the ALARMs `ALGELINE3_79` (singular matrix) and
-  `ALGELINE5_23` (Sturm count). Other analyses (dynamics, buckling) NOT verified.
+  `ALGELINE5_23` (Sturm count). Dynamics, buckling and XFEM: LS-07w–z.
+
+### LS-07w–z Double conditions in dynamics, buckling and XFEM (KNOWN_BUGS 147)
+
+- **Purpose**: the same fix as LS-07p–v in the other analyses: the slave nodes leave the
+  relation or the tie rows are left out. Before the fix `MECANONLINE9_4` (w, x, zero
+  pivot, no step) and `FACTOR_11` (y, z).
+- **Model**: (w) LS-07p as *Nonlinear Dynamic* (HHT, `deformation` PETIT, density
+  7850 kg/m³), force from 0 to 4000 N in 1 ms (~57 periods of the first axial mode,
+  56.7 kHz), then constant to 1.5 ms. (x) LS-07s as *Nonlinear Dynamic* with a step load
+  (0–10 ms, step 0.1 ms). (y) Buckling: a column of two bonded hex20 blocks of
+  20 × 20 × 100 mm (lower 2 × 2 × 5, upper 3 × 3 × 5 with own nodes, seam at z = 0),
+  *Symmetry* x = 0 on both (half of a 40 × 20 mm column), *Fixed* at the foot, 4000 N on
+  the top. (z) XFEM: the BR-07 plate (hex8, h = a/20) in two layers bonded at z = a/2
+  (upper layer = slave, own nodes), *Symmetry* x = 0 on both layers, a surface crack from
+  the top z = a down to z = a/2 + h/2 (plane y = 0, front along x from the symmetry plane
+  to x = b), so that the seam nodes are enriched; `error_estimator` off (KNOWN_BUGS 157).
+- **Reference**: (w) Mecway 36 with CCX (static, LS-07p) 0.9540648 µm at the end of the
+  ramp and at 1.5 ms; at 0.5 ms the same model with *Displacement* 0 without the tied
+  slave nodes (Code-Aster 17.4): 0.4770163 µm. (x) LS-07i run the same way (at 1, 2 and
+  8 ms). (y) the same model with *Displacement* X = 0 without the slave nodes: 43.446 and
+  368.36; Euler π²EI/(4L²)/P = 43.18 (full section, 8000 N). (z) the same model with
+  *Displacement* X = 0 without the slave nodes: K_I (`CALC_G_XFEM`) 31.789 MPa√m at the
+  symmetry plane and 32.060 MPa√m in the middle; the same plate in one mesh 32.081 MPa√m.
+- **Result**: (w) 0.954064 µm (0.00%) and 0.954081 µm (+0.002%), at 0.5 ms equal to the
+  reference; (x) equal to LS-07i in all digits; (y) equal to the reference, +0.6% from
+  Euler (one mesh 43.454); (z) equal to the reference, −0.07% from one mesh (at the
+  symmetry plane +0.27%, `POST_K1_K2_K3` −3%: the bonded layers, not the double
+  condition). With XFEM the slave nodes also lose the `DDL_IMPO` on their XFEM degrees of
+  freedom; that changes nothing: with the support on the slave instead of the master nodes
+  the result is the same. The shell routes (LS-07r `LIAISON_DDL`, LS-07a `LIAISON_MAIL` COQUE) do not compute in
+  dynamics without a double condition either (KNOWN_BUGS 156). HOMARD (`adapt_homard`)
+  refuses bonded contact before the run.
 
 ### LS-08 Node temperature (thermal stress per node)
 
@@ -2232,7 +2264,7 @@ samples) plus the kinks of the load tables (NL-20).
   (1 s; 1050 N) (f): Mecway 36 with CCX computes up to the period and gives one result there
   (7.49916e-6 / 4.99963e-6 m: the table value at 1.5 s, held after its last point); the
   bridge ends at 1.5 s too (7.5000e-6 / 5.0000e-6 m; its other stored steps are not in
-  Mecway's solution, KNOWN_BUGS 156).
+  Mecway's solution, KNOWN_BUGS 158).
 ### NL-40 Formula in y and t
 
 - **Purpose**: a formula in x, y, z and t in `STAT_NON_LINE` (`FORMULE` of Y and

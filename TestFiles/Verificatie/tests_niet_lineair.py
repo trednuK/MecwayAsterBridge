@@ -913,7 +913,7 @@ def _ux_force7(dt, mw, t_end=1.0, force=1050.0, tol_mw=1e-4):
 # (Mecway 36.0.9815 met CCX, headless, 19 nov 2026: tabel tot 2 s gaf
 # u_x(L) = 7,49916e-6 m (F(1,5 s) = 1575 N), tabel (0; 0), (1 s; 1050 N)
 # gaf 4,99963e-6 m op t = 1,5 s). Alleen de laatste tijd is vergelijkbaar:
-# Mecway geeft daar 1 resultaat, de bridge elke rekenstap (KNOWN_BUGS 156).
+# Mecway geeft daar 1 resultaat, de bridge elke rekenstap (KNOWN_BUGS 158).
 # CCX ligt iets lager en het verschil groeit met de last (7,4e-5 bij 1050 N,
 # 1,12e-4 bij 1575 N): NL-75e krijgt daarom 2e-4 t.o.v. Mecway.
 TP7 = OrderedDict([("timeperiod", "1.5 s"),

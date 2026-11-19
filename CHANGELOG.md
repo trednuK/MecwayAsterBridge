@@ -13,7 +13,7 @@
   and takes the load tables there, also when a table runs further, and holds a table that
   ends earlier (Mecway 36 with CCX, measured headless). The bridge computed up to the last
   table point; it now ends at the period (INFO). Verification NL-75e/f. The output times
-  still differ (KNOWN_BUGS 156).
+  still differ (KNOWN_BUGS 158).
 - **Result route `tabel` removed.** The results now always go through the `.liml`:
   Code-Aster writes Mecway's own results and the bridge puts them into the model (all time
   steps or modes, values per element, every analysis type). The old table route (POST_RELEVE_T
@@ -37,7 +37,9 @@
   saved first. A read-only model or a folder that is gone still stops the run
   before Code-Aster. The copy is removed after a run without errors whose results were
   loaded, and stays otherwise (the `.comm` reads it when run again by hand). Unsaved changes
-  stay unsaved during the run: save the model yourself before a long run. *Show section* no
+  stay unsaved during the run: save the model yourself before a long run. After a run that
+  left the file as it was, Mecway asks "Save changes?" when another model is opened (Mecway
+  does that after every script); "No" is safe if you edited nothing. *Show section* no
   longer saves either. Older Mecway versions (no `mw.liml_text()`) behave as before.
   Verified in the Mecway 36 window (36.0.9815).
 
@@ -72,14 +74,17 @@
   stops Code-Aster with `FACTOR_11` (linear) or `MECANONLINE9_4` (nonlinear): the tied
   slave nodes leave the relation there and follow the master (INFO; verification LS-07p/q
   and in Nonlinear Static LS-07t/u, equal to Mecway; modal LS-07v without the singular
-  matrix ALARM). For shell on shell with a quadratic or an oblique/curved master (the
+  matrix ALARM; implicit dynamics LS-07w, buckling LS-07y and XFEM LS-07z, which previously
+  stopped with `MECANONLINE9_4` or `FACTOR_11`). For shell on shell with a quadratic or an oblique/curved master (the
   bridge's own `LIAISON_DDL`) a tie relation in a translation whose nodes are all held the
   same way is left out (INFO; LS-07r/s, which previously stopped with `FACTOR_57` or
-  `FACTOR_11`). The `.comm` of
+  `FACTOR_11`; in implicit dynamics LS-07x). The `.comm` of
   such models changes (node groups without those nodes, `SANS_GROUP_NO` on `FACE_IMPO`,
   fewer `LIAISON_DDL` rows). What stays double gets a WARNING, which with NPREC = -1 now
   says that MUMPS does not check for a singular matrix (`FACTOR_57` or an unreliable
-  result). Dynamics and buckling NOT verified.
+  result). Also measured in implicit dynamics, buckling and XFEM (LS-07w..z); HOMARD refuses
+  bonded contact before the run; explicit dynamics, harmonic and the other analyses NOT verified
+  (side findings: KNOWN_BUGS 156, 157).
 - **Behaviour change: contact method `auto` is the new default in Nonlinear Static**
   (`contact_algo`, page Contact). Every unilateral contact with Mecway's *normal stiffness*
   in a 3D Nonlinear Static analysis is now computed with penalty (`PENALISATION`), as Mecway
