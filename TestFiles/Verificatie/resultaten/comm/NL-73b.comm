@@ -208,8 +208,9 @@ fieldmat = AFFE_MATERIAU(
 # from 0 to the period, plus the kinks of the load tables. Without a
 # step size: the time points of all time-dependent forces with
 # substeps_per_interval substeps per segment (without time-dependent
-# forces 0 to default_time_end). DEFI_LIST_INST cuts a step that does not
-# converge (ECHEC DECOUPE).
+# forces 0 to default_time_end). Without <timesteps> (no Quasi-static) only
+# up to t = 1 s, where Mecway takes every table. DEFI_LIST_INST cuts a step
+# that does not converge (ECHEC DECOUPE).
 # =====================================================
 times = DEFI_LIST_REEL(
     DEBUT=0.0,

@@ -591,6 +591,18 @@ die cellen. Gladmaken: `LAGRANGE` als elk stuk van het front recht is, anders
 `fracture_legendre_degree` gelden. Sleutels per scheur (`punten=`, `glad=`, `r_inf=`)
 zijn er voor een selectie niet.
 
+![Het scheurvlak van een XFEM-scheur uit een vlakselectie: geselecteerde vlakken, front, mond en ligament](img/xfem_face_selection.svg)
+
+Het scheurvlak gezien langs zijn normaal; het raster is de laag knopen in dat vlak.
+
+1. De geselecteerde vlakken `XFEM_<naam>`: de scheur.
+2. Het ligament: vlakken in hetzelfde vlak die niet geselecteerd zijn.
+3. Het front: de rand van de selectie die binnen het volume ligt.
+4. De mond: een rand van de selectie op een buitenvlak (of een symmetrievlak), geen
+   front.
+5. De normaal van het scheurvlak: de grootste component van de gemiddelde normaal
+   positief (+y voor een scheur in het vlak y = 0).
+
 Gemeten (BR-13, mesh van BR-09 met de scheur als selectie): K_I −0,06 %, G −0,05 %,
 `POST_K1_K2_K3` +1,1 % t.o.v. Tada, net als BR-09 met `HALFVLAK` (§7.4). Omdat het
 scheurvlak op een knooplaag ligt, krijgen de knopen in het vlak in Mecway de waarde van

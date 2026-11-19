@@ -466,6 +466,21 @@ de Code-Aster-testcases sdld313d en sdld21b):
   gelijk aan u_st/η, fase daar −90° (Aubry, 2023, §3.3.4). Bij een balk of volume:
   (statische bijdrage van de mode)/η.
 
+![Amplitude en fase van één mode over de frequentieverhouding, en de verplaatsing als fasor](img/harmonic_phase.svg)
+
+Eén mode met demping ξ = 0,1, r = f/f_n (handcontrole hierboven).
+
+1. De statische respons u_st (r = 0).
+2. De piek ≈ u_st/(2ξ), bij r = √(1 − 2ξ²).
+3. De halfvermogensbreedte ≈ 2ξ·f_n.
+4. De fase −90° bij r = 1.
+5. Onder de resonantie: in fase met de last (0°).
+6. Ver erboven: in tegenfase (−180°).
+7. De last met fase 0, op de reële as.
+8. De fasor U: die ijlt na op de last en draait tegen de klok in met ωt.
+9. Re(U) = `displx/y/z`: de verplaatsing op het moment ωt = 0.
+10. Im(U) = `displix/y/z`, negatief als U naijlt.
+
 ### 7.6 Wat niet kan
 
 - **Opgelegde (basis)beweging** ≠ 0 (ERROR): de modes hebben die vrijheidsgraden vast.

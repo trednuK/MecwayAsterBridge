@@ -3024,6 +3024,17 @@ def _temperature_histories(model_data, t_cut=None):
         if not isinstance(h, list):
             continue
         if t_cut is not None:
+            if h and h[-1][0] > t_cut * (1.0 + 1.0e-9):
+                log(tr("WARNING: Temperatuurtabel op '{0}' loopt tot t = {1} "
+                       "s; zonder Quasi-static neemt Mecway de waarde op "
+                       "t = {2} s, dus de bridge ook. Zet Quasi-static aan "
+                       "om de hele tabel te volgen.",
+                       "WARNING: Temperature table on '{0}' runs up to "
+                       "t = {1} s; without Quasi-static Mecway takes the "
+                       "value at t = {2} s, so the bridge does too. Turn on "
+                       "Quasi-static to follow the whole table.").format(
+                           t.get("selection", "?"), "%g" % h[-1][0],
+                           "%g" % t_cut))
             h = [(ti, v) for ti, v in h if ti < t_cut] + [
                 (t_cut, _value_at(h, t_cut))]
         out.append(("_temp", h))
@@ -5471,6 +5482,39 @@ def _auto_listinst_block(load_funcs, analysis, model_data):
     return block, times[-1]
 
 
+# Mecway's step time in Nonlinear Static without Quasi-static (no
+# <timesteps>): Mecway computes one step and evaluates every load table at
+# t = 1 s, also when the table runs further (Mecway 36.0.9815 with CCX,
+# headless, 19 Nov 2026: force, imposed displacement and temperature
+# tables (0 s; 0), (2 s; v) all gave the effect of v/2; Mecway 34 with CCX
+# the same for a temperature table, NL-75). Independent of the bridge
+# setting default_time_end (that is the end time without any load table).
+_MECWAY_STEP_TIME = 1.0
+
+
+def _cut_at_step_time(times):
+    """
+    Time points of the load tables for Nonlinear Static without
+    Quasi-static (no <timesteps>): the points after Mecway's step time
+    _MECWAY_STEP_TIME drop out and the step time itself is added when a
+    table runs past it, so that the calculation ends at t = 1 s with the
+    table values there (the DEFI_FONCTIONs stay complete; Code-Aster
+    interpolates them at 1 s). Pure. Returns (times, last) with last the
+    last table time when one runs past 1 s, else None. A table that
+    starts at or after 1 s leaves only the step time: then 0 is the
+    start (Code-Aster holds the table at its first value, PROL_GAUCHE
+    'CONSTANT'; that Mecway does the same is NOT verified).
+    """
+    t_cut = _MECWAY_STEP_TIME
+    later = [t for t in times if t > t_cut * (1.0 + 1.0e-9)]
+    kept = set(t for t in times if t <= t_cut * (1.0 + 1.0e-9))
+    if later:
+        kept.add(t_cut)
+    if kept and min(kept) >= t_cut * (1.0 - 1.0e-9):
+        kept.add(0.0)
+    return kept, (max(later) if later else None)
+
+
 def _build_listinst_block(load_funcs, analysis, model_data=None):
     """
     Generate DEFI_LIST_REEL + DEFI_LIST_INST for the time discretisation
@@ -5480,8 +5524,9 @@ def _build_listinst_block(load_funcs, analysis, model_data=None):
     steps up to the period plus the kinks of the load tables; each
     calculation step is an output time. Without step size:
     all unique time points of the load functions with substeps_per_interval
-    steps per interval. In both cases DEFI_LIST_INST cuts a step
-    that does not converge.
+    steps per interval; without <timesteps> at all (no Quasi-static) only
+    up to Mecway's step time 1 s (_cut_at_step_time). In both cases
+    DEFI_LIST_INST cuts a step that does not converge.
 
     Returns
     -------
@@ -5509,6 +5554,23 @@ def _build_listinst_block(load_funcs, analysis, model_data=None):
     for _, history in load_funcs:
         for t, _ in history:
             all_times.add(t)
+
+    if (all_times and model_data is not None and
+            not model_data.get("timesteps")):
+        # No Quasi-static: like Mecway, every table only up to t = 1 s
+        all_times, last = _cut_at_step_time(all_times)
+        if last is not None:
+            log(tr("WARNING: Belastingstabel loopt tot t = {0} s; zonder "
+                   "Quasi-static rekent Mecway 1 stap en neemt elke "
+                   "tabel op t = {1} s, dus de bridge ook (berekening tot "
+                   "t = {1} s). Zet Quasi-static aan om de hele tabel te "
+                   "volgen.",
+                   "WARNING: Load table runs up to t = {0} s; without "
+                   "Quasi-static Mecway computes one step and takes every "
+                   "table at t = {1} s, so the bridge does too (calculation "
+                   "up to t = {1} s). Turn on Quasi-static to follow the "
+                   "whole table.").format("%g" % last,
+                                          "%g" % _MECWAY_STEP_TIME))
 
     if not all_times:
         # No time-dependent loads: 0 -> default_time_end
@@ -7780,10 +7842,11 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
     load_funcs       = _collect_load_funcs(model_data)
     # Kinks of a Temperature with a time history also as calculation time
     # (only the times; no DEFI_FONCTION, _build_temperature_field)
-    # (Without Quasi-static: up to t = 1 s like Mecway, _temperature_histories.)
+    # (Without Quasi-static: up to t = 1 s like Mecway, _temperature_histories;
+    # the other load tables are cut in _build_listinst_block.)
     temp_times = _temperature_histories(
         model_data, None if dynamic or model_data.get("timesteps") else
-        analysis.get("default_time_end", 1.0))
+        _MECWAY_STEP_TIME)
 
     # --------------------------------------------------
     # BLOCK F-pre2: DEFI_LIST_REEL

@@ -2274,7 +2274,12 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
   `GROT_GDEP` telt de thermische rek als Green-Lagrange-rek (0,03–0,06 % minder
   verlenging dan Mecway/CCX, NL-70b). Zonder *Quasi-static* neemt Mecway/CCX van een
   tabel de waarde op t = 1 s (de staptijd), ook als de tabel verder loopt; de bridge
-  rekent dan tot t = 1 s (NL-75: 1,2e-4 m, exact en gelijk aan Mecway/CCX).
+  rekent dan tot t = 1 s (NL-75: 1,2e-4 m, exact en gelijk aan Mecway/CCX). NL-75b..d:
+  een krachttabel (0 s; 0 N), (2 s; 2100 N) op de eindknopen zonder *Quasi-static*, met
+  +100 K (b), met de temperatuurtabel (c) of alleen (d): Mecway 36 met CCX neemt die ook op
+  t = 1 s (headless: 1,24994e-4 / 1,24994e-4 / 4,99963e-6 m; een opgelegde
+  verplaatsingstabel net zo); de bridge rekent tot t = 1 s met een WARNING (1,2500e-4 /
+  1,2500e-4 / 5,0000e-6 m, = α·ΔT·L + F(1 s)·L/(EA)).
 ### NL-40 Formule in y en t
 
 - **Doel**: een formule in x, y, z én t in `STAT_NON_LINE` (`FORMULE` van Y en `INST`)

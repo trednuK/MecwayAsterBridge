@@ -124,6 +124,22 @@ Bonded contact per combination (slave on master):
 | Element offset (shell, beam) | Yes | DKT/DST: `COQUE` `EXCENTREMENT` (+ `INER_ROTA`); COQUE_3D and beams: element on its own nodes + rigid arm (`LIAISON_DDL`) | Shell: *Element coordinates*, only W counts (as in Mecway; u/v have no effect there either). Beam: *Global coordinates* x/y/z (u/v/w on a beam: no effect in Mecway, WARNING). Displacement, rotation and reaction at the Mecway nodes; stresses of the offset element shown at those nodes, also as element values (LS-65). In all mechanical analyses (Mecway: static only), not in the thermal → mechanical chain (WARNING, KB64). Rigid arm: small rotations, also with `GROT_GDEP` (WARNING for offset shells, KB108). A node with a value of its own (other element) keeps it; the stress of the offset element does not count there (KB108). A load on a face selection on edges of offset shells is applied at the nodes by the bridge, at the offset edge by Mecway (WARNING, KB108). A flexible joint on an offset beam element: in linear static and modal at the end of the arm, between the offset point and the element, as in Mecway (LS-52); elsewhere not translated (WARNING, KB108); bonded contact on offset shells: WARNING (KB108). Verification LS-60–67, LS-52. |
 | Element orientation (local U/V axes) | Yes | beams: `AFFE_CARA_ELEM` `ORIENTATION` `CARA='VECT_Y'` | Mecway stores the orientation in two ways: per element (*Element properties*: attributes `orientationux`…`vz`, `angle`) and as an item in Loads & Constraints (*Element orientation* on an element selection: `<orientation selection="…">` with `ux`…`vz` and `angleu`, also as a formula of the element centre x, y, z: the mean of all element nodes, as Mecway (measured on line2 and quad4/quad8 shells); Mecway 34 keeps the card like this when saving). The bridge reads both in the same way. Beams: V axis and angle; every beam gets Mecway's V axis explicitly as `VECT_Y`, also without orientation (default V = Z × U, along Z V = Y). Gaps: U = direction; a U not along node 1 → 2 becomes `ORIENTATION` `CARA='VECT_X_Y'` on the gap cell (with `PRECISION` above the cell length), also between coincident nodes, equal to Mecway 35 (NL-92e … NL-92l; NL-92m against the hand calculation). Mecway does not use the node positions otherwise; only a tension gap on separate nodes (U from node 2 to node 1) is beyond `DIS_CHOC`: ERROR (KB23). Shells: U axis of the result field `shell_forces` (§6), equal to Mecway 35 also with an oblique U axis (LS-31f … LS-31h). Solids: U, V and angle are the material axes of an orthotropic material (§5, `MASSIF` `ANGL_REP`); no effect with an isotropic material. Trusses, cables, springs and dampers: no effect (INFO). An element with an orientation from both a card and the attributes, or from two cards: Mecway does not solve then (*already has its orientation defined elsewhere*), the bridge gives a WARNING and uses the card (of two cards the last one in the file). A U axis on beams, a V axis or angle on shells (Mecway does not solve then either) and a beam card without a V vector (Mecway: singular): WARNING, ignored. A card on a component name without an element selection of that name has no effect in Mecway: ERROR. Verification MO-31, LS-79–82, BU-25, LS-31d … LS-31i, NL-92d … NL-92m. |
 
+*Flexible joint on beam* (§3) and *Element offset* (above) on one beam, and an offset
+shell:
+
+![A beam with an element offset and a flexible joint, and a shell with an offset](../img/joint_offset.svg)
+
+1. The Mecway node of the beam.
+2. The rigid arm to the offset point at node + (x, y, z), global axes.
+3. The joint's own node: at the end of the arm (drawn apart), free to rotate about the
+   chosen U, V and/or W. Joint and offset together only on line2 in linear static and
+   modal; elsewhere a WARNING and no joint (KB108).
+4. The beam element between the arm ends.
+5. The nodes of the shell; their order gives the normal W (right hand).
+6. W.
+7. The mid-surface of the offset shell, at +w along W.
+8. The offset w.
+
 ## 5. Materials and cross-sections
 
 | Mecway | Status | Remark |

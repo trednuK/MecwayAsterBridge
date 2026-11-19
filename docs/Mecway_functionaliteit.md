@@ -124,6 +124,22 @@ Verlijmd contact per combinatie (slave op master):
 | Element offset (schaal, balk) | Ja | DKT/DST: `COQUE` `EXCENTREMENT` (+ `INER_ROTA`); COQUE_3D en balken: element op eigen knopen + starre arm (`LIAISON_DDL`) | Schaal: *Element coordinates*, alleen W telt (zoals Mecway; u/v hebben ook daar geen effect). Balk: *Global coordinates* x/y/z (u/v/w op een balk: geen effect in Mecway, WARNING). Verplaatsing, rotatie en reactie op de Mecway-knopen; spanningen van het verschoven element op die knopen getoond, ook als elementwaarden (LS-65). In alle mechanische analyses (Mecway: alleen statisch), niet in de keten thermisch → mechanisch (WARNING, KB64). Starre arm: kleine rotaties, ook met `GROT_GDEP` (WARNING bij verschoven schalen, KB108). Een knoop met een eigen waarde (ander element) houdt die; de spanning van het verschoven element telt daar niet mee (KB108). Een last op een vlakselectie op randen van verschoven schalen zet de bridge op de knopen, Mecway op de verschoven rand (WARNING, KB108). Een flexible joint op een verschoven balkelement: in lineair statisch en modaal aan het eind van de arm, tussen het offsetpunt en het element, zoals Mecway (LS-52); elders niet vertaald (WARNING, KB108); verlijmd contact op verschoven schalen: WARNING (KB108). Verificatie LS-60–67, LS-52. |
 | Element orientation (lokale U/V-assen) | Ja | balken: `AFFE_CARA_ELEM` `ORIENTATION` `CARA='VECT_Y'` | Mecway slaat de oriëntatie op twee manieren op: per element (*Element properties*: attributen `orientationux`…`vz`, `angle`) en als item in Loads & Constraints (*Element orientation* op een elementselectie: `<orientation selection="…">` met `ux`…`vz` en `angleu`, ook als formule van het elementmiddelpunt x, y, z: het gemiddelde van alle elementknopen, zoals Mecway (gemeten op line2 en quad4/quad8-schalen); Mecway 34 houdt de kaart zo bij opslaan). De bridge leest beide op dezelfde manier. Balken: V-as en hoek; elke balk krijgt Mecway's V-as expliciet als `VECT_Y`, ook zonder oriëntatie (standaard V = Z × U, langs Z V = Y). Gaps: U = richting; een U die niet langs knoop 1 → 2 ligt wordt `ORIENTATION` `CARA='VECT_X_Y'` op de gap-cel (met `PRECISION` boven de cellengte), ook tussen samenvallende knopen, gelijk aan Mecway 35 (NL-92e … NL-92l; NL-92m tegen de handberekening). Mecway gebruikt de plaats van de knopen verder niet; alleen een trek-gap op gescheiden knopen (U van knoop 2 naar knoop 1) kan `DIS_CHOC` niet: ERROR (KB23). Schalen: U-as van het resultaatveld `shell_forces` (§6), gelijk aan Mecway 35 ook met een schuine U-as (LS-31f … LS-31h). Volumes: U, V en hoek zijn de materiaalassen van orthotroop materiaal (§5, `MASSIF` `ANGL_REP`); met isotroop materiaal geen effect. Trusses, kabels, veren en dempers: geen effect (INFO). Een element met een oriëntatie uit zowel een kaart als de attributen, of uit twee kaarten: Mecway rekent dan niet (*already has its orientation defined elsewhere*), de bridge geeft een WARNING en gebruikt de kaart (van twee kaarten de laatste in het bestand). Een U-as op balken, een V-as of hoek op schalen (Mecway rekent dan ook niet) en een balkkaart zonder V-vector (Mecway: singulier): WARNING, genegeerd. Een kaart op een componentnaam zonder elementselectie met die naam heeft in Mecway geen effect: ERROR. Verificatie MO-31, LS-79–82, BU-25, LS-31d … LS-31i, NL-92d … NL-92m. |
 
+*Flexible joint on beam* (§3) en *Element offset* (hierboven) op één balk, en een
+verschoven schaal:
+
+![Een balk met een element offset en een flexible joint, en een schaal met een offset](img/joint_offset.svg)
+
+1. De Mecway-knoop van de balk.
+2. De starre arm naar het offsetpunt op knoop + (x, y, z), globale assen.
+3. De eigen knoop van de joint: aan het eind van de arm (los getekend), vrij om te draaien
+   om de gekozen U, V en/of W. Joint en offset samen alleen op line2 in lineair statisch
+   en modaal; elders een WARNING en geen joint (KB108).
+4. Het balkelement tussen de armeinden.
+5. De knopen van de schaal; hun volgorde geeft de normaal W (rechterhand).
+6. W.
+7. Het middenvlak van de verschoven schaal, op +w langs W.
+8. De offset w.
+
 ## 5. Materialen en doorsneden
 
 | Mecway | Status | Opmerking |

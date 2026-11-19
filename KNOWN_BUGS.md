@@ -1073,23 +1073,13 @@ Code-Aster value per node) and logs the largest difference per variable.
    item 124), DIS_T does not; suspected for any spring with an axial force in Buckling and
    modal with prestress, NOT measured (STAPPENPLAN S15c).
 
-151\. **Mecway asks "Save changes?" after a run that stopped without results** (question;
-   Mecway 36.0.9815 window, 19 Nov 2026, bridge a434d50). After runs that stopped before
-   Code-Aster without any edit in Mecway (a read-only model, two `#ASTER` ERRORs: checks A5, B3
-   and B10 of the GUI checks), Mecway asked "Save changes?" when the next model was opened;
-   not after a run whose results were loaded (that run reopens the model). It was also seen
-   after an edited model (A3a) and an untitled one (A9), where the question is expected. Answering *No* is safe (the file on disk is the user's last save);
-   *Yes* saves the model as it is in Mecway. The bridge itself changes nothing in the model on
-   these paths (`_run` returns before saving; `bridge_section_model.remove_shape` does nothing
-   without the temporary shells). Probed headless (hidden Mecway 36, VM-01a): neither
-   `mw.liml_text()`, a snapshot, `remove_shape` nor `mw.display()` makes `mw.open` of another
-   model ask, but a real change (`mw.new_node`) does not either, and the window title shows
-   no change marker in script mode: the flag cannot be read there, and the API has no call to
-   read or clear it. Most likely Mecway marks a model as changed after any script ran (NOT
-   verified). A user meets it after a run that stops before Code-Aster, or that ends without
-   results with *Summary also as Saved monitor in the .liml* off (with it on, the model is
-   saved). Status: open; a
-   check in the Mecway window with a script that does nothing would settle it.
+155\. **Load tables past the period with *time points* but without a step size** (question,
+   `bridge_to_aster._build_listinst_block`). A model with `<timesteps>` (period) but
+   without `stepsize` (CCX *time points*) and with `auto_time_stepping` off computes every
+   point of the load tables, also after the period; `_mecway_static_times` (with a step
+   size) drops them, as Mecway does. Whether Mecway with CCX time points also stops at the
+   period is NOT verified (19 Nov 2026). Without `<timesteps>` the tables are cut at 1 s
+   like Mecway (NL-75b..d).
 
 ## Not translated (the bridge reports it at the end of the run)
 
