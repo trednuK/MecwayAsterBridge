@@ -419,15 +419,20 @@ NCOTES = ("<ccxmodeldefinition>** ASTER-ZONE INTEGRATION='NCOTES'"
           "</ccxmodeldefinition>")
 
 
-def build_nl03_patch(kn=KN4, n_lo=2, extra=None):
-    m = Model("L30", timesteps=_timesteps(1.0))
+def build_nl03_patch(kn=KN4, n_lo=2, extra=None, analysis="L30", ts=None):
+    """analysis "D31" (with ts, e.g. {"timeperiod": "1 s", "stepsize":
+    "0.1 s"}, the form Mecway writes for CCX): the same model as a
+    nonlinear dynamic run with steel's density (NL-03j)."""
+    m = Model(analysis, timesteps=ts or _timesteps(1.0))
     m.elset("Onderblok", "Staal")
     lo = hexmesh(m, "Onderblok", n_lo, n_lo, 1, box(0, A4, 0, A4, -H4, 0),
                  order=2)
     m._index = {}          # bovenblok: eigen knopen
     m.elset("Bovenblok", "Staal")
     up = hexmesh(m, "Bovenblok", 3, 3, 1, box(0, A4, 0, A4, 0, H4), order=2)
-    _elastic_mat(m, "Staal", NU4)
+    _elastic_mat(m, "Staal", NU4, ('<density type="Simple" density="7850 '
+                                   'kg/m³" />',) if analysis == "D31"
+                 else ())
     m.node_selection("SymX", sorted(lo["nodes"]["u0"] | up["nodes"]["u0"]))
     m.node_selection("SymY", sorted(lo["nodes"]["v0"] | up["nodes"]["v0"]))
     m.node_selection("Bodem", sorted(lo["nodes"]["w0"]))
@@ -633,6 +638,20 @@ TESTS = [
                 source="NL-03h met ALGO_FROT='STANDARD' (Lagrange, star)")],
          note="Kruip per stap (tau/(mu p))/COEF_PENA_FROT, hier samen "
               "~0,08% (KNOWN_BUGS 149)."),
+    Case("NL-03j", GROUP, "Contact-patchtest als niet-lineaire dynamica "
+         "(D31, stepsize zoals Mecway schrijft), langzaam belast",
+         "dyna_impl_3d",
+         lambda: build_nl03_patch(analysis="D31", ts={
+             "timeperiod": "1 s", "stepsize": "0.1 s"}),
+         _nl03_patch_checks(True) + [
+             Check("aantal uitvoerstappen (stepsize)", lambda r: len(
+                 [x for x in r.times() if x > 0.0]), ref=10, tol_abs=0,
+                 source="Mecway 36 met CCX (D31): een oplossing per "
+                        "stepsize, 10 stappen")],
+         settings={"contact_algo": "PENALISATION"},
+         note="Mecway 36 met CCX (D31, headless, 19 nov 2026): bovenkant "
+              "1,9524 um, penetratie 0,99998 um, 10 stappen; voor V2026.15 "
+              "las de bridge stepsize bij D31 niet (alleen t = 1 s)."),
     Case("NL-03p", GROUP, "Contact-patchtest (PENALISATION), te slappe "
          "normal stiffness: penetratiecontrole", "nonlin_static_3d",
          lambda: build_nl03_patch(kn=1.0e10),

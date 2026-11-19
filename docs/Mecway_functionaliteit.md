@@ -179,7 +179,7 @@ bij welke Mecway-naam hoort: [`Handleiding.md`](Handleiding.md) §4.1.
 | Shift point (knik) | Nee | Alleen INFO (KB46). |
 | Mode superposition (D30) | Ja | §1. |
 | Time period | Ja | |
-| Time step size | Ja | D30, D20, DA0 (rekenstap = Mecway's stap, ook bij *every n time steps*; met mode superposition hoogstens Mecway's stap), T31 en L30 (L30: Mecway's stappen tot de periode plus de knikken van de lasttabellen; zonder stapgrootte `substeps_per_interval`). Met *Automatic time stepping* zie de regel hieronder. |
+| Time step size | Ja | D30, D20, DA0 en D31 (D31 sinds V2026.15, nagelopen tegen Mecway 36 met CCX: NL-03j; *every n time steps* bij D31 NIET nagelopen; rekenstap = Mecway's stap, ook bij *every n time steps*; met mode superposition hoogstens Mecway's stap), T31 en L30 (L30: Mecway's stappen tot de periode plus de knikken van de lasttabellen; zonder stapgrootte `substeps_per_interval`). Met *Automatic time stepping* zie de regel hieronder. |
 | Uitvoertijden, *Generate solution every n time steps* | Ja | |
 | Automatic time stepping | Ja | L30 (niet-lineair statisch): `DEFI_LIST_INST METHODE='AUTO'` tussen Mecway's uitvoertijden, `ARCHIVAGE` op die tijden; instelling `auto_time_stepping`. Dynamisch niet: vaste stappen, knippen bij divergentie. |
 | Incompatible hex8 | Nee | KB1. |

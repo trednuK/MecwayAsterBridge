@@ -78,6 +78,13 @@
   same (it already stuck almost rigidly), but convergence is much better: NL-03h 10 steps
   instead of 754, and Tutorials/AssemblyWithContact *Friction* and *Quadratic_ramp* now
   complete (they stopped). Your own `#ASTER-ZONE COEF_PENA_FROT=...` still wins.
+- **Nonlinear dynamics (D31) with a *Time step size*: the bridge now uses it** (bug fix,
+  changes results). Before, a D31 model in the form Mecway writes for CCX (`stepsize`) got only
+  the points of its load tables as time steps (a 200 µs pulse: 4 steps instead of 100); now
+  the solver step and the output step are Mecway's step, as for D30 (verification NL-03j,
+  equal to Mecway 36 with CCX). With *Time point increment* nothing changes. Explicit dynamics
+  writes its output per step too, and a run with element failure restarts per step (more
+  restarts than before).
 - **Thermal bonded contact with the same temperature on both sides of the bond** no longer
   stops with `FACTOR_11`: slave nodes whose temperature is imposed with the same value as
   their master nodes leave the thermal tie (KNOWN_BUGS 147, verification TH-04e/f/g); another

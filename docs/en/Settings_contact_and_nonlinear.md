@@ -86,7 +86,7 @@ when you omit the keyword (catalogue 17.4).
 |---|---|---|---|---|
 | `substeps_per_interval` (Substeps per time interval) | static | Only for a model without Mecway's *Time step size*: solver steps per interval between the time points of the time-dependent loads (`DEFI_LIST_REEL`, `NOMBRE`); without a time load 0 to `default_time_end`. With a step size the bridge computes Mecway's steps plus the kinks of the load tables (§2.1). | 10 | - |
 | `auto_time_stepping` (Follow Mecway's Automatic time stepping) | static | Only with Mecway's *Automatic time stepping*: on = `DEFI_LIST_INST METHODE='AUTO'` between Mecway's output times, results at those times (§2.1); off = fixed steps. | on | - |
-| `substeps_per_output` (Solver steps per Mecway time step) | implicit | Solver steps per Mecway time step: with Dynamic Response (D30, D20, DA0) per *Time step size*, also with *Generate solution every n time steps* > 1 (then n × this value per output interval; results only at the output times); otherwise (D31, `timepointsincrement`) per output interval. Kinks of load functions are added as extra time points. | 1 | - |
+| `substeps_per_output` (Solver steps per Mecway time step) | implicit | Solver steps per Mecway time step: with Dynamic Response (D30, D20, DA0) and D31 per *Time step size*, also with *Generate solution every n time steps* > 1 (then n × this value per output interval; results only at the output times); otherwise (`timepointsincrement`) per output interval. Kinks of load functions are added as extra time points. | 1 | - |
 | `default_time_end` (End time without time load) [s] | all | End time when the model has no time load (static) or no `<timesteps>` (dynamic). | 1.0 | - |
 | `explicit_dt_factor` (Time step / critical time step) | explicit | Time step ≤ factor × the critical time step as estimated by the bridge, divided evenly per output interval (so every output time is a solver step). | 0.5 | - |
 
@@ -752,6 +752,23 @@ contact = DEFI_CONTACT(
   implicit dynamics that stopped NL-03h at t = 0.00024 s (19 Nov 2026), so there give the
   zone your own `#ASTER-ZONE COEF_PENA_FROT=...` (1/m, e.g. 1/(1e-8 × the diagonal of the contact
   faces in m)); it takes precedence.
+
+  ![Friction: tangential displacement per load step](../img/contact_friction_stick.svg)
+
+  1. Mecway (CCX): the tangential stiffness kt gives an elastic slip τ/kt on top of the
+     deformation of the parts; it stays constant while the load stays constant.
+  2. Code-Aster with `COEF_PENA_FROT` = kt/(μp), the closest conversion of Mecway's kt: the
+     contact slips again in every time step, so the displacement keeps growing, also while the
+     load stays constant (creep, KNOWN_BUGS 149).
+  3. The bridge (rigid stick): only the deformation of the parts, no slip; stiffer than
+     Mecway by τ/kt (NL-03h: −10 % at kt = 1e13 Pa/m).
+  4. The load is held constant from here.
+  5. The shear load τ on the contact, ramped up in five steps.
+
+  u: tangential displacement of the top of the upper block; n: load step. Numbers of NL-03h
+  (10 MPa compression, then 2 MPa shear, μ = 0.5, kt = 1e13 Pa/m): 1 and 3 measured, 2
+  computed with the creep per step (measured at step 5: 2.50 µm against 2.46 µm drawn); the
+  held steps are drawn, not run.
 - **Adaptation.** CA default `ADAPTATION='CYCLAGE'`: if a contact point keeps
   switching status, Code-Aster switches there to penalty with a maximum penetration
   (U4.44.11, "Operand ADAPTATION"; U2.04.04 §4.1). Then check the penetration in the

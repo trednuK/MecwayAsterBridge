@@ -85,7 +85,7 @@ Code-Aster-standaard als je het sleutelwoord weglaat (catalogus 17.4).
 |---|---|---|---|---|
 | `substeps_per_interval` (Substappen per tijdsinterval) | statisch | Alleen voor een model zonder Mecway's *Time step size*: rekenstappen per interval tussen de tijdspunten van de tijdsafhankelijke lasten (`DEFI_LIST_REEL`, `NOMBRE`); zonder tijdslast 0 tot `default_time_end`. Met een stapgrootte rekent de bridge Mecway's stappen plus de knikken van de lasttabellen (§2.1). | 10 | - |
 | `auto_time_stepping` (Mecway's Automatic time stepping volgen) | statisch | Alleen met Mecway's *Automatic time stepping*: aan = `DEFI_LIST_INST METHODE='AUTO'` tussen Mecway's uitvoertijden, resultaten op die tijden (§2.1); uit = vaste stappen. | aan | - |
-| `substeps_per_output` (Rekenstappen per Mecway-tijdstap) | impliciet | Rekenstappen per tijdstap van Mecway: bij Dynamic Response (D30, D20, DA0) per *Time step size*, ook met *Generate solution every n time steps* > 1 (dan n × deze waarde per uitvoerinterval; resultaten alleen op de uitvoertijden); anders (D31, `timepointsincrement`) per uitvoerinterval. Knikpunten van lastfuncties komen er als extra tijdspunt bij. | 1 | - |
+| `substeps_per_output` (Rekenstappen per Mecway-tijdstap) | impliciet | Rekenstappen per tijdstap van Mecway: bij Dynamic Response (D30, D20, DA0) en D31 per *Time step size*, ook met *Generate solution every n time steps* > 1 (dan n × deze waarde per uitvoerinterval; resultaten alleen op de uitvoertijden); anders (`timepointsincrement`) per uitvoerinterval. Knikpunten van lastfuncties komen er als extra tijdspunt bij. | 1 | - |
 | `default_time_end` (Eindtijd zonder tijdsbelasting) [s] | alle | Eindtijd als het model geen tijdslast (statisch) of geen `<timesteps>` (dynamisch) heeft. | 1.0 | - |
 | `explicit_dt_factor` (Tijdstap / kritieke tijdstap) | expliciet | Tijdstap ≤ factor × de kritieke tijdstap zoals de bridge die schat, per uitvoerinterval gelijk verdeeld (zo is elke uitvoertijd een rekenstap). | 0.5 | - |
 
@@ -765,6 +765,23 @@ contact = DEFI_CONTACT(
   dynamica stopte NL-03h daarmee bij t = 0,00024 s (19 nov 2026), geef de zone daar dus een
   eigen `#ASTER-ZONE COEF_PENA_FROT=...` (1/m, bijv. 1/(1e-8 × de diagonaal van de
   contactvlakken in m)); die gaat voor.
+
+  ![Wrijving: tangentiële verplaatsing per belastingstap](img/contact_friction_stick.svg)
+
+  1. Mecway (CCX): de tangentiële stijfheid kt geeft een elastische slip τ/kt bovenop de
+     vervorming van de delen; die blijft gelijk zolang de belasting gelijk blijft.
+  2. Code-Aster met `COEF_PENA_FROT` = kt/(μp), de dichtste omrekening van Mecway's kt: het
+     contact slipt in elke tijdstap opnieuw, dus de verplaatsing blijft groeien, ook als de
+     belasting gelijk blijft (kruip, KNOWN_BUGS 149).
+  3. De bridge (star plakken): alleen de vervorming van de delen, geen slip; stijver dan
+     Mecway met τ/kt (NL-03h: −10 % bij kt = 1e13 Pa/m).
+  4. Vanaf hier blijft de belasting gelijk.
+  5. De schuifbelasting τ op het contact, in vijf stappen opgebouwd.
+
+  u: tangentiële verplaatsing van de bovenkant van het bovenste blok; n: belastingstap.
+  Getallen van NL-03h (10 MPa druk, dan 2 MPa schuif, μ = 0,5, kt = 1e13 Pa/m): 1 en 3
+  gemeten, 2 berekend met de kruip per stap (gemeten bij stap 5: 2,50 µm tegen 2,46 µm
+  getekend); de stappen met gelijke belasting zijn getekend, niet gerekend.
 - **Adaptatie.** CA-standaard `ADAPTATION='CYCLAGE'`: wisselt een contactpunt
   steeds van status, dan schakelt Code-Aster daar zelf over op penalty met een
   maximale penetratie (U4.44.11, "Operand ADAPTATION"; U2.04.04 §4.1). Controleer

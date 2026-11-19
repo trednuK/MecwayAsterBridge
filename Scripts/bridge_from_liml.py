@@ -2232,8 +2232,9 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
                     ts.get("timepointsincrement", "0 s"), "time"),
                 "outputtimes": ts.get("outputtimes", "regular"),
                 "automatic": ts.get("automatictimestepping", "") == "true",
-                # D30 (Dynamic Response): <timesteps timeperiod=".."
-                # stepsize=".." [keepeverynthtimestep="n"] />; Mecway
+                # D30 (Dynamic Response) and D31 with CCX: <timesteps
+                # timeperiod=".." stepsize=".." [keepeverynthtimestep="n"] />;
+                # Mecway
                 # writes a solution at t = 0 and every n-th step
                 # (seen headless with Mecway 33, D30 with mode
                 # superposition: stepsize 0.001 s, n = 10 gave 201 steps

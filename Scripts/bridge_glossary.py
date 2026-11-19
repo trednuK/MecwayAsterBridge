@@ -1659,12 +1659,12 @@ SETTING_HELP = {
                   u"(longer period, lower peak). Default -0.1 (Code-Aster "
                   u"default)."),
     "substeps_per_output": (u"Rekenstappen per tijdstap van Mecway (Dynamic "
-                            u"Response: Time step size, ook bij 'Generate "
+                            u"Response en D31: Time step size, ook bij 'Generate "
                             u"solution every n time steps'; anders per "
                             u"uitvoerinterval); meer = kleinere rekenstap. "
                             u"Standaard 1 (rekenstap = Mecway's tijdstap).",
                             u"Solver steps per Mecway time step (Dynamic "
-                            u"Response: Time step size, also with 'Generate "
+                            u"Response and D31: Time step size, also with 'Generate "
                             u"solution every n time steps'; otherwise per "
                             u"output interval); more = smaller solver step. "
                             u"Default 1 (solver step = Mecway's time step)."),
