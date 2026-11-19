@@ -561,7 +561,7 @@ patroon.
 | `ERROR: ...: ET >= E bij ... K` | tangentmodulus te groot bij een hoge temperatuur (E klein) | `H` gebruiken, of ET kleiner |
 | `ERROR: ...: H/ET zonder SY` | versteviging zonder vloeigrens | `SY` geven |
 | `WARNING: #ASTER-MATERIAAL werkt alleen ...; hier genegeerd` | de regel staat in een mechanisch model of een thermisch model zonder Thermal stress | Thermal stress toevoegen (T31), of de regel weghalen |
-| `BRIDGE_ONVOLLEDIG <t>` / `MECANONLINE` in de `.mess` | de mechanische stap convergeert niet, ook na knippen | `TC_CUT` zetten in de regel `#ASTER-MATERIAAL` (§9.2), E en SY boven 1200 °C niet extreem klein, `convergence_resi_rela` 1e-5 (pagina *Thermisch*, kop *Oplosser*, §9.3), kleinere *Time step* |
+| `BRIDGE_ONVOLLEDIG <t>` / `MECANONLINE` in de `.mess` | de mechanische stap convergeert niet, ook na knippen | `TC_CUT` zetten in de regel `#ASTER-MATERIAAL` (§9.2), E en SY boven 1200 °C niet extreem klein, `convergence_resi_rela` 1e-5 (pagina *Thermisch*, kop *Stappen en convergentie*, §9.3), kleinere *Time step* |
 | `WARNING: Thermomechanisch: de tijdstappen ... lopen niet gelijk` | (zou niet moeten voorkomen) | melden; de temperatuur in Mecway kan bij een andere stap horen |
 
 ## 10. Metallurgie: fasen, hardheid en de invloed op de restspanning

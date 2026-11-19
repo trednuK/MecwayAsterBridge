@@ -63,7 +63,7 @@ What the nonlinear analyses support:
 |---|---|---|
 | Code-Aster run | `time_limit`, `memory_limit` | all |
 | Solver | `solver_nprec`; `lin_solver`, `lin_solver_resi` | all; `lin_solver` static only, `lin_solver_resi` static and the static step of modal, buckling and the imperfection |
-| Steps and convergence | `substeps_per_interval` (static), `newton_max_iter`, `newton_reac_iter`, `default_time_end`, `convergence_criterion`, `convergence_resi_rela`, `convergence_resi_maxi`, `line_search`, `auto_time_stepping` (static) | nonlinear static, dynamic implicit (there, without `substeps_per_interval`, the fields are under the heading *Solver*); `default_time_end` also explicit |
+| Steps and convergence | `substeps_per_interval` (static), `newton_max_iter`, `newton_reac_iter`, `default_time_end`, `convergence_criterion`, `convergence_resi_rela`, `convergence_resi_maxi`, `line_search`, `auto_time_stepping` (static) | nonlinear static, dynamic implicit (Newton and convergence also thermal); `default_time_end` also explicit |
 | Contact | `contact_algo`, `contact_smoothing`, `contact_pene_maxi` | nonlinear static, dynamic implicit (`contact_algo` also explicit) |
 | Material and kinematics | `plastic_strain_definition`, `deformation` | nonlinear static, dynamic |
 | Time scheme | `schema`, `hht_alpha`, `substeps_per_output` (implicit), `explicit_dt_factor` (explicit) | dynamic |
@@ -76,8 +76,7 @@ What the nonlinear analyses support:
 ![Start screen, page Nonlinear static: the headings Steps and convergence and Contact](../img/nonlin_static_steps_en.png)
 
 1. The page *Nonlinear static* in the navigation list (the other analyses have their own
-   page; on *Dynamic (implicit)* and *Thermal* the convergence fields are under the
-   heading *Solver*).
+   page, with the same headings where they have these fields).
 2. Heading *Steps and convergence*.
 3. *Substeps per time interval* (`substeps_per_interval`).
 4. *Convergence criterion* (`convergence_criterion`), with `convergence_resi_rela` and

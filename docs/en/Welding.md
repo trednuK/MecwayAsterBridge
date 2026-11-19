@@ -561,7 +561,7 @@ qualitative pattern.
 | `ERROR: ...: ET >= E at ... K` | tangent modulus too large at a high temperature (small E) | use `H`, or a smaller ET |
 | `ERROR: ...: H/ET without SY` | hardening without a yield strength | give `SY` |
 | `WARNING: #ASTER-MATERIAL only works ...; ignored here` | the line is in a mechanical model or a thermal model without Thermal stress | add a Thermal stress (T31), or remove the line |
-| `BRIDGE_ONVOLLEDIG <t>` / `MECANONLINE` in the `.mess` | the mechanical step does not converge, even after cutting | set `TC_CUT` in the `#ASTER-MATERIAL` line (§9.2), E and SY above 1200 °C not extremely small, `convergence_resi_rela` 1e-5 (page *Thermal*, heading *Solver*, §9.3), smaller *Time step* |
+| `BRIDGE_ONVOLLEDIG <t>` / `MECANONLINE` in the `.mess` | the mechanical step does not converge, even after cutting | set `TC_CUT` in the `#ASTER-MATERIAL` line (§9.2), E and SY above 1200 °C not extremely small, `convergence_resi_rela` 1e-5 (page *Thermal*, heading *Steps and convergence*, §9.3), smaller *Time step* |
 | `WARNING: Thermomechanical: the time steps ... differ` | (should not happen) | report it; the temperature in Mecway may belong to another step |
 
 ## 10. Metallurgy: phases, hardness and the effect on residual stress

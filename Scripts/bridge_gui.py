@@ -510,6 +510,12 @@ SECTION_BEFORE = {
     "solver_nprec": ("Oplosser", "Solver"),
     "substeps_per_interval": ("Stappen en convergentie",
                               "Steps and convergence"),
+    # pages without substeps_per_interval (Dynamic (implicit), Thermal,
+    # Dynamic (explicit)): the same heading before the Newton/convergence
+    # fields (shown once per page)
+    "newton_max_iter": ("Stappen en convergentie", "Steps and convergence"),
+    # Dynamic (explicit): only default_time_end of this group
+    "default_time_end": ("Stappen en convergentie", "Steps and convergence"),
     "contact_algo": ("Contact", "Contact"),
     "plastic_strain_definition": ("Materiaal en kinematica",
                                   "Material and kinematics"),

@@ -62,7 +62,7 @@ Wat de niet-lineaire analyses ondersteunen:
 |---|---|---|
 | Code-Aster-run | `time_limit`, `memory_limit` | alle |
 | Oplosser | `solver_nprec`; `lin_solver`, `lin_solver_resi` | alle; `lin_solver` alleen statisch, `lin_solver_resi` statisch en de statische stap van modaal, knik en de imperfectie |
-| Stappen en convergentie | `substeps_per_interval` (statisch), `newton_max_iter`, `newton_reac_iter`, `default_time_end`, `convergence_criterion`, `convergence_resi_rela`, `convergence_resi_maxi`, `line_search`, `auto_time_stepping` (statisch) | niet-lineair statisch, dynamisch impliciet (daar, zonder `substeps_per_interval`, staan de velden onder de kop *Oplosser*); `default_time_end` ook expliciet |
+| Stappen en convergentie | `substeps_per_interval` (statisch), `newton_max_iter`, `newton_reac_iter`, `default_time_end`, `convergence_criterion`, `convergence_resi_rela`, `convergence_resi_maxi`, `line_search`, `auto_time_stepping` (statisch) | niet-lineair statisch, dynamisch impliciet (Newton en convergentie ook thermisch); `default_time_end` ook expliciet |
 | Contact | `contact_algo`, `contact_smoothing`, `contact_pene_maxi` | niet-lineair statisch, dynamisch impliciet (`contact_algo` ook expliciet) |
 | Materiaal en kinematica | `plastic_strain_definition`, `deformation` | niet-lineair statisch, dynamisch |
 | Tijdschema | `schema`, `hht_alpha`, `substeps_per_output` (impliciet), `explicit_dt_factor` (expliciet) | dynamisch |
@@ -75,8 +75,7 @@ Wat de niet-lineaire analyses ondersteunen:
 ![Startscherm, pagina Niet-lineair statisch: de koppen Stappen en convergentie en Contact](img/nonlin_static_steps_nl.png)
 
 1. De pagina *Niet-lineair statisch* in de navigatielijst (de andere analyses hebben een
-   eigen pagina; op *Dynamisch (impliciet)* en *Thermisch* staan de convergentievelden
-   onder de kop *Oplosser*).
+   eigen pagina, met dezelfde koppen waar ze deze velden hebben).
 2. Kop *Stappen en convergentie*.
 3. *Substappen per tijdsinterval* (`substeps_per_interval`).
 4. *Convergentiecriterium* (`convergence_criterion`), met `convergence_resi_rela` en
