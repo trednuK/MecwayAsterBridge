@@ -135,6 +135,13 @@ fn stage(msg: &str) {
     let mut err = io::stderr();
     let _ = writeln!(err, "{msg}");
     let _ = err.flush();
+    // The bridge reads this file. Stderr of a Windows child is easy to miss.
+    if let Ok(path) = std::env::var("ASTER_FAST_STATUS") {
+        if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
+            let _ = writeln!(f, "{msg}");
+            let _ = f.flush();
+        }
+    }
 }
 
 fn err(e: impl std::fmt::Display) -> io::Error {
@@ -163,6 +170,7 @@ fn mesh(file: &H5File) -> io::Result<(Vec<Node>, HashMap<String, Vec<Cell>>)> {
     };
     let noe = body.group("NOE").map_err(err)?;
     let coo = noe.dataset("COO").map_err(err)?;
+    stage("reading coordinates");
     let flat = coo.read_f64().map_err(err)?;
     let nbr = attr_i64(&coo, "NBR").unwrap_or(0);
     if nbr <= 0 {
@@ -186,6 +194,7 @@ fn mesh(file: &H5File) -> io::Result<(Vec<Node>, HashMap<String, Vec<Cell>>)> {
         for typ in mai.groups().map_err(err)? {
             let grp = mai.group(&typ).map_err(err)?;
             let Ok(nod) = grp.dataset("NOD") else { continue };
+            stage(&format!("reading elements {typ}"));
             let ncell = attr_i64(&nod, "NBR").unwrap_or(0);
             if ncell <= 0 {
                 continue;

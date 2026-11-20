@@ -1,5 +1,16 @@
 # Changelog
 
+## V2026.20 – 20 November 2026
+
+While the MED file is read, Mecway's console shows each step and, every
+5 seconds, how long it has been running and the last step. Errors are
+printed there too, not only in the log file. The window text follows the
+same lines.
+
+The `.comm` and the `.export` are the same as V2026.19.
+
+Not checked in the Mecway window.
+
 ## V2026.19 – 20 November 2026
 
 Reading the `.rmed` no longer stops on "Reading the MED file (aster_fast)".

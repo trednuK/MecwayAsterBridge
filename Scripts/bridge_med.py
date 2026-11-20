@@ -20,6 +20,7 @@ from __future__ import division
 import base64
 import os
 import struct
+import sys
 
 import bridge_hdf5
 
@@ -66,8 +67,12 @@ _MAP = (
 
 
 def _tick(detail, fraction=None, force=False):
-    """One line in the results window. Quiet between steps so a large
-    MED file does not fill the log."""
+    """One line in the results window and on Mecway's console."""
+    try:
+        print(detail)
+        sys.stdout.flush()
+    except Exception:
+        pass
     try:
         import bridge_utils
         bridge_utils.progress(

@@ -287,7 +287,7 @@ def write_med(rmed_path, out_path, liml_path=None):
     cmd = [exe, "med", rmed_path, out_path]
     if liml_path:
         cmd.append(liml_path)
-    out_path_tmp = err_path = None
+    out_path_tmp = err_path = status_path = None
     try:
         try:
             size = os.path.getsize(rmed_path)
@@ -295,29 +295,53 @@ def write_med(rmed_path, out_path, liml_path=None):
             size = -1
         log("INFO: aster_fast med starting ({0}, {1} bytes).".format(
             os.path.basename(rmed_path), size))
+        _say("aster_fast: {0}".format(exe))
+        _say("aster_fast med: {0} ({1} bytes)".format(
+            os.path.basename(rmed_path), size))
         fd, out_path_tmp = tempfile.mkstemp(prefix="mwfast_", suffix=".out")
         os.close(fd)
         fd, err_path = tempfile.mkstemp(prefix="mwfast_", suffix=".err")
+        os.close(fd)
+        fd, status_path = tempfile.mkstemp(prefix="mwfast_", suffix=".status")
         os.close(fd)
         progress(section, detail, None, True)
         out_f = open(out_path_tmp, "wb")
         err_f = open(err_path, "wb")
         try:
-            proc = subprocess.Popen(
-                cmd, stdout=out_f, stderr=err_f, stdin=_devnull())
+            try:
+                proc = subprocess.Popen(
+                    cmd, stdout=out_f, stderr=err_f, stdin=_devnull(),
+                    env=_status_env(status_path))
+            except Exception as exc:
+                _say("WARNING: status file was not passed ({0}).".format(exc))
+                proc = subprocess.Popen(
+                    cmd, stdout=out_f, stderr=err_f, stdin=_devnull())
             seen = 0
+            last = detail
+            t0 = time.time()
+            beat = t0
             while proc.poll() is None:
-                seen = _med_stages(section, err_path, seen)
-                progress(section, detail, None, False)
+                seen, last = _med_stages(section, status_path, seen, last)
+                now = time.time()
+                if now - beat >= 5.0:
+                    beat = now
+                    msg = "aster_fast still running, {0:.0f} s, last: {1}".format(
+                        now - t0, last)
+                    _say_console(msg)
+                    progress(section, msg, None, True, True)
+                else:
+                    progress(section, detail, None, False)
                 time.sleep(0.05)
-            _med_stages(section, err_path, seen)
+            seen, last = _med_stages(section, status_path, seen, last)
+            _say("aster_fast finished in {0:.0f} s (code {1}), last: {2}".format(
+                time.time() - t0, proc.returncode, last))
         finally:
             out_f.close()
             err_f.close()
         err = open(err_path, "rb").read()
         if proc.returncode != 0:
-            log("WARNING: aster_fast med failed ({0}); reading the MED "
-                "file in Python. {1}".format(proc.returncode, _err_text(err)))
+            _say("ERROR: aster_fast med failed ({0}). {1}".format(
+                proc.returncode, _err_text(err)))
             if os.path.isfile(out_path):
                 try:
                     os.remove(out_path)
@@ -327,21 +351,57 @@ def write_med(rmed_path, out_path, liml_path=None):
         text = open(out_path_tmp, "rb").read()
         nvars = _med_count(text)
         if nvars is None or not os.path.isfile(out_path) or os.path.getsize(out_path) == 0:
-            log("WARNING: aster_fast med wrote no fragment; reading the "
-                "MED file in Python.")
+            _say("ERROR: aster_fast med wrote no fragment. "
+                 "Reading the MED file in Python.")
             return None
         return nvars
     except Exception as exc:
-        log("WARNING: aster_fast med could not start ({0}); reading the "
-            "MED file in Python.".format(exc))
+        _say("ERROR: aster_fast med could not start ({0}). "
+             "Reading the MED file in Python.".format(exc))
         return None
     finally:
-        for path in (out_path_tmp, err_path):
+        for path in (out_path_tmp, err_path, status_path):
             if path and os.path.isfile(path):
                 try:
                     os.remove(path)
                 except OSError:
                     pass
+
+
+def _say(text):
+    """One line on Mecway's console and in the log."""
+    _say_console(text)
+    log(text)
+
+
+def _say_console(text):
+    """print, which Mecway shows. A bad console encoding must not stop the run."""
+    try:
+        print(text)
+    except Exception:
+        try:
+            if isinstance(text, type(u"")):
+                print(text.encode("ascii", "replace"))
+            else:
+                print(text)
+        except Exception:
+            return
+    try:
+        sys.stdout.flush()
+    except Exception:
+        pass
+
+
+def _status_env(path):
+    """Environment for the child, plus the status-file path."""
+    env = {}
+    for key in os.environ:
+        try:
+            env[str(key)] = str(os.environ[key])
+        except Exception:
+            pass
+    env["ASTER_FAST_STATUS"] = str(path)
+    return env
 
 
 def _devnull():
@@ -353,33 +413,31 @@ def _devnull():
         return None
 
 
-def _med_stages(section, err_path, pos):
-    """Log complete stderr lines of aster_fast and show the last one.
-    Returns how many bytes are already handled."""
+def _med_stages(section, path, pos, last):
+    """New lines from aster_fast. Printed on the console. Returns
+    (bytes already handled, last line)."""
     try:
-        raw = open(err_path, "rb").read()
+        raw = open(path, "rb").read()
     except OSError:
-        return pos
+        return pos, last
     if not isinstance(pos, int) or pos < 0 or pos > len(raw):
         pos = 0
     chunk = raw[pos:]
     nl = chunk.rfind(b"\n")
     if nl < 0:
-        return pos
+        return pos, last
     try:
         text = chunk[:nl].decode("utf-8", "replace")
     except Exception:
-        return pos + nl + 1
-    last = None
+        return pos + nl + 1, last
     for line in text.splitlines():
         line = line.strip()
         if not line:
             continue
-        log("INFO: aster_fast: {0}".format(line))
         last = line
-    if last:
-        progress(section, last, None, True)
-    return pos + nl + 1
+        _say("aster_fast: {0}".format(line))
+        progress(section, line, None, True)
+    return pos + nl + 1, last
 
 
 def _med_count(text):
