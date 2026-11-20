@@ -572,11 +572,24 @@ def _run(settings):
         bridge_manifest.finish_run(
             work_dir_path(), model_data, export_file,
             not (stopped or job.exit_code or mess_errors), mess_version)
-        # Wait window while the results go into Mecway (opening a large
-        # .liml takes as long as the preparation)
-        wait_open(tr(u"Resultaten in Mecway laden",
-                     u"Loading the results into Mecway"),
-                  settings.get("gui") == "winforms")
+        # The results window is the preparation window: it has a bar and
+        # it refreshes on this thread. The small "Please wait" window has
+        # no bar and does not move while this thread is busy.
+        if open_prep_progress(
+                run_name(""),
+                tr(u"Resultaten", u"Results"),
+                tr(u"Mecway is geblokkeerd tot de resultaten erin staan. "
+                   u"Elke stap staat hier, met de status.",
+                   u"Mecway is locked until the results are in. Each step "
+                   u"is shown here, with its status.")):
+            prep_open = True
+        else:
+            wait_open(tr(u"Resultaten in Mecway laden",
+                         u"Loading the results into Mecway"),
+                      settings.get("gui") == "winforms")
+        progress(tr(u"Resultaten", u"Results"), tr(
+            u"Resultaatbestand zoeken...",
+            u"Looking for the result file..."), None, True)
         # Failed elements (bridge_failure.py) in the log and a message
         failure_note = report_failures(
             os.path.join(work_dir_path(), run_name(".mess")),
@@ -591,6 +604,9 @@ def _run(settings):
         loaded = _load_liml_results(active_liml, model_data, run_start,
                                     monitor, mess_errors,
                                     snapshot=model_copy["path"])
+        if prep_open:
+            close_prep_progress()
+            prep_open = False
         wait_close()
         # results not in Mecway: the copy stays for a run by hand too
         model_copy["keep"] = model_copy["keep"] or not loaded
@@ -838,6 +854,9 @@ def _load_liml_results(active_liml, model_data, run_start, monitor=None,
         fresh = (os.path.isfile(rmed) and
                  os.path.getmtime(rmed) >= run_start - 1.0)
         if fresh:
+            progress(tr(u"Resultaten", u"Results"), tr(
+                u"MED-bestand lezen...",
+                u"Reading the MED file..."), None, True)
             try:
                 import bridge_med
                 nvars = bridge_med.write_fragment(rmed, fragment, model_data)
@@ -885,6 +904,9 @@ def _load_liml_results(active_liml, model_data, run_start, monitor=None,
         log("INFO: Vibro-acoustics: Mecway has no coupled analysis; "
             "no comparison with the Mecway solve.")
     elif CONFIG_BRIDGE.get("mecway_solve_first", False):
+        progress(tr(u"Resultaten", u"Results"), tr(
+            u"Vergelijken met de Mecway-oplossing...",
+            u"Comparing with the Mecway solution..."), None, True)
         if modes:
             # Vibration/buckling shapes have an arbitrary sign and are not
             # unique for multiple modes: compare only the values.
@@ -910,8 +932,13 @@ def _load_liml_results(active_liml, model_data, run_start, monitor=None,
             arrays = read_step(fragment, -1, len(model_data["mesh_nodes"]))
             _compare_with_mecway(solution, arrays, sorted(arrays),
                                  work_dir_path())
+    progress(tr(u"Resultaten", u"Results"), tr(
+        u"Model opslaan...", u"Saving the model..."), None, True)
     if not _save_before_write(snapshot, fragment):
         return False
+    progress(tr(u"Resultaten", u"Results"), tr(
+        u"Resultaten in de .liml schrijven...",
+        u"Writing the results into the .liml..."), None, True)
     configuration, warning = pick_configuration(active_liml)
     if warning:
         log("WARNING: " + warning)
@@ -937,6 +964,9 @@ def _load_liml_results(active_liml, model_data, run_start, monitor=None,
     # .liml (small .liml).
     log("INFO: Result file (can be reloaded with "
         "the Results... button): {0}".format(fragment))
+    progress(tr(u"Resultaten", u"Results"), tr(
+        u"Model in Mecway openen...",
+        u"Opening the model in Mecway..."), None, True)
     if harmonic:
         report = (bridge_acoustic.report_harmonic
                   if bridge_acoustic.is_acoustic(active)

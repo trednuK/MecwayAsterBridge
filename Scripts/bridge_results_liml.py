@@ -58,11 +58,42 @@ import re
 from collections import OrderedDict
 
 from bridge_utils import (tr, choose_configuration, configuration_warning, log,
-                          model_stem, run_name, work_dir_path)
+                          model_stem, run_name, work_dir_path, progress)
 import bridge_monitor
 
 
 _CHUNK = 4 * 1024 * 1024
+# Byte count while splice_results writes the .liml. Other copies leave
+# total at 0 and do not touch the window.
+_SPLICE = {"total": 0, "done": 0}
+
+
+def _splice_tick(n):
+    """Move the results window while a large file is copied. Quiet: the
+    log keeps one line per step, not one per chunk."""
+    total = _SPLICE["total"]
+    if not total or n <= 0:
+        return
+    _SPLICE["done"] += n
+    frac = _SPLICE["done"] / float(total)
+    if frac > 0.98:
+        frac = 0.98
+    progress(tr(u"Resultaten", u"Results"),
+             tr(u"Resultaten in de .liml schrijven ({0} %)...",
+                u"Writing the results into the .liml ({0} %)...").format(
+                    int(round(100.0 * frac))),
+             frac, quiet=True)
+
+
+def _write_chunks(dst_file, body):
+    """Write body in pieces so the results window can move."""
+    start = 0
+    size = len(body)
+    while start < size:
+        piece = body[start:start + _CHUNK]
+        dst_file.write(piece)
+        _splice_tick(len(piece))
+        start += _CHUNK
 
 
 # ==========================================
@@ -147,6 +178,7 @@ def _copy_range(src, dst_file, start, end):
                 break
             dst_file.write(block)
             left -= len(block)
+            _splice_tick(len(block))
     finally:
         f.close()
 
@@ -161,6 +193,7 @@ def _copy_from(src, dst_file, start):
             if not block:
                 break
             dst_file.write(block)
+            _splice_tick(len(block))
     finally:
         f.close()
 
@@ -743,33 +776,52 @@ def splice_results(model_liml, fragment_path, out_path, configuration=None,
             marker = head.find(">", m.start()) + 1
 
     tmp = out_path + ".tmp"
-    f = open(tmp, "wb")
     try:
-        if marker > 0:
-            _copy_range(model_liml, f, 0, marker)
-            f.write(nl + "  <savedmonitor />")
-            _copy_range(model_liml, f, marker, begin)
-        else:
-            _copy_range(model_liml, f, 0, begin)
-        f.write(lead + indent + open_tag + nl)
-        f.write(nl.join(copy_lines) + nl)
-        if monitor is None:
-            _copy_from(fragment_path, f, 0)
-        else:
-            block = bridge_monitor.savedmonitor_block(monitor)
-            if fragment_path is None:
-                f.write('    <results precision="double">' + block +
-                        "\r\n    </results>\r\n")
+        _SPLICE["done"] = 0
+        _SPLICE["total"] = 1
+        try:
+            _SPLICE["total"] = os.path.getsize(model_liml)
+        except OSError:
+            _SPLICE["total"] = 1
+        if fragment_path is not None:
+            try:
+                _SPLICE["total"] += os.path.getsize(fragment_path)
+            except OSError:
+                pass
+        progress(tr(u"Resultaten", u"Results"),
+                 tr(u"Resultaten in de .liml schrijven (0 %)...",
+                    u"Writing the results into the .liml (0 %)..."),
+                 0.0, True)
+        f = open(tmp, "wb")
+        try:
+            if marker > 0:
+                _copy_range(model_liml, f, 0, marker)
+                f.write(nl + "  <savedmonitor />")
+                _copy_range(model_liml, f, marker, begin)
             else:
-                _copy_range(fragment_path, f, 0, results_end)
-                f.write(block)
-                _copy_from(fragment_path, f, results_end)
-        f.write("  </solution>")
-        if sol < 0:
-            f.write(nl)
-        _copy_from(model_liml, f, tail_start)
+                _copy_range(model_liml, f, 0, begin)
+            f.write(lead + indent + open_tag + nl)
+            _write_chunks(f, nl.join(copy_lines) + nl)
+            if monitor is None:
+                _copy_from(fragment_path, f, 0)
+            else:
+                block = bridge_monitor.savedmonitor_block(monitor)
+                if fragment_path is None:
+                    f.write('    <results precision="double">' + block +
+                            "\r\n    </results>\r\n")
+                else:
+                    _copy_range(fragment_path, f, 0, results_end)
+                    f.write(block)
+                    _copy_from(fragment_path, f, results_end)
+            f.write("  </solution>")
+            if sol < 0:
+                f.write(nl)
+            _copy_from(model_liml, f, tail_start)
+        finally:
+            f.close()
     finally:
-        f.close()
+        _SPLICE["total"] = 0
+        _SPLICE["done"] = 0
 
     _replace_with_bak(tmp, out_path)
     _log_section_notes(fragment_path)

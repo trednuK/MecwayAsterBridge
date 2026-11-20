@@ -1459,13 +1459,13 @@ def set_progress_hook(fn, pump=None):
     _PROGRESS["last"] = 0.0
 
 
-def progress(section, detail, fraction=None, force=False):
+def progress(section, detail, fraction=None, force=False, quiet=False):
     """
-    One preparation step, shown to the user while the run has not started
-    Code-Aster yet (bridge_gui preparation window). Also one STATUS line
-    in the log, at most a few times a second unless force is set (a new
-    step). fraction is 0..1 or None (the bar just moves). A missing window
-    still writes the log line.
+    One step, shown in the preparation window (bridge_gui). Also one
+    STATUS line in the log, at most a few times a second unless force is
+    set (a new step). fraction is 0..1 or None (the bar just moves).
+    quiet: paint the window but do not log (a long copy that reports a
+    percentage). A missing window still writes the log line, unless quiet.
     """
     now = time.time()
     show = force or (now - _PROGRESS["last"]) >= 0.4
@@ -1478,7 +1478,8 @@ def progress(section, detail, fraction=None, force=False):
                 pass
         return
     _PROGRESS["last"] = now
-    log(u"STATUS: {0} | {1}".format(section, detail))
+    if not quiet:
+        log(u"STATUS: {0} | {1}".format(section, detail))
     fn = _PROGRESS["fn"]
     if fn is None:
         return

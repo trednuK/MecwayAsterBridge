@@ -65,6 +65,18 @@ _MAP = (
 )
 
 
+def _tick(detail, fraction=None, force=False):
+    """One line in the results window. Quiet between steps so a large
+    MED file does not fill the log."""
+    try:
+        import bridge_utils
+        bridge_utils.progress(
+            bridge_utils.tr(u"Resultaten", u"Results"),
+            detail, fraction, force, quiet=not force)
+    except Exception:
+        pass
+
+
 def read_med(path):
     """Mesh nodes, cells and fields. fields[name] = list of steps
     (time, nodal {nid: [comps]}, elno {etype: {eid: [[comps per node]]}})."""
@@ -75,7 +87,14 @@ def read_med(path):
         cells = _cells(body, nodes)
         fields = {}
         if _has(fh, "CHA"):
-            for name in list(fh["CHA"].keys()):
+            import bridge_utils
+            names = list(fh["CHA"].keys())
+            n = len(names) or 1
+            for i, name in enumerate(names):
+                _tick(bridge_utils.tr(
+                    u"MED-veld {0} ({1}/{2})...",
+                    u"MED field {0} ({1}/{2})...").format(name, i + 1, n),
+                    0.4 * i / float(n))
                 comps, steps = _field(fh["CHA"][name], nodes, cells)
                 fields[name] = {"comps": comps, "steps": steps}
         return {"mesh": mesh_name, "nodes": nodes, "cells": cells,
@@ -448,8 +467,10 @@ def _var_xml(name, values, groups, element, indent):
 
 
 def _write(out_path, rows, times, model_data, med):
+    import bridge_utils
     static = len(times) <= 1
     indent = "      " if static else "        "
+    n = len(rows) or 1
     parts = [b'    <results precision="double">\r\n']
     # ids from the first step; a later step uses the same nodes
     prepared = []
@@ -469,7 +490,11 @@ def _write(out_path, rows, times, model_data, med):
         if not static:
             parts.append('      <timestep id="{0}" time="{1} s">\r\n'.format(
                 k, _num(times[k])).encode("ascii"))
-        for field, comp, name, elno, ids in prepared:
+        for i, (field, comp, name, elno, ids) in enumerate(prepared):
+            _tick(bridge_utils.tr(
+                u"Variabele {0} ({1}/{2})...",
+                u"Variable {0} ({1}/{2})...").format(name, i + 1, n),
+                0.4 + 0.6 * (k * n + i) / float(max(1, len(times) * n)))
             info = med["fields"][field]
             if elno:
                 by_elem = _elno_value(info, k, comp, model_data)

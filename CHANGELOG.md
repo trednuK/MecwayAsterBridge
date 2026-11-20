@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **Results window shows the step.** Putting the results back into Mecway
+  used the "Please wait" window: one line, no bar, and it did not refresh
+  while the result file was read or written. That phase now uses the same
+  window as the preparation, with the step (MED field, variable, percent
+  written into the `.liml`, opening the model) and a bar.
+
 ## V2026.16 – 20 November 2026
 
 Optional PETSc and MPI, and results read on the host from the MED file when

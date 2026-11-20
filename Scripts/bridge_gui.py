@@ -2886,13 +2886,15 @@ _PREP = {"form": None, "section": None, "detail": None, "bar": None,
          "time": None, "t0": None, "disabled": None, "on_closing": None}
 
 
-def open_prep_progress(subtitle):
+def open_prep_progress(subtitle, heading=None, note=None):
     """
-    Window while the bridge reads the model and writes the solver files.
-    The run blocks the UI thread, so each progress() call refreshes this
-    window and pumps messages; otherwise Mecway shows nothing until the
-    Code-Aster status window opens. Returns False when Windows Forms is
-    not available (the STATUS lines still go to the log).
+    Window while the bridge reads the model and writes the solver files,
+    and again while the results go into Mecway. The run blocks the UI
+    thread, so each progress() call refreshes this window and pumps
+    messages; otherwise Mecway shows nothing. heading and note replace
+    the "Preparing" title and the line under the clock (the results
+    phase). Returns False when Windows Forms is not available (the
+    STATUS lines still go to the log).
     """
     close_prep_progress()
     try:
@@ -2917,8 +2919,8 @@ def open_prep_progress(subtitle):
     try:
         look = _Look()
         form = Form()
-        form.Text = tr("MecwayAsterBridge - voorbereiden",
-                       "MecwayAsterBridge - preparing")
+        form.Text = heading or tr("MecwayAsterBridge - voorbereiden",
+                                  "MecwayAsterBridge - preparing")
         form.Font = look.font
         form.BackColor = look.col("page_bg")
         form.ClientSize = Size(560, 220)
@@ -2929,7 +2931,7 @@ def open_prep_progress(subtitle):
         form.ShowInTaskbar = True
         form.TopMost = True
         header = look.header(
-            form, tr("Voorbereiden", "Preparing"), subtitle or u"")
+            form, heading or tr("Voorbereiden", "Preparing"), subtitle or u"")
         y = header.Height + 16
         section = Label()
         section.Font = look.section
@@ -2958,18 +2960,18 @@ def open_prep_progress(subtitle):
         elapsed.Size = Size(528, look.line_height() + 4)
         form.Controls.Add(elapsed)
         y = elapsed.Bottom + 8
-        note = Label()
-        note.Font = look.font
-        note.ForeColor = look.col("muted")
-        note.Location = Point(16, y)
-        note.Size = Size(528, look.line_height() * 2 + 8)
-        note.Text = tr(
+        note_lbl = Label()
+        note_lbl.Font = look.font
+        note_lbl.ForeColor = look.col("muted")
+        note_lbl.Location = Point(16, y)
+        note_lbl.Size = Size(528, look.line_height() * 2 + 8)
+        note_lbl.Text = note or tr(
             "Mecway is geblokkeerd tot Code-Aster start. Elke stap staat "
             "hier, met de status.",
             "Mecway is locked until Code-Aster starts. Each step is shown "
             "here, with its status.")
-        form.Controls.Add(note)
-        form.ClientSize = Size(560, note.Bottom + 16)
+        form.Controls.Add(note_lbl)
+        form.ClientSize = Size(560, note_lbl.Bottom + 16)
 
         def on_closing(sender, args):
             if not _PREP.get("allow_close"):
