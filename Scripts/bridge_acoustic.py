@@ -97,8 +97,9 @@ import os
 from collections import OrderedDict
 
 from bridge_utils import (log, parse_and_convert, CONFIG_BRIDGE, tr,
-                          run_name, _normalize_unit_string, mumps_keywords,
-                          no_job_python, write_med_file)
+                          run_name, _normalize_unit_string, solveur_extra,
+                          no_job_python, write_med_file,
+                          export_parallel_lines)
 
 
 # Mecway loads that only exist in Acoustic Resonance (manual v33
@@ -617,7 +618,7 @@ def _calc_modes_block(model_data, analysis, shift_free):
                   "%.10g" % float(analysis.get("modal_tolerance", 1.0e-6))),
               "    SOLVEUR=_F(METHODE='MUMPS', NPREC={0}{1}),".format(
                   int(analysis.get("solver_nprec", 8)),
-                  mumps_keywords(analysis, low_rank=False)),
+                  solveur_extra(analysis, low_rank=False)),
               ")"]
     log("INFO: CALC_MODES acoustic: {0} modes.".format(n))
     return "\n".join(lines) + "\n"
@@ -776,9 +777,7 @@ def build_acoustic_modes(work_dir, model_data, msh_path, resu_name, analysis):
                 "P actions make_etude",
                 "P time_limit {0}".format(analysis.get("time_limit", 900)),
                 "P memory_limit {0}".format(analysis.get("memory_limit", 2048)),
-                "P mpi_nbcpu 1",
-                "P ncpus {0}".format(CONFIG_BRIDGE["ncpus"]),
-                "P no-mpi true",
+            ] + list(export_parallel_lines()) + [
                 "F comm {0} D 1".format(comm_path),
                 "F mail {0} D 20".format(msh_path),
                 "F mess {0} R 6".format(os.path.join(work_dir,
@@ -1126,9 +1125,7 @@ def _write_modes_files(work_dir, analysis, msh_path, resu_name, blocks,
                 "P actions make_etude",
                 "P time_limit {0}".format(analysis.get("time_limit", 900)),
                 "P memory_limit {0}".format(analysis.get("memory_limit", 2048)),
-                "P mpi_nbcpu 1",
-                "P ncpus {0}".format(CONFIG_BRIDGE["ncpus"]),
-                "P no-mpi true",
+            ] + list(export_parallel_lines()) + [
                 "F comm {0} D 1".format(comm_path),
                 "F mail {0} D 20".format(msh_path),
                 "F mess {0} R 6".format(os.path.join(work_dir,
@@ -1701,7 +1698,7 @@ def build_acoustic_harm(work_dir, model_data, msh_path, resu_name, analysis):
         ")\n").format(", ".join(_r(f) for f in freqs),
                       "    MATR_AMOR=amor_c,\n" if abso else "",
                       "".join(excit), int(analysis.get("solver_nprec", 8)),
-                      mumps_keywords(analysis, low_rank=False))
+                      solveur_extra(analysis, low_rank=False))
 
     export_block = (bta._custom_code(model_data, "post") +
                     _harm_export_block(work_dir, model_data, inp["mics"]))
@@ -1735,9 +1732,7 @@ def build_acoustic_harm(work_dir, model_data, msh_path, resu_name, analysis):
                 "P actions make_etude",
                 "P time_limit {0}".format(analysis.get("time_limit", 900)),
                 "P memory_limit {0}".format(analysis.get("memory_limit", 2048)),
-                "P mpi_nbcpu 1",
-                "P ncpus {0}".format(CONFIG_BRIDGE["ncpus"]),
-                "P no-mpi true",
+            ] + list(export_parallel_lines()) + [
                 "F comm {0} D 1".format(comm_path),
                 "F mail {0} D 20".format(msh_path),
                 "F mess {0} R 6".format(os.path.join(work_dir,

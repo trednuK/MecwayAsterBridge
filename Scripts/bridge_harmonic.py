@@ -55,8 +55,9 @@ from collections import OrderedDict
 
 import bridge_to_aster as b2a
 import bridge_dyna_modal as bdm
-from bridge_utils import (log, tr, CONFIG_BRIDGE, run_name, mumps_keywords,
-                          mumps_solveur, no_job_python, write_med_file)
+from bridge_utils import (log, tr, CONFIG_BRIDGE, run_name, solveur_extra,
+                          mumps_solveur, no_job_python, write_med_file,
+                          export_parallel_lines)
 
 HARM_ANALYSIS = "harmonic_3d"
 # Node selections with the frequency response in the log and a CSV (by the
@@ -631,7 +632,7 @@ def _harm_block(analysis, plan, basis, excit, alpha, beta, zeta, damped_c,
             "    ),",
             "    SOLVEUR=_F(METHODE='MUMPS', NPREC={0}{1}),".format(
                 int(analysis.get("solver_nprec", 8)),
-                mumps_keywords(analysis, low_rank=False)),
+                solveur_extra(analysis, low_rank=False)),
             ")",
             "",
         ]
@@ -1131,9 +1132,7 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
                 "P time_limit {0}".format(analysis.get("time_limit", 1800)),
                 "P memory_limit {0}".format(analysis.get("memory_limit",
                                                          2048)),
-                "P mpi_nbcpu 1",
-                "P ncpus {0}".format(CONFIG_BRIDGE["ncpus"]),
-                "P no-mpi true",
+            ] + list(export_parallel_lines()) + [
                 "F comm {0} D 1".format(comm_path),
                 "F mail {0} D 20".format(msh_path),
                 "F mess {0} R 6".format(os.path.join(work_dir,

@@ -543,6 +543,9 @@ solver statistics end up in the `.mess` (convergence window, §4.4). That is abo
 |---|---|---|
 | `lin_solver` (Linear solver) | `MUMPS` (default): direct solver, factorises the matrix | `SOLVEUR=_F(METHODE='MUMPS', NPREC=..., RESI_RELA=...)` |
 | | `GCPC`: iterative, conjugate gradient with incomplete factorisation | `SOLVEUR=_F(METHODE='GCPC', PRE_COND='LDLT_INC', RESI_RELA=...)` |
+| | `PETSC`: iterative Krylov method. Needs a parallel Code-Aster (CAVE). The Windows build stops with `FERMETUR_10` | `SOLVEUR=_F(METHODE='PETSC', RESI_RELA=...)` plus `ALGORITHME` / `PRE_COND` only when they are not the catalogue defaults |
+| `petsc_algo` | `FGMRES` (default), `GMRES`, `CG`, `CR`, `GCR` | `ALGORITHME` |
+| `petsc_precond` | `LDLT_SP` (default), `LDLT_INC`, `JACOBI`, `BOOMER`, `GAMG`, `ML`, `SANS` | `PRE_COND` |
 | `lin_solver_resi` (Solver accuracy) | `RESI_RELA`, default 1e-5 (CA default for `MECA_STATIQUE` 1e-6; fine meshes of thin parts estimate about 2e-6 without being singular) | |
 
 - **MUMPS**: `RESI_RELA` is the bound on the *estimated relative error in the
@@ -568,9 +571,7 @@ solver statistics end up in the `.mess` (convergence window, §4.4). That is abo
   iterations are normal: the beam of LS-02 (hex8) took 232 iterations with 20,169
   equations and 499 with 141,321, with the same result as MUMPS within tolerance
   (R-GCPC). If the convergence window shows a long flat line, use MUMPS.
-- **PETSC** is in the catalogue, but the Windows version of Code-Aster is sequential
-  and has no PETSc (`FERMETUR_10`, seen in a test run; U4.50.01 §3.7). The bridge
-  therefore does not offer it.
+- **PETSC** (static, nonlinear static and implicit dynamics): Krylov method from the PETSc library (U4.50.01 §3.7). Catalogue defaults `ALGORITHME='FGMRES'` and `PRE_COND='LDLT_SP'` (MUMPS in single precision) are left out of the `.comm`. `RESI_RELA` is `lin_solver_resi` (‖r‖/‖f‖). The sequential Windows build has no PETSc (`FERMETUR_10`). A parallel install (CAVE) does: set `mpi_nbcpu` above 1 (`P no-mpi false`). Not for explicit dynamics, eigenvalues or the imperfection step (those stay MUMPS). `mumps_memory` has no effect with PETSc.
 
 **Large models: `mumps_memory` (MUMPS memory, all analyses).** MUMPS keeps the
 factorization in memory when it fits in the memory of the job (`memory_limit`, §2.7).

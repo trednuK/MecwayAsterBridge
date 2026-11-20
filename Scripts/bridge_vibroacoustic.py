@@ -77,8 +77,8 @@ import os
 from collections import OrderedDict
 
 from bridge_utils import (log, parse_and_convert, CONFIG_BRIDGE, tr,
-                          run_name, mumps_keywords, no_job_python,
-                          write_med_file)
+                          run_name, solveur_extra, no_job_python,
+                          write_med_file, export_parallel_lines)
 
 ANALYSIS = "vibroacoustic_modes_3d"
 
@@ -543,7 +543,7 @@ def _mode_search_block(model_data, analysis, n):
                "(spurious modes at 0 Hz); 0.1 Hz used."))
         fmin = 0.1
     nprec = int(analysis.get("solver_nprec", 8))
-    mumps = mumps_keywords(analysis, low_rank=False)    # Sturm count
+    mumps = solveur_extra(analysis, low_rank=False)    # Sturm count
     seuil = "%.10g" % float(analysis.get("modal_tolerance", 1.0e-6))
     log("INFO: CALC_MODES vibro-acoustic: the first {0} modes above {1} "
         "Hz (OPTION 'BANDE', band searched with INFO_MODE).".format(
@@ -878,9 +878,7 @@ def build_vibroacoustic_modes(work_dir, model_data, msh_path, resu_name,
                 "P time_limit {0}".format(analysis.get("time_limit", 900)),
                 "P memory_limit {0}".format(analysis.get("memory_limit",
                                                          2048)),
-                "P mpi_nbcpu 1",
-                "P ncpus {0}".format(CONFIG_BRIDGE["ncpus"]),
-                "P no-mpi true",
+            ] + list(export_parallel_lines()) + [
                 "F comm {0} D 1".format(comm_path),
                 "F mail {0} D 20".format(msh_path),
                 "F mess {0} R 6".format(os.path.join(work_dir,

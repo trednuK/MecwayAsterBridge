@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **PETSc and MPI.** `mpi_nbcpu` (default 1) is the number of MPI ranks in
+  the `.export`; above 1 sets `P no-mpi false` and needs a parallel
+  Code-Aster (CAVE). The Windows build stays sequential. `matr_distribuee`
+  (`auto` / `oui` / `non`) adds `MATR_DISTRIBUEE='OUI'` on MUMPS and PETSc
+  when more than one rank is used. `lin_solver` can be `PETSC` on Static,
+  Nonlinear static and implicit Dynamic, with `petsc_algo` (default
+  `FGMRES`) and `petsc_precond` (default `LDLT_SP`); the catalogue defaults
+  are not written. Off the defaults, `.comm` and `.export` are unchanged.
+  `tests/test_bridge_petsc_mpi.py`.
+
 - **Results on the host when the job Python cannot see Scripts.** The
   call stays `run_aster.bat` / `as_run`; a CAVE install is transparent
   behind that. Its Python runs in a container and cannot import

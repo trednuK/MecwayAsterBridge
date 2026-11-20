@@ -65,7 +65,7 @@ import bridge_dyna_modal as bdm
 import bridge_harmonic as bh
 import bridge_acoustic as bac
 import bridge_vibroacoustic as bva
-from bridge_utils import log, tr, CONFIG_BRIDGE, run_name, mumps_keywords, no_job_python, write_med_file
+from bridge_utils import log, tr, CONFIG_BRIDGE, run_name, solveur_extra, no_job_python, write_med_file, export_parallel_lines
 
 ANALYSIS = "vibroacoustic_harm_3d"
 MIC_SUFFIX = bac.MIC_SUFFIX            # <run>_microfoons.csv (like S3a)
@@ -783,7 +783,7 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
             else "",
             excit="\n".join(excit),
             nprec=int(analysis.get("solver_nprec", 8)),
-            mumps=mumps_keywords(analysis, low_rank=False))
+            mumps=solveur_extra(analysis, low_rank=False))
 
     if stresses:
         calc_champ_block = (
@@ -876,9 +876,7 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
                 "P time_limit {0}".format(analysis.get("time_limit", 1800)),
                 "P memory_limit {0}".format(analysis.get("memory_limit",
                                                          2048)),
-                "P mpi_nbcpu 1",
-                "P ncpus {0}".format(CONFIG_BRIDGE["ncpus"]),
-                "P no-mpi true",
+            ] + list(export_parallel_lines()) + [
                 "F comm {0} D 1".format(comm_path),
                 "F mail {0} D 20".format(msh_path),
                 "F mess {0} R 6".format(os.path.join(work_dir,

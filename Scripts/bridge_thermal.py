@@ -85,7 +85,7 @@ from collections import OrderedDict
 
 from bridge_utils import (log, parse_and_convert, CONFIG_BRIDGE, tr,
                           run_name, mumps_keywords, host_med_results,
-                          write_med_file)
+                          write_med_file, solveur_extra, export_parallel_lines)
 import bridge_mesh
 
 
@@ -2728,7 +2728,7 @@ def build_thermal(work_dir, model_data, msh_path, resu_name, analysis):
     solve += ["    INCREMENT=_F(LIST_INST=times),",
               "    SOLVEUR=_F(METHODE='MUMPS', NPREC={0}{1}),".format(
                   int(analysis.get("solver_nprec", 8)),
-                  mumps_keywords(analysis))]
+                  solveur_extra(analysis))]
     if tb.nonlinear:
         solve += ["    NEWTON=_F(REAC_ITER={0}),".format(
                       int(analysis.get("newton_reac_iter", 1))),
@@ -2820,9 +2820,7 @@ def build_thermal(work_dir, model_data, msh_path, resu_name, analysis):
                 "P actions make_etude",
                 "P time_limit {0}".format(analysis.get("time_limit", 1800)),
                 "P memory_limit {0}".format(analysis.get("memory_limit", 4096)),
-                "P mpi_nbcpu 1",
-                "P ncpus {0}".format(CONFIG_BRIDGE["ncpus"]),
-                "P no-mpi true",
+            ] + list(export_parallel_lines()) + [
                 "F comm {0} D 1".format(comm_path),
                 "F mail {0} D 20".format(msh_path),
                 "F mess {0} R 6".format(os.path.join(work_dir,

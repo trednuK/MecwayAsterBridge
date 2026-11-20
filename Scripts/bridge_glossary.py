@@ -1163,12 +1163,25 @@ SETTING_HELP = {
         u"C:\\Projects\\Beam_aster), also Results... and the convergence "
         u"window. A model that has not been saved yet uses the Work folder. "
         u"The folder in use is shown next to the checkbox. Off by default."),
-    "ncpus": (u"Aantal processorkernen (threads) voor Code-Aster (1 = geen "
-              u"parallellisme; geen MPI). Standaard 1; het effect op de "
-              u"rekentijd is niet gemeten.",
-              u"Number of processor cores (threads) for Code-Aster (1 = no "
-              u"parallelism; no MPI). Default 1; the effect on the run "
-              u"time has not been measured."),
+    "ncpus": (u"Aantal processorkernen (threads, OpenMP) voor Code-Aster. "
+              u"Standaard 1. MPI is apart: mpi_nbcpu.",
+              u"Number of processor cores (threads, OpenMP) for Code-Aster. "
+              u"Default 1. MPI is separate: mpi_nbcpu."),
+    "mpi_nbcpu": (u"Aantal MPI-processen in de .export (P mpi_nbcpu). "
+                  u"Standaard 1: P no-mpi true, geen MPI. Hoger dan 1 zet "
+                  u"P no-mpi false en vraagt een parallelle Code-Aster "
+                  u"(CAVE). De Windows-build is sequentieel.",
+                  u"Number of MPI processes in the .export (P mpi_nbcpu). "
+                  u"Default 1: P no-mpi true, no MPI. Above 1 sets "
+                  u"P no-mpi false and needs a parallel Code-Aster (CAVE). "
+                  u"The Windows build is sequential."),
+    "matr_distribuee": (u"MATR_DISTRIBUEE op MUMPS en PETSc. Standaard auto: "
+                        u"het sleutelwoord alleen als mpi_nbcpu > 1. oui: "
+                        u"altijd. non: nooit. Niet bij GCPC en niet bij "
+                        u"FACTORISER.",
+                        u"MATR_DISTRIBUEE on MUMPS and PETSc. Default auto: "
+                        u"the keyword only when mpi_nbcpu > 1. oui: always. "
+                        u"non: never. Not for GCPC and not for FACTORISER."),
     "active_analysis": (u"Welke berekening Code-Aster doet. 'auto' volgt "
                         u"het analysetype van het Mecway-model (standaard). "
                         u"Expliciete dynamica, harmonische respons en "
@@ -1506,12 +1519,31 @@ SETTING_HELP = {
                      u"harmonic and explicit. out_of_core: factorization "
                      u"always on disk. Per model: #ASTER-OPTIE mumps_memory "
                      u"= low_rank."),
-    "lin_solver": (u"Oplosser voor Ku = F in de statische analyse: MUMPS "
-                   u"(direct, standaard) of GCPC (iteratief, met "
-                   u"residu-grafiek in het convergentiescherm).",
-                   u"Solver for Ku = F in the static analysis: MUMPS "
-                   u"(direct, default) or GCPC (iterative, with a residual "
-                   u"plot in the convergence window)."),
+    "lin_solver": (u"Oplosser voor Ku = F: MUMPS (direct, standaard), GCPC "
+                   u"(iteratief, alleen statisch) of PETSC (iteratief, "
+                   u"parallelle Code-Aster). Statisch: de hele berekening. "
+                   u"Niet-lineair statisch en impliciet dynamisch: de "
+                   u"niet-lineaire oplossing. De Windows-build heeft geen "
+                   u"PETSc (FERMETUR_10).",
+                   u"Solver for Ku = F: MUMPS (direct, default), GCPC "
+                   u"(iterative, static only) or PETSC (iterative, parallel "
+                   u"Code-Aster). Static: the whole analysis. Nonlinear "
+                   u"static and implicit dynamics: the nonlinear solve. "
+                   u"The Windows build has no PETSc (FERMETUR_10)."),
+    "petsc_algo": (u"Krylov-methode van PETSc (U4.50.01). Standaard FGMRES "
+                   u"(catalogus): dan staat ALGORITHME niet in de .comm. "
+                   u"Alleen bij lin_solver PETSC.",
+                   u"Krylov method of PETSc (U4.50.01). Default FGMRES "
+                   u"(catalogue): then ALGORITHME is not in the .comm. "
+                   u"Only with lin_solver PETSC."),
+    "petsc_precond": (u"Preconditioner van PETSc. Standaard LDLT_SP "
+                      u"(MUMPS in enkele precisie): dan staat PRE_COND niet "
+                      u"in de .comm. LDLT_INC, JACOBI, BOOMER, GAMG, ML of "
+                      u"SANS. Alleen bij lin_solver PETSC.",
+                      u"Preconditioner of PETSc. Default LDLT_SP (MUMPS in "
+                      u"single precision): then PRE_COND is not in the "
+                      u".comm. LDLT_INC, JACOBI, BOOMER, GAMG, ML or SANS. "
+                      u"Only with lin_solver PETSC."),
     "lin_solver_resi": (u"RESI_RELA van de lineaire oplosser (standaard "
                         u"1e-5; Code-Aster 1e-6): bij MUMPS de maximale "
                         u"geschatte relatieve fout van de oplossing "

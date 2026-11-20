@@ -217,7 +217,9 @@ elke waarde zo gekozen is: [`Standaardinstellingen_en_aannames.md`](Standaardins
 | Code-Aster launcher (run_aster.bat) | `%LOCALAPPDATA%\code_aster\v2025\17.4\bin\run_aster.bat` | pad naar `run_aster.bat`; omgevingsvariabelen zoals `%LOCALAPPDATA%` mogen. Bestaat het bestand niet, dan zegt het statusvak dat bij de start; kies het met *Bladeren...* |
 | Werkmap | leeg = `WorkDir` naast de map `Scripts` (het venster toont dat pad) | map voor mesh, `<model>_<run-id>.*`, log en resultaten (§5); wordt aangemaakt als hij niet bestaat |
 | Werkmap naast het model (<model>_aster) | uit | aan: de bestanden van een run gaan naar de submap `<model>_aster` naast het open `.liml`-bestand (bijv. `C:\Projecten\Ligger.liml` → `C:\Projecten\Ligger_aster`), ook voor *Resultaten...*, het convergentiescherm en adaptieve verfijning; naast het vinkje staat de map die gebruikt wordt. Een model dat nog niet is opgeslagen gebruikt de *Werkmap* |
-| Aantal CPU-kernen (ncpus) | 1 | `ncpus` (threads) in de `.export`; de bridge rekent zonder MPI (`mpi_nbcpu 1`) |
+| Aantal CPU-kernen (ncpus) | 1 | `ncpus` (OpenMP-threads) in de `.export` |
+| MPI-processen (mpi_nbcpu) | 1 | `mpi_nbcpu` in de `.export`. 1 houdt `P no-mpi true`. Hoger dan 1 zet `P no-mpi false` en vraagt een parallelle Code-Aster (CAVE); de Windows-build is sequentieel |
+| Matrix verdelen (auto / oui / non) | `auto` | `MATR_DISTRIBUEE='OUI'` op MUMPS en PETSc als `mpi_nbcpu` > 1. `oui` altijd, `non` nooit |
 | Actieve analyse (auto = volgens Mecway) | `auto` | `auto` volgt het Mecway-analysetype: S30 → Statisch, S20 en SA0 (2D, axisymmetrisch) → Statisch, D20 en DA0 → Dynamisch (impliciet) ([`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md)), L30 → Niet-lineair statisch, D30 met *Mode superposition* → Respons op modale basis, D30 zonder en D31 → Dynamisch (impliciet), T30/T31 → Thermisch, V30 → Modaal (met een fluïdum-onderdeel: Vibro-akoestiek (modes)), B30 → Knik, A30 → Akoestiek (holtemodes; met een bron, `BRON_`-selectie, Akoestiek (harmonisch)), A20 → Akoestiek (holtemodes, 2D); geldt alleen voor die run. Of kies zelf een analyse (Dynamisch (expliciet) kies je altijd zelf). Een ander Mecway-type (E30, ...) met `auto`: de bridge stopt met een melding |
 | Configuratie (auto = volgens de regel) | `auto` | welke configuratie de bridge rekent en in welke solution de resultaten komen; de lijst toont de configuraties van het open model (laatst opgeslagen versie). `auto`: de enige configuratie, anders de enige zonder onderdrukte items, anders de eerste (WARNING). Een naam die niet in het model staat: WARNING en `auto` (§4) |
 | Eerst Mecway-solve ter controle | uit | lost eerst in Mecway op en stopt bij een fout. Schrijft `<model>_<run-id>_vergelijking.csv` (Mecway- en Code-Aster-waarde per knoop) en logt per variabele het grootste verschil; bij modaal en knik vergelijkt de log de frequentie of factor per mode. Laat de solve geen solution achter (Mecway kan het model niet oplossen), dan volgt een WARNING en gaat de run door zonder vergelijking |
@@ -270,7 +272,9 @@ pagina toont alleen de instellingen die bij die analyse horen:
 | Tijdslimiet run_aster [s] | alle | 600 (statisch), 1800 (niet-lineair statisch, thermisch, respons op modale basis, harmonische respons, responsspectrum, vibro-akoestiek (harmonisch)), 7200 (dynamisch), 900 (modaal, knik, akoestiek, vibro-akoestiek (modes)) |
 | Geheugenlimiet run_aster [MB] | alle | 4096 (niet-lineair statisch, dynamisch, thermisch), 2048 (overige) |
 | MUMPS NPREC (-1 = controle uit) | alle | 8 |
-| Lineaire oplosser (MUMPS / GCPC) | statisch | `MUMPS` |
+| Lineaire oplosser (MUMPS / GCPC / PETSC) | statisch, niet-lineair statisch, impliciet dynamisch | `MUMPS` |
+| PETSc-algoritme | daar waar `lin_solver` staat | `FGMRES` |
+| PETSc-preconditioner | daar waar `lin_solver` staat | `LDLT_SP` |
 | Nauwkeurigheid oplosser (RESI_RELA) | statisch | 1e-5 |
 | Foutschatter (CALC_ERREUR, alleen volumes) | statisch | aan ([`Foutschatter.md`](Foutschatter.md)) |
 | Scheur: R_INF / R_SUP [m] (0 = automatisch), gladmaken langs het front, Legendre-graad | statisch (alleen met `SCHEUR_`-selecties of `#ASTER-XFEM`; gladmaken en graad niet voor XFEM) | 0 / 0, `LINEAIRE`, 5 ([`Breukmechanica.md`](Breukmechanica.md)) |

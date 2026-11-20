@@ -58,8 +58,16 @@ CONFIG_BRIDGE = {
     # model work_dir is used (work_dir_path(), set_model_path()).
     "work_dir_beside_model": False,
 
-    # Number of CPU cores (threads) for Code-Aster (ncpus=1 = no parallelism)
+    # Number of CPU cores (threads) for Code-Aster (ncpus=1 = no OpenMP).
+    # mpi_nbcpu is the number of MPI ranks in the .export (1 = no MPI).
+    # The Windows build is sequential: mpi_nbcpu > 1 needs a parallel
+    # Code-Aster (CAVE). matr_distribuee: "auto" writes
+    # MATR_DISTRIBUEE='OUI' on MUMPS and PETSc only when mpi_nbcpu > 1;
+    # "oui" always, "non" never. Default auto with mpi_nbcpu 1 writes
+    # nothing.
     "ncpus":           1,
+    "mpi_nbcpu":       1,
+    "matr_distribuee": "auto",
     # First run a Mecway solve as a check for model errors
     # (mw.solve(); the Mecway API documents no return value).
     "mecway_solve_first": False,
@@ -202,10 +210,14 @@ CONFIG_BRIDGE = {
             # 'OUT_OF_CORE'). Not for GCPC.
             "mumps_memory":   "auto",
             # Linear solver (bridge_to_aster._build_lin_solveur_ref):
-            # "MUMPS" (direct, default) or "GCPC" (iterative, conjugate
-            # gradient with PRE_COND='LDLT_INC'; residual per iteration in the
-            # convergence window). PETSC is not in the Windows version.
+            # "MUMPS" (direct, default), "GCPC" (iterative) or "PETSC"
+            # (iterative, parallel Code-Aster only; the Windows build
+            # stops with FERMETUR_10). petsc_algo / petsc_precond are
+            # the catalogue defaults and are left out of the .comm until
+            # changed (U4.50.01 par. 3.7).
             "lin_solver":     "MUMPS",
+            "petsc_algo":     "FGMRES",
+            "petsc_precond":  "LDLT_SP",
             # SOLVEUR RESI_RELA: MUMPS = limit for the estimated relative
             # error of the solution; GCPC = convergence criterion ||r||/||f||.
             # 1e-5 instead of Code-Aster's 1e-6 (user, 13 Nov 2026): fine
@@ -325,6 +337,11 @@ CONFIG_BRIDGE = {
             # MUMPS NPREC (see lin_static_3d).
             "solver_nprec":          8,
             "mumps_memory":          "auto",
+            # Same solver words as Static. PETSc replaces the MUMPS line
+            # of STAT_NON_LINE; the imperfection step stays MUMPS.
+            "lin_solver":            "MUMPS",
+            "petsc_algo":            "FGMRES",
+            "petsc_precond":         "LDLT_SP",
             # Element failure (bridge_failure.py): elements with a
             # plastic strain above the limit get E x stiffness_factor and
             # zero stress. Limit per material: #ASTER-BEZWIJKEN, PLAS_TAB
@@ -415,6 +432,10 @@ CONFIG_BRIDGE = {
             "memory_limit":          4096,
             "solver_nprec":          8,
             "mumps_memory":          "auto",
+            # Same solver words as Static. Not for the explicit scheme.
+            "lin_solver":            "MUMPS",
+            "petsc_algo":            "FGMRES",
+            "petsc_precond":         "LDLT_SP",
             # Element failure: see nonlin_static_3d (checked at the
             # output times).
             "element_failure":       True,
@@ -1073,12 +1094,98 @@ def mumps_solveur(analysis, indent="    "):
     """
     SOLVEUR line for a command that has none in the .comm and then uses
     MUMPS with Code-Aster's defaults (MACRO_ELAS_MULT, MODE_STATIQUE):
-    "" for auto, else indent + "SOLVEUR=_F(METHODE='MUMPS', ...),".
+    "" for auto without a distributed matrix, else indent +
+    "SOLVEUR=_F(METHODE='MUMPS', ...),".
     """
-    tail = mumps_keywords(analysis)
+    tail = solveur_extra(analysis)
     if not tail:
         return ""
     return "{0}SOLVEUR=_F(METHODE='MUMPS'{1}),".format(indent, tail)
+
+
+# MPI ranks and distributed matrix (all analyses, .export and SOLVEUR).
+# Catalogue c_solveur.py v17.4: MATR_DISTRIBUEE on MUMPS and PETSc
+# (default NON). The .export line is always "P mpi_nbcpu N"; N = 1 is
+# the previous text.
+MATR_DISTRIBUEE = ("auto", "oui", "non")
+_MPI_LOGGED = []
+_DIST_LOGGED = []
+
+
+def mpi_ranks():
+    """mpi_nbcpu as an integer >= 1. A bad value is 1."""
+    raw = CONFIG_BRIDGE.get("mpi_nbcpu", 1)
+    try:
+        n = int(raw)
+    except (TypeError, ValueError):
+        n = 1
+    return n if n >= 1 else 1
+
+
+def _parallel_numbers():
+    """(mpi ranks, OpenMP threads), both >= 1. Logs once when ranks > 1."""
+    n = mpi_ranks()
+    try:
+        threads = int(CONFIG_BRIDGE.get("ncpus", 1))
+    except (TypeError, ValueError):
+        threads = 1
+    if threads < 1:
+        threads = 1
+    if n > 1 and not _MPI_LOGGED:
+        _MPI_LOGGED.append(True)
+        log(tr("INFO: mpi_nbcpu {0}: dit vraagt een parallelle "
+               "Code-Aster (CAVE). De Windows-build is sequentieel "
+               "(P no-mpi true).",
+               "INFO: mpi_nbcpu {0}: this needs a parallel Code-Aster "
+               "(CAVE). The Windows build is sequential "
+               "(P no-mpi true).").format(n))
+    return n, threads
+
+
+def export_parallel_lines():
+    """
+    The three .export lines for the processors, without a trailing
+    newline. With mpi_nbcpu 1 they are exactly the previous text:
+    P mpi_nbcpu 1 / P ncpus <n> / P no-mpi true.
+    """
+    n, threads = _parallel_numbers()
+    return ("P mpi_nbcpu {0}".format(n),
+            "P ncpus {0}".format(threads),
+            "P no-mpi {0}".format("false" if n > 1 else "true"))
+
+
+def export_mpi_line():
+    """One .export line: P mpi_nbcpu N."""
+    return export_parallel_lines()[0]
+
+
+def matr_distribuee_mode():
+    """matr_distribuee: auto, oui or non. Unknown text is auto."""
+    mode = "{0}".format(CONFIG_BRIDGE.get("matr_distribuee", "auto"))
+    mode = mode.strip().lower()
+    return mode if mode in MATR_DISTRIBUEE else "auto"
+
+
+def distributed_matrix():
+    """
+    Text to append inside SOLVEUR=_F(METHODE='MUMPS' or 'PETSC', ...)
+    (with the leading comma), or "". auto writes the keyword only when
+    mpi_nbcpu > 1. Not for FACTORISER and not for GCPC.
+    """
+    mode = matr_distribuee_mode()
+    if mode == "non" or (mode == "auto" and mpi_ranks() <= 1):
+        return ""
+    if not _DIST_LOGGED:
+        _DIST_LOGGED.append(True)
+        log("INFO: MATR_DISTRIBUEE='OUI' on MUMPS and PETSc "
+            "(matr_distribuee {0}, mpi_nbcpu {1}).".format(
+                mode, mpi_ranks()))
+    return ", MATR_DISTRIBUEE='OUI'"
+
+
+def solveur_extra(analysis, low_rank=True):
+    """mumps_keywords plus the distributed-matrix keyword, for a SOLVEUR."""
+    return mumps_keywords(analysis, low_rank) + distributed_matrix()
 
 
 # Analyses whose harmonic solve has complex matrices: Code-Aster keeps
@@ -1114,11 +1221,12 @@ def mumps_memory_note(analysis, name=None):
         log("INFO: mumps_memory out_of_core: GESTION_MEMOIRE='OUT_OF_CORE' "
             "in every MUMPS solve (factors on disk).")
     solver = "{0}".format((analysis or {}).get("lin_solver", "MUMPS"))
-    if solver.strip().upper() == "GCPC":
+    if solver.strip().upper() in ("GCPC", "PETSC"):
         log(tr("WARNING: mumps_memory {0} geldt alleen voor MUMPS; met "
-               "lin_solver GCPC heeft het geen effect.",
+               "lin_solver {1} heeft het geen effect.",
                "WARNING: mumps_memory {0} only applies to MUMPS; with "
-               "lin_solver GCPC it has no effect.").format(mode))
+               "lin_solver {1} it has no effect.").format(
+                   mode, solver.strip().upper()))
     if mode == "out_of_core" and name in _COMPLEX_ANALYSES:
         log(tr("WARNING: mumps_memory out_of_core: Code-Aster houdt "
                "complexe matrices op Windows toch in het geheugen "
