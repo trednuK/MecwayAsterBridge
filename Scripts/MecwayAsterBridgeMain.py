@@ -858,8 +858,14 @@ def _load_liml_results(active_liml, model_data, run_start, monitor=None,
                 u"MED-bestand lezen...",
                 u"Reading the MED file..."), None, True)
             try:
-                import bridge_med
-                nvars = bridge_med.write_fragment(rmed, fragment, model_data)
+                import bridge_fast
+                mesh_liml = (snapshot if snapshot and
+                             os.path.isfile(snapshot) else active_liml)
+                nvars = bridge_fast.write_med(rmed, fragment, mesh_liml)
+                if nvars is None:
+                    import bridge_med
+                    nvars = bridge_med.write_fragment(
+                        rmed, fragment, model_data)
                 log(tr("INFO: Resultaten gelezen uit het MED-bestand "
                        "({0} variabelen).",
                        "INFO: Results read from the MED file "

@@ -269,6 +269,88 @@ def _read_slow_elem(r, model_data, ename, shapes, line_eids, truss_eids):
                 line_eids, truss_eids)
 
 
+def write_med(rmed_path, out_path, liml_path=None):
+    """Write the `<results>` fragment with ``aster_fast med``.
+
+    Returns the number of variables, or None when the helper is off or
+    failed (the caller then uses bridge_med). The window keeps moving
+    while the program runs: IronPython does not have to parse the HDF5.
+    """
+    exe = find_exe()
+    if not exe:
+        return None
+    from bridge_utils import tr
+    section, detail = (
+        tr(u"Resultaten", u"Results"),
+        tr(u"MED-bestand lezen (aster_fast)...",
+           u"Reading the MED file (aster_fast)..."))
+    cmd = [exe, "med", rmed_path, out_path]
+    if liml_path:
+        cmd.append(liml_path)
+    out_path_tmp = err_path = None
+    try:
+        fd, out_path_tmp = tempfile.mkstemp(prefix="mwfast_", suffix=".out")
+        os.close(fd)
+        fd, err_path = tempfile.mkstemp(prefix="mwfast_", suffix=".err")
+        os.close(fd)
+        progress(section, detail, None, True)
+        out_f = open(out_path_tmp, "wb")
+        err_f = open(err_path, "wb")
+        try:
+            proc = subprocess.Popen(cmd, stdout=out_f, stderr=err_f)
+            while proc.poll() is None:
+                progress(section, detail, None, False)
+                time.sleep(0.05)
+        finally:
+            out_f.close()
+            err_f.close()
+        err = open(err_path, "rb").read()
+        if proc.returncode != 0:
+            log("WARNING: aster_fast med failed ({0}); reading the MED "
+                "file in Python. {1}".format(proc.returncode, _err_text(err)))
+            if os.path.isfile(out_path):
+                try:
+                    os.remove(out_path)
+                except OSError:
+                    pass
+            return None
+        text = open(out_path_tmp, "rb").read()
+        nvars = _med_count(text)
+        if nvars is None or not os.path.isfile(out_path) or os.path.getsize(out_path) == 0:
+            log("WARNING: aster_fast med wrote no fragment; reading the "
+                "MED file in Python.")
+            return None
+        return nvars
+    except Exception as exc:
+        log("WARNING: aster_fast med could not start ({0}); reading the "
+            "MED file in Python.".format(exc))
+        return None
+    finally:
+        for path in (out_path_tmp, err_path):
+            if path and os.path.isfile(path):
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
+
+
+def _med_count(text):
+    """`variables N` from aster_fast med, or None."""
+    if not isinstance(text, str):
+        try:
+            text = text.decode("ascii", "replace")
+        except Exception:
+            return None
+    for line in text.splitlines():
+        line = line.strip()
+        if line.startswith("variables "):
+            try:
+                return int(line.split()[1])
+            except (ValueError, IndexError):
+                return None
+    return None
+
+
 def write_mail(mail_path, nids, nodes, extra_nodes, by_type, group_ma,
                group_no):
     """Write the ASTER mesh with aster_fast. False: caller uses Python."""

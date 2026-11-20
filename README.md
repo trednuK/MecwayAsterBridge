@@ -12,9 +12,9 @@ in Mecway's *Custom model definition*.
 
 [![Architecture diagram](https://gitdiagram.com/diagram-badge.svg)](https://gitdiagram.com/trednuk/mecwayasterbridge?utm_source=readme&utm_medium=badge)
 
-Version: **V2026.17** (see [`CHANGELOG.md`](CHANGELOG.md)). Dutch documentation:
+Version: **V2026.18** (see [`CHANGELOG.md`](CHANGELOG.md)). Dutch documentation:
 [`docs/Handleiding.md`](docs/Handleiding.md). Large models can use the optional
-`aster_fast` helper (below). The version shown on the start screen stays **V2026.17**.
+`aster_fast` helper (below). The version shown on the start screen stays **V2026.18**.
 
 **Provided as is, without warranty (MPL-2.0, sections 6 and 7). Always check results
 independently before you rely on them.**
@@ -45,7 +45,7 @@ independently before you rely on them.**
    `%LOCALAPPDATA%\code_aster\v2025\17.4\bin\run_aster.bat`, which is the bridge's
    default; nothing needs to be set if you keep that location.
 2. **Get the bridge.** Download and unpack the Windows release of
-   [V2026.17](https://github.com/larsmei/MecwayAsterBridge/releases/tag/V2026.17),
+   [V2026.18](https://github.com/larsmei/MecwayAsterBridge/releases/tag/V2026.18),
    or clone this repository:
    ```
    git clone https://github.com/larsmei/MecwayAsterBridge.git
@@ -71,7 +71,9 @@ On a model of about 800,000 nodes, IronPython 2.7 can spend more than half an ho
 building the files before Code-Aster starts. `Scripts\aster_fast.exe` does the two slow
 steps outside IronPython: it reads the mesh out of the `.liml` (results under `<solution>`
 are still skipped), counts the free faces of the solids and writes the Code-Aster `.mail`.
-The mesh text is the same as the pure Python writer. Materials, loads and constraints are
+It also reads a `.rmed` and writes the Mecway result fragment (`aster_fast med`) when
+results are taken from the MED file on the host. The mesh text is the same as the pure
+Python writer. Materials, loads and constraints are
 still read by the bridge. While those steps run, the **Preparing** window shows each step
 and its status; it closes when the Code-Aster status window opens.
 

@@ -1,5 +1,20 @@
 # Changelog
 
+## V2026.18 – 20 November 2026
+
+Reading the `.rmed` back into Mecway no longer stays on "Reading the MED
+file". `aster_fast med` writes the result fragment. The `.comm` and the
+`.export` are the same as V2026.17. Without `aster_fast.exe`, or if it
+cannot read the file, the Python reader is still used.
+
+Not checked in the Mecway window. `tests/test_bridge_med.py` compares the
+fragment with the Python reader, including a gzip+shuffle file. The full
+regression was not re-run.
+
+- **MED results read by `aster_fast`.** Same program as the mesh helper.
+  HDF5 is inside the program (deflate and shuffle), nothing else to
+  install. The window keeps its step while the program runs.
+
 ## V2026.17 – 20 November 2026
 
 The window while the results go into Mecway shows the step and a bar.

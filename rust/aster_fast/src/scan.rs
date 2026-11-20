@@ -95,6 +95,33 @@ pub fn prepare(liml: &Path, slim_path: &Path, bin_path: &Path) -> io::Result<()>
     Ok(())
 }
 
+pub struct ModelMesh {
+    /// Mecway element id -> node ids, in the order Mecway stored them.
+    pub elements: HashMap<u32, Vec<u32>>,
+    /// Elset name -> element ids, in file order.
+    pub elsets: Vec<(String, Vec<u32>)>,
+}
+
+/// Elements and elsets of a `.liml`, for the MED result writer. The same
+/// cut as `prepare` (everything before `<solution`).
+pub fn model_mesh(liml: &Path) -> io::Result<ModelMesh> {
+    let (data, _) = read_model(liml)?;
+    let mut slim = Vec::new();
+    let mut mesh = Mesh::new();
+    parse(&data, &mut slim, &mut mesh)?;
+    let mut elements = HashMap::new();
+    let mut elsets = Vec::new();
+    for set in &mesh.elsets {
+        let mut ids = Vec::with_capacity(set.elems.len());
+        for elem in &set.elems {
+            elements.insert(elem.eid, elem.nodes.clone());
+            ids.push(elem.eid);
+        }
+        elsets.push((set.name.clone(), ids));
+    }
+    Ok(ModelMesh { elements, elsets })
+}
+
 /// Bytes of the model, cut at the same `<solution` Python's `_model_bytes` uses.
 fn read_model(path: &Path) -> io::Result<(Vec<u8>, bool)> {
     let f = File::open(path)?;

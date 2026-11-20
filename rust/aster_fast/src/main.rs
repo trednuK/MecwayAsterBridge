@@ -1,9 +1,12 @@
-//! aster_fast — the slow mesh steps of MecwayAsterBridge, outside IronPython.
+//! aster_fast — the slow mesh and result steps of MecwayAsterBridge,
+//! outside IronPython.
 //!
 //!   aster_fast prep <model.liml> <slim.liml> <mesh.bin>
 //!   aster_fast mail <model.mail>   (job on stdin, see Scripts/bridge_fast.py)
+//!   aster_fast med  <study.rmed> <results.xml> [model.liml]
 
 mod mail;
+mod med;
 mod real;
 mod scan;
 
@@ -34,9 +37,19 @@ fn run() -> io::Result<()> {
             let out = need(&mut args, "mail")?;
             mail::write_mail(Path::new(&out), io::stdin().lock())
         }
+        "med" => {
+            let rmed = need(&mut args, "rmed")?;
+            let xml = need(&mut args, "xml")?;
+            let liml = args.next();
+            med::write_fragment(
+                Path::new(&rmed),
+                Path::new(&xml),
+                liml.as_deref().map(Path::new),
+            )
+        }
         _ => Err(io::Error::new(
             io::ErrorKind::InvalidInput,
-            "usage: aster_fast prep <liml> <slim> <bin> | aster_fast mail <mail>",
+            "usage: aster_fast prep <liml> <slim> <bin> | aster_fast mail <mail> | aster_fast med <rmed> <xml> [liml]",
         )),
     }
 }

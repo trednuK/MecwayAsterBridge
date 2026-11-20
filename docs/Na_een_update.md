@@ -187,6 +187,7 @@ het laatst is nagelopen:
 | Resultaten op de host uit het MED-bestand, `results_from_med` (V2026.16) | NIET nagelopen | NIET nagelopen | NIET nagelopen in het Mecway-venster (`tests/test_bridge_med.py`; standaard uit, de Windows-job schrijft het fragment zelf) |
 | Voorbereidingsvenster en `aster_fast` (meshindex, vrije vlakken, leesbuffer op de heap) (V2026.16; eerder de fork-releases V2026.14-fast.1 … fast.3) | NIET nagelopen | NIET nagelopen | NIET nagelopen in het Mecway-venster (`tests/test_bridge_fast.py`; zonder `aster_fast.exe` blijft het Python-pad) |
 | Resultatenvenster met stap en balk (MED-veld, variabele, procent in de `.liml`, model openen) (V2026.17) | NIET nagelopen | NIET nagelopen | NIET nagelopen in het Mecway-venster (zelfde venster als de voorbereiding; `.comm` en `.export` ongewijzigd) |
+| MED-resultaten gelezen door `aster_fast med` (V2026.18) | NIET nagelopen | NIET nagelopen | NIET nagelopen in het Mecway-venster (`tests/test_bridge_med.py`, hetzelfde fragment als de Python-lezer, ook gzip+shuffle; zonder het programma blijft de Python-lezer) |
 
 "Nagelopen" betekent de verificatie van §2 en een run in Mecway met die versie. Vergelijkingen
 met Mecway's eigen solver in de andere documenten noemen de Mecway-versie waarmee ze gemeten

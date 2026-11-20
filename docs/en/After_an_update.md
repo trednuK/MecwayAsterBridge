@@ -189,6 +189,7 @@ it was last verified:
 | Results on the host from the MED file, `results_from_med` (V2026.16) | NOT verified | NOT verified | NOT verified in the Mecway window (`tests/test_bridge_med.py`; off by default, a Windows job still writes the fragment itself) |
 | Preparation window and `aster_fast` (mesh index, free faces, read buffer on the heap) (V2026.16; earlier the fork releases V2026.14-fast.1 … fast.3) | NOT verified | NOT verified | NOT verified in the Mecway window (`tests/test_bridge_fast.py`; without `aster_fast.exe` the Python path stays) |
 | Results window with the step and a bar (MED field, variable, percent written into the `.liml`, opening the model) (V2026.17) | NOT verified | NOT verified | NOT verified in the Mecway window (the same window as the preparation; the `.comm` and the `.export` are unchanged) |
+| MED results read by `aster_fast med` (V2026.18) | NOT verified | NOT verified | NOT verified in the Mecway window (`tests/test_bridge_med.py`, same fragment as the Python reader, also gzip+shuffle; without the program the Python reader stays) |
 
 "Verified" means the verification of §2 and a run in Mecway with that version. Comparisons
 with Mecway's own solver in the other documents name the Mecway version they were measured

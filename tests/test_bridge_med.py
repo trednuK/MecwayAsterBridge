@@ -91,6 +91,68 @@ def _values(xml, name):
             for i in range(0, len(raw), 8)]
 
 
+def _rust_exe():
+    here = os.path.dirname(os.path.abspath(__file__))
+    root = os.path.join(here, "..", "rust", "aster_fast", "target", "release")
+    for name in ("aster_fast", "aster_fast.exe"):
+        path = os.path.join(root, name)
+        if os.path.isfile(path):
+            return path
+    return None
+
+
+def _rust_same(rmed, xml, model):
+    """The Rust reader writes the same fragment. Skipped without a build."""
+    import subprocess
+    exe = _rust_exe()
+    if not exe:
+        print("SKIP aster_fast med (binary not built)")
+        return
+    liml = os.path.join(os.path.dirname(rmed), "model.liml")
+    # one line, Mecway node order 2 then 1, elset Arm
+    open(liml, "w").write(
+        '<liml><elset name="Arm">'
+        '<elem eid="1" shape="line2" nodes="2 1"/>'
+        '</elset></liml>')
+    out = os.path.join(os.path.dirname(rmed), "rust.xml")
+    proc = subprocess.Popen([exe, "med", rmed, out, liml],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    _stdout, err = proc.communicate()
+    assert proc.returncode == 0, err
+    got = open(out, "rb").read()
+    want = open(xml, "rb").read()
+    assert got == want, "aster_fast med differs from bridge_med"
+    # gzip + shuffle, the way a large Code-Aster .rmed is stored
+    import h5py
+    import numpy as np
+    import shutil
+    packed = rmed + ".gz.h5"
+    shutil.copy(rmed, packed)
+    # rewrite the displacement values compressed; the mesh stays
+    with h5py.File(rmed, "r") as src, h5py.File(packed, "w") as dst:
+        def copy(name, obj):
+            if isinstance(obj, h5py.Dataset):
+                kw = {}
+                if obj.dtype.kind == "f":
+                    kw["compression"] = "gzip"
+                    kw["shuffle"] = True
+                d = dst.create_dataset(name, data=obj[()], **kw)
+                for k, v in obj.attrs.items():
+                    d.attrs[k] = v
+            elif isinstance(obj, h5py.Group):
+                g = dst.create_group(name)
+                for k, v in obj.attrs.items():
+                    g.attrs[k] = v
+        src.visititems(copy)
+    py2 = out + ".py"
+    bridge_med.write_fragment(packed, py2, model)
+    proc = subprocess.Popen([exe, "med", packed, out, liml],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    _stdout, err = proc.communicate()
+    assert proc.returncode == 0, err
+    assert open(out, "rb").read() == open(py2, "rb").read()
+
+
 def main():
     try:
         import h5py  # noqa: F401
@@ -120,6 +182,7 @@ def main():
     # nodal SIGM is absent; the element-node block is the second stressxx
     # (only ELNO was written). One element, nodes 2 then 1 -> 7 then 3.
     assert abs(stress[0] - 7.0) < 1e-12 and abs(stress[1] - 3.0) < 1e-12, stress
+    _rust_same(path, out, model)
     saved = CONFIG_BRIDGE.get("results_from_med"), CONFIG_BRIDGE.get("exe_aster")
     try:
         CONFIG_BRIDGE["results_from_med"] = False
