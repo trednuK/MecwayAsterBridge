@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **Results on the host when the job Python cannot see Scripts.** The
+  call stays `run_aster.bat` / `as_run`; a CAVE install is transparent
+  behind that. Its Python runs in a container and cannot import
+  `Scripts` or open the `.liml`. With **Results on the host from the
+  MED file** (`results_from_med`) the job writes the `.rmed` and does
+  not import a host script. Afterwards the bridge reads the file
+  (`bridge_med.py`, HDF5 reader included) and writes the `<results>`
+  fragment. Off by default, so a Windows install is unchanged.
+  `tests/test_bridge_med.py`.
+
 - **Preparation window, and a faster mesh index.** Until Code-Aster starts, Mecway
   showed nothing: the log file was the only trace, and on an 800k-node model that
   silent stretch was still about three minutes. A window now stays open for each
@@ -10,9 +20,7 @@
   stores nodes, plain elements and numeric node groups as arrays, and counts the
   free faces of the solids while it reads the `.liml` (the same faces the error
   estimator used to count in IronPython). The `.mail` bytes are unchanged.
-  The Windows executable is on fork release **V2026.14-fast.3**. `ASTER_FAST=0`
-  still uses Python only. fast.2 is the previous executable (no preparation
-  window, free faces still counted in Python).
+  Build `aster_fast` as in the README. `ASTER_FAST=0` still uses Python only.
 
 - **Large meshes: optional Rust helper for the .liml read and the ASTER mesh.**
   `aster_fast` (crate `rust/aster_fast`, no dependencies) does the two steps that

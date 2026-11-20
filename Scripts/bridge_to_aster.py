@@ -57,7 +57,8 @@ from bridge_results_liml import RESULTS_SUFFIX
 from bridge_utils import (log, tr, CONFIG_BRIDGE, get_active_analysis,
                           run_name, template_path, parse_yes_no,
                           mumps_keywords, mumps_memory, mumps_memory_note,
-                          mumps_solveur, progress)
+                          mumps_solveur, progress, host_med_results,
+                          write_med_file, no_job_python)
 
 
 # ==========================================
@@ -2351,6 +2352,9 @@ def _static_check_block(model_data):
     exception into the .mess before Python catches it, and the bridge would
     then report the run as failed (KNOWN_BUGS 119); the reactions remain.
     """
+    if host_med_results():
+        return ("#-- mass check skipped (results are read from the MED "
+                "file on the host) --\n")
     scripts = os.path.dirname(os.path.abspath(__file__))
     mass = _GD_BEAM not in (model_data.get("elset_modelisations") or {}).values()
     if not mass:
@@ -2393,6 +2397,13 @@ def _results_route(work_dir, model_data, postreleve_block, impr_table_block,
                                quiet=True) if fields is None else [])
     scripts = os.path.dirname(os.path.abspath(__file__))
     fragment = results_file(work_dir)
+    if host_med_results():
+        log("INFO: Results will be read from the MED file on the host "
+            "after as_run (results_from_med); the job imports nothing "
+            "from Scripts.")
+        return ("#-- tables not needed (results read from the MED file "
+                "on the host) --\n",
+                "#-- no in-job result export (results_from_med) --\n")
     extra = _derived_args(model_data, chosen) + formulas_arg(model_data) + \
         bridge_plane.export_arg(model_data) + moved_nodes_arg(model_data) + \
         extra
@@ -2439,7 +2450,7 @@ def _build_impr_resu_block(model_data, with_plastic=False, fields=None):
     POST_CHAMP EXTR_COQUE) goes in as its own result (NOM_RESU_MED, max.
     8 characters).
     """
-    if not CONFIG_BRIDGE.get("med_export", False):
+    if not write_med_file():
         return "#-- no MED export (setting med_export off) --\n"
     cara = " CARA_ELEM=cara," if _has_cara(model_data) else ""
     lines = [
@@ -2470,7 +2481,7 @@ def _export_result_lines(work_dir, resu_name):
     route 'tabel'); the signature stays for the callers.
     """
     lines = []
-    if CONFIG_BRIDGE.get("med_export", False):
+    if write_med_file():
         lines.append("F rmed {0} R 80".format(
             os.path.join(work_dir, run_name(".rmed"))))
     return "".join("\n" + line for line in lines)
@@ -7795,6 +7806,9 @@ def _jump_check_block(model_data, load_funcs):
                     if m == _GD_BEAM)
     if not groups:
         return ""
+    if host_med_results():
+        return ("#-- jump check skipped (results are read from the MED "
+                "file on the host) --\n")
     scripts = os.path.dirname(os.path.abspath(__file__))
     return (
         "# Jump to another equilibrium branch (POU_D_T_GD beams)\n"
@@ -9088,6 +9102,9 @@ def _modes_export_block(work_dir, model_data, stiffness_norm=False,
     pass the mass matrix 'masse' (effective mass for the rotations).
     complex_modes: complex modes (bridge_modal_damping); export_results
     then also gets 'masse' (normalisation of the real part)."""
+    if host_med_results():
+        return ("#-- modes are read from the MED file on the host "
+                "(results_from_med) --\n")
     scripts = os.path.dirname(os.path.abspath(__file__))
     extra = ""
     if len(fields) > 1:
@@ -9583,7 +9600,7 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
                             analysis, buckling, quiet=True) == "RIGI_GENE",
                         fields=fields, mass=not buckling,
                         complex_modes=bool(damping)))
-    if CONFIG_BRIDGE.get("med_export", False):
+    if write_med_file():
         impr_resu_block = ("IMPR_RESU(FORMAT='MED', UNITE=80, "
                            "RESU=_F(RESULTAT=res, NOM_CHAM=('DEPL',)))\n")
     else:

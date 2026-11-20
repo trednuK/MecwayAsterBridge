@@ -1307,6 +1307,18 @@ SETTING_HELP = {
                    u"hundreds of MB. With an XFEM crack also _xfem.rmed: the "
                    u"mesh that follows the crack, in which the opening is "
                    u"visible."),
+    "results_from_med": (u"De resultaten na as_run op deze pc uit het .rmed "
+                         u"lezen. De job importeert geen script uit Scripts: "
+                         u"de Python van een CAVE-installatie zit in een "
+                         u"container en ziet de host niet. De aanroep blijft "
+                         u"run_aster.bat / as_run. Standaard uit; de "
+                         u"Windows-installatie schrijft het fragment zelf.",
+                         u"After as_run, read the results from the .rmed on "
+                         u"this PC. The job does not import a script from "
+                         u"Scripts: the Python of a CAVE install is inside a "
+                         u"container and cannot see the host. The call stays "
+                         u"run_aster.bat / as_run. Off by default; the Windows "
+                         u"install writes the fragment itself."),
     "vtu_export": (u"Ook <model>_<run_id>.pvd met een .vtu per tijdstap "
                    u"schrijven (VTK-formaat, leest elke ParaView, ook zonder "
                    u"MED-lezer). Dezelfde velden als Mecway krijgt: "

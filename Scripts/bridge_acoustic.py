@@ -97,7 +97,8 @@ import os
 from collections import OrderedDict
 
 from bridge_utils import (log, parse_and_convert, CONFIG_BRIDGE, tr,
-                          run_name, _normalize_unit_string, mumps_keywords)
+                          run_name, _normalize_unit_string, mumps_keywords,
+                          no_job_python, write_med_file)
 
 
 # Mecway loads that only exist in Acoustic Resonance (manual v33
@@ -749,7 +750,7 @@ def build_acoustic_modes(work_dir, model_data, msh_path, resu_name, analysis):
     calc_modes_block = _calc_modes_block(model_data, analysis, shift_free)
     export_block = (bta._custom_code(model_data, "post") +
                     _export_block(work_dir, model_data))
-    if CONFIG_BRIDGE.get("med_export", False):
+    if write_med_file():
         impr_resu_block = ("IMPR_RESU(FORMAT='MED', UNITE=80, "
                            "RESU=_F(RESULTAT=res, NOM_CHAM=('PRES',)))\n")
     else:
@@ -799,6 +800,9 @@ def _export_block(work_dir, model_data):
     """aster_results_export: modes as <mode> with the node variable
     'pressure' (Mecway's name), normalised p^T M p = 1 (export_results
     does that for MODE_ACOU with MASS_GENE), and the BRIDGE_MODE lines."""
+    skip = no_job_python("acoustic results")
+    if skip:
+        return skip
     import bridge_to_aster as bta
     scripts = os.path.dirname(os.path.abspath(__file__))
     return ("# Results in Mecway's own format (result_route 'liml')\n"
@@ -1047,7 +1051,8 @@ def _complex_modes_comm(work_dir, model_data, msh_path, resu_name, analysis,
     c_min = min(c for c, _rho in mats.values())
     size = -0.1 * c_min / (2.0 * free) if free < 0.0 else 1.0
     scripts = os.path.dirname(os.path.abspath(__file__))
-    calc_modes_block = (
+    _skip = no_job_python("complex acoustic modes")
+    calc_modes_block = _skip if _skip else (
         "# Complex modes (impedance): quadratic eigenvalue problem\n"
         "# (K + l C + l^2 M) P = 0, C = sum rho/Z int N N dA (Mecway manual\n"
         "# par. 6.9.2), solved with scipy in aster_acoustic_complex\n"
@@ -1080,7 +1085,7 @@ def _complex_modes_comm(work_dir, model_data, msh_path, resu_name, analysis,
                "apply to complex modes; the modes with the smallest "
                "|lambda| (like Mecway)."))
     export_block = bta._custom_code(model_data, "post")
-    if CONFIG_BRIDGE.get("med_export", False):
+    if write_med_file():
         log(tr("WARNING: Akoestiek: geen MED-export bij complexe modes "
                "(impedantie): er is geen Code-Aster-resultaat; de modes "
                "staan alleen in Mecway.",
@@ -1700,7 +1705,7 @@ def build_acoustic_harm(work_dir, model_data, msh_path, resu_name, analysis):
 
     export_block = (bta._custom_code(model_data, "post") +
                     _harm_export_block(work_dir, model_data, inp["mics"]))
-    if CONFIG_BRIDGE.get("med_export", False):
+    if write_med_file():
         impr_resu_block = (
             "IMPR_RESU(FORMAT='MED', UNITE=80, RESU=(\n"
             "    _F(RESULTAT=res, NOM_CHAM='PRES', PARTIE='REEL', "
@@ -1756,6 +1761,9 @@ MIC_SUFFIX = "_microfoons.csv"
 def _harm_export_block(work_dir, model_data, mics):
     """aster_acoustic_export: one <mode> per frequency (pressure,
     pressurei, pressuremag, pressurephase, spl) and the microphones."""
+    skip = no_job_python("acoustic harmonic results")
+    if skip:
+        return skip
     import bridge_to_aster as bta
     scripts = os.path.dirname(os.path.abspath(__file__))
     mic_text = "{" + ", ".join("{0}: [{1}]".format(

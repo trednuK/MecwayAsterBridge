@@ -61,8 +61,8 @@ import io
 import os
 import re
 
-from bridge_utils import (log, tr, run_name, parse_and_convert,
-                          _unit_key, work_dir_path)
+from bridge_utils import (log, tr, run_name, CONFIG_BRIDGE, parse_and_convert,
+                          _unit_key, work_dir_path, no_job_python)
 
 CSV_SUFFIX = "_vermoeiing.csv"
 
@@ -932,6 +932,13 @@ def fatigue_block(model_data, analysis, work_dir):
     if not curves:
         return "", ""
     opts = plan["options"]
+    skip = no_job_python("fatigue")
+    if skip:
+        log(tr(u"INFO: Vermoeiing draait niet in de job: de container ziet "
+               u"Scripts niet. De spanningen komen wel in het .rmed.",
+               u"INFO: Fatigue does not run in the job: the container "
+               u"cannot see Scripts. The stresses still go into the .rmed."))
+        return skip, ""
     scripts = os.path.dirname(os.path.abspath(__file__))
     route = ("blocks" if plan["blocks"] else "signal" if plan["signal"]
              else "time steps of the run")

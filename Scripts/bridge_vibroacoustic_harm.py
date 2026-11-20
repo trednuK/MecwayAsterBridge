@@ -65,7 +65,7 @@ import bridge_dyna_modal as bdm
 import bridge_harmonic as bh
 import bridge_acoustic as bac
 import bridge_vibroacoustic as bva
-from bridge_utils import log, tr, CONFIG_BRIDGE, run_name, mumps_keywords
+from bridge_utils import log, tr, CONFIG_BRIDGE, run_name, mumps_keywords, no_job_python, write_med_file
 
 ANALYSIS = "vibroacoustic_harm_3d"
 MIC_SUFFIX = bac.MIC_SUFFIX            # <run>_microfoons.csv (like S3a)
@@ -806,7 +806,8 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
         return "{" + ", ".join("{0}: [{1}]".format(
             b2a._py_str(name), ", ".join(str(n) for n in nids))
             for name, nids in d.items()) + "}"
-    export_block = b2a._custom_code(model_data, "post") + (
+    export_block = no_job_python("vibro-acoustic harmonic results") or (
+        b2a._custom_code(model_data, "post") + (
         "# Results in Mecway's own format (result_route 'liml'): one\n"
         "# <mode frequency> per frequency with the displacement of the\n"
         "# structure and the pressure in the fluid (aster_harmonic_export)\n"
@@ -829,8 +830,8 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
             b2a._py_str(os.path.join(work_dir, run_name(PROBE_SUFFIX))),
             b2a._py_str(CONFIG_BRIDGE.get("language", "en")),
             _ids(inp["mics"]),
-            b2a._py_str(os.path.join(work_dir, run_name(MIC_SUFFIX))))
-    if CONFIG_BRIDGE.get("med_export", False):
+            b2a._py_str(os.path.join(work_dir, run_name(MIC_SUFFIX)))))
+    if write_med_file():
         impr_resu_block = (
             "IMPR_RESU(FORMAT='MED', UNITE=80, RESU=(\n"
             "    _F(RESULTAT=res, NOM_CHAM='DEPL', PARTIE='REEL', "

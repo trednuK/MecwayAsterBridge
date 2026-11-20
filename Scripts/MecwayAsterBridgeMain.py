@@ -121,7 +121,7 @@ from bridge_utils       import (CONFIG_BRIDGE, log, resolve_auto_analysis,
                                 run_names, path_too_long, work_dir_path,
                                 exe_aster_path, set_model_path,
                                 BRIDGE_VERSION, log_size, log_errors,
-                                legacy_route_note, progress)
+                                legacy_route_note, progress, host_med_results)
 from bridge_gui         import (run_settings_dialog, results_dialog,
                                 claim_instance, release_instance,
                                 instance_busy_text, wait_open, wait_step,
@@ -833,6 +833,22 @@ def _load_liml_results(active_liml, model_data, run_start, monitor=None,
     Mecway.
     """
     fragment = results_file(work_dir_path())
+    if host_med_results():
+        rmed = os.path.join(work_dir_path(), run_name(".rmed"))
+        fresh = (os.path.isfile(rmed) and
+                 os.path.getmtime(rmed) >= run_start - 1.0)
+        if fresh:
+            try:
+                import bridge_med
+                nvars = bridge_med.write_fragment(rmed, fragment, model_data)
+                log(tr("INFO: Resultaten gelezen uit het MED-bestand "
+                       "({0} variabelen).",
+                       "INFO: Results read from the MED file "
+                       "({0} variables).").format(nvars))
+            except Exception as exc:
+                log(tr("ERROR: MED-bestand niet gelezen ({0}): {1}",
+                       "ERROR: MED file not read ({0}): {1}").format(
+                           rmed, exc))
     if (not os.path.exists(fragment) or
             os.path.getmtime(fragment) < run_start - 1.0):
         log(tr("ERROR: Geen resultaatfragment van deze run ({0}); zie "

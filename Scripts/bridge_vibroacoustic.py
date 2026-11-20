@@ -77,7 +77,8 @@ import os
 from collections import OrderedDict
 
 from bridge_utils import (log, parse_and_convert, CONFIG_BRIDGE, tr,
-                          run_name, mumps_keywords)
+                          run_name, mumps_keywords, no_job_python,
+                          write_med_file)
 
 ANALYSIS = "vibroacoustic_modes_3d"
 
@@ -618,6 +619,9 @@ def _export_block(work_dir, model_data):
     Code-Aster has no meaning for U_P_PHI modes, adlv100a: 4.6e-20
     for the piston mode) and aster_results_export with displacements
     (structure) and the pressure (fluid, component PRES of DEPL)."""
+    skip = no_job_python("vibro-acoustic results")
+    if skip:
+        return skip
     import bridge_to_aster as bta
     scripts = os.path.dirname(os.path.abspath(__file__))
     return ("# Results in Mecway's own format (result_route 'liml')\n"
@@ -845,7 +849,7 @@ def build_vibroacoustic_modes(work_dir, model_data, msh_path, resu_name,
     calc_modes_block = _mode_search_block(model_data, analysis, n)
     export_block = (bta._custom_code(model_data, "post") +
                     _export_block(work_dir, model_data))
-    if CONFIG_BRIDGE.get("med_export", False):
+    if write_med_file():
         impr_resu_block = ("IMPR_RESU(FORMAT='MED', UNITE=80, "
                            "RESU=_F(RESULTAT=res, NOM_CHAM=('DEPL',)))\n")
     else:

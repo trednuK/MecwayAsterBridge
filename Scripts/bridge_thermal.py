@@ -84,7 +84,8 @@ import re
 from collections import OrderedDict
 
 from bridge_utils import (log, parse_and_convert, CONFIG_BRIDGE, tr,
-                          run_name, mumps_keywords)
+                          run_name, mumps_keywords, host_med_results,
+                          write_med_file)
 import bridge_mesh
 
 
@@ -2619,9 +2620,9 @@ def _shift(value, offset):
 
 
 def _med_block():
-    """IMPR_RESU MED (study.rmed) only with the setting "med_export";
-    Mecway gets the results via the .liml."""
-    if not CONFIG_BRIDGE.get("med_export", False):
+    """IMPR_RESU MED (study.rmed) with med_export, and always when the
+    results are read from that file on the host (results_from_med)."""
+    if not (CONFIG_BRIDGE.get("med_export", False) or host_med_results()):
         return "#-- no MED export (setting med_export off) --\n"
     return ("IMPR_RESU(\n"
             "    FORMAT='MED',\n"
@@ -2828,7 +2829,8 @@ def build_thermal(work_dir, model_data, msh_path, resu_name, analysis):
                                                      run_name(".mess"))),
             ] + (["F rmed {0} R 80".format(os.path.join(work_dir,
                                                        run_name(".rmed")))]
-                 if CONFIG_BRIDGE.get("med_export", False) else [])))
+                 if (CONFIG_BRIDGE.get("med_export", False) or
+                     host_med_results()) else [])))
         log("SUCCESS: .export written to '{0}'.".format(export_path))
         return export_path
     except KeyError as e:

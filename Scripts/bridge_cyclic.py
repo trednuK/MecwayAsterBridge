@@ -67,7 +67,7 @@ import os
 import re
 from collections import OrderedDict
 
-from bridge_utils import log, tr, CONFIG_BRIDGE, run_name, mumps_keywords
+from bridge_utils import log, tr, CONFIG_BRIDGE, run_name, mumps_keywords, no_job_python, write_med_file
 
 TAG = "cyclicsymmetry"
 
@@ -910,7 +910,8 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
         ")",
         "# Modes on sector 1 (field DEPL per mode)",
         "modsec = REST_SOUS_STRUC(RESU_GENE=modcyc, SECTEUR=1, NOM_CHAM='DEPL')",
-    ] + wheel_lines + [
+    ] + wheel_lines + (
+        ["res = modsec"] if no_job_python("cyclic results") else [
         "import sys",
         "sys.path.insert(0, {0})".format(b2a._py_str(scripts)),
         "import aster_cyclic",
@@ -918,8 +919,8 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
         "axis='{3}', "
         "angle={4!r}{5})".format(n_seg, n, diameters, axis_name,
                                  ROTATION.get(axis_name, 0.0), wheel_args),
-    ]) + "\n"
-    export_block = b2a._custom_code(model_data, "post") + (
+    ])) + "\n"
+    export_block = no_job_python("cyclic results") or (b2a._custom_code(model_data, "post") + (
         "# Results in Mecway's own format (bridge: result_route='liml')@N"
         "import aster_results_export@N"
         "aster_results_export.export_results(@N"
@@ -930,8 +931,8 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
         fragment=b2a._py_str(b2a.results_file(work_dir)),
         liml=b2a._py_str(liml),
         cyclic="{{'axis': {0}, 'segments': {1}}}".format(axis, n_seg),
-        formulas=b2a.formulas_arg(model_data))
-    if CONFIG_BRIDGE.get("med_export", False):
+        formulas=b2a.formulas_arg(model_data)))
+    if write_med_file():
         impr_resu_block = ("IMPR_RESU(FORMAT='MED', UNITE=80, "
                            "RESU=_F(RESULTAT=res, NOM_CHAM=('DEPL',)))\n")
     else:

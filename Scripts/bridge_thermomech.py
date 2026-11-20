@@ -58,7 +58,7 @@
 import re
 from collections import OrderedDict
 
-from bridge_utils import log, tr, CONFIG_BRIDGE
+from bridge_utils import log, tr, CONFIG_BRIDGE, no_job_python, write_med_file
 import bridge_failure
 import bridge_plane
 
@@ -1081,6 +1081,9 @@ def export_block(work_dir, model_data, fields):
     (heat flux); same NUME_ORDRE (ARCHIVAGE on the thermal times)."""
     import bridge_to_aster as bta
     import os
+    skip = no_job_python("thermal-mechanical results")
+    if skip:
+        return skip
     scripts = os.path.dirname(os.path.abspath(__file__))
     return (
         "# Results in Mecway's own format (mechanical + thermal)\n"
@@ -1103,8 +1106,8 @@ def export_block(work_dir, model_data, fields):
 
 
 def med_block():
-    """IMPR_RESU MED only with the setting med_export."""
-    if not CONFIG_BRIDGE.get("med_export", False):
+    """IMPR_RESU MED with med_export, and when the host reads the .rmed."""
+    if not write_med_file():
         return "#-- no MED export (setting med_export off) --\n"
     return ("IMPR_RESU(\n    FORMAT='MED',\n    UNITE=80,\n    RESU=(\n"
             "        _F(RESULTAT=res_ther, NOM_CHAM=('TEMP',)),\n"

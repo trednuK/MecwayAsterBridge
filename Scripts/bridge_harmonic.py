@@ -56,7 +56,7 @@ from collections import OrderedDict
 import bridge_to_aster as b2a
 import bridge_dyna_modal as bdm
 from bridge_utils import (log, tr, CONFIG_BRIDGE, run_name, mumps_keywords,
-                          mumps_solveur)
+                          mumps_solveur, no_job_python, write_med_file)
 
 HARM_ANALYSIS = "harmonic_3d"
 # Node selections with the frequency response in the log and a CSV (by the
@@ -892,7 +892,9 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
     calc_modes_block = b2a._calc_modes_block(
         model_data, analysis, False, cara_ref).replace(
             "res = CALC_MODES(", "modes = CALC_MODES(", 1)
-    calc_modes_block += (
+    _skip = no_job_python("mode overview")
+    if not _skip:
+        calc_modes_block += (
         "# Mode overview (frequency, effective mass) in the .mess\n"
         "import sys\n"
         "sys.path.insert(0, {0})\n"
@@ -909,7 +911,7 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
             "vec_{0} = ASSE_VECTEUR(VECT_ELEM=vel_{0}, NUME_DDL=numedd)"
             .format(k + 1),
         ]
-    if excitations and basis == "GENE":
+    if excitations and basis == "GENE" and not _skip:
         # Load resultant for the warning on missing modal mass
         # (MecwayAsterBridgeMain._warn_modal_mass)
         proj.append("aster_results_export.print_excitation([{0}])".format(
@@ -1053,7 +1055,8 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
     probe_text = "{" + ", ".join("{0}: [{1}]".format(
         b2a._py_str(name), ", ".join(str(n) for n in nids))
         for name, nids in probes.items()) + "}"
-    export_block = b2a._custom_code(model_data, "post") + (
+    export_block = no_job_python("harmonic results") or (
+        b2a._custom_code(model_data, "post") + (
         "# Results in Mecway's own format (result_route 'liml'): one\n"
         "# <mode frequency> per frequency (aster_harmonic_export)\n"
         "import aster_harmonic_export\n"
@@ -1069,8 +1072,8 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
             [str(f) for f in fields], probe_text,
             b2a._py_str(os.path.join(work_dir, run_name(PROBE_SUFFIX))),
             b2a._py_str(CONFIG_BRIDGE.get("language", "en")), basis,
-            _stress_args(classes, stress_eta))
-    if CONFIG_BRIDGE.get("med_export", False):
+            _stress_args(classes, stress_eta)))
+    if write_med_file():
         impr_resu_block = (
             "IMPR_RESU(FORMAT='MED', UNITE=80, RESU=(\n"
             "    _F(RESULTAT=res, NOM_CHAM='DEPL', PARTIE='REEL', "

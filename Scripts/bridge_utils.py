@@ -74,6 +74,12 @@ CONFIG_BRIDGE = {
     # Also write a MED file (<model>_<run_id>.rmed) for
     # ParaView/Salome. Mecway does not use it; it can reach hundreds of MB.
     "med_export":      False,
+    # Read the results from the .rmed on the host instead of importing
+    # aster_results_export inside the job. The call stays run_aster.bat /
+    # as_run. A CAVE install is transparent, but its Python cannot see
+    # Scripts or the .liml on the host. Off: the job writes the fragment
+    # itself (the Windows install).
+    "results_from_med": False,
     # Keep the Code-Aster base of a linear or nonlinear static run, with a
     # manifest, for a follow-up run (MecwayFreebody, bridge_manifest.py). A
     # base is 125-450 MB; the newest "keep_base_runs" per model stay.
@@ -945,6 +951,30 @@ def exe_aster_path():
     """Path to run_aster.bat: CONFIG_BRIDGE["exe_aster"] with expanded
     environment variables (default %LOCALAPPDATA%\\code_aster\\...)."""
     return expand_path(CONFIG_BRIDGE.get("exe_aster"))
+
+
+def host_med_results():
+    """True when the <results> fragment is built on the host from the
+    .rmed, not by a Python script inside the Code-Aster job.
+    The job is still started with run_aster.bat / as_run. A CAVE
+    install hides behind that, and its Python cannot read the host."""
+    return bool(CONFIG_BRIDGE.get("results_from_med", False))
+
+
+def write_med_file():
+    """True when the job must write the .rmed (ParaView, or the host
+    reads the results from it)."""
+    return bool(CONFIG_BRIDGE.get("med_export", False) or host_med_results())
+
+
+def no_job_python(what="results"):
+    """Comment that replaces an import of a host script inside the job,
+    or None when the job may import Scripts (normal Windows install)."""
+    if not host_med_results():
+        return None
+    return ("#-- {0}: not imported in the job. The container Python "
+            "cannot see the host; the bridge reads the .rmed after "
+            "as_run. --\n".format(what))
 
 
 def template_path(template):
