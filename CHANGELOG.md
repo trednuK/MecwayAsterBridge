@@ -1,12 +1,18 @@
 # Changelog
 
-## Unreleased
+## V2026.17 – 20 November 2026
 
-- **Results window shows the step.** Putting the results back into Mecway
-  used the "Please wait" window: one line, no bar, and it did not refresh
-  while the result file was read or written. That phase now uses the same
-  window as the preparation, with the step (MED field, variable, percent
-  written into the `.liml`, opening the model) and a bar.
+The window while the results go into Mecway shows the step and a bar.
+V2026.16 used the "Please wait" window: one line, no bar, and it did not
+refresh while the result file was read or written. Same `.comm` and
+`.export` as V2026.16.
+
+Not checked in the Mecway window. `tests/test_bridge_med.py` still passes.
+The full regression was not re-run.
+
+- **Results window shows the step.** That phase now uses the same window
+  as the preparation, with the step (MED field, variable, percent written
+  into the `.liml`, opening the model) and a bar.
 
 ## V2026.16 – 20 November 2026
 

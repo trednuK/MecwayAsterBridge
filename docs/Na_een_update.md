@@ -186,6 +186,7 @@ het laatst is nagelopen:
 | PETSc en MPI: `mpi_nbcpu`, `matr_distribuee`, `lin_solver` PETSC met `petsc_algo` en `petsc_precond` (V2026.16) | NIET nagelopen | NIET nagelopen | NIET nagelopen in het Mecway-venster (`tests/test_bridge_petsc_mpi.py`; de standaard laat `.comm` en `.export` gelijk aan V2026.15; PETSc vraagt een parallelle Code-Aster, de Windows-build niet) |
 | Resultaten op de host uit het MED-bestand, `results_from_med` (V2026.16) | NIET nagelopen | NIET nagelopen | NIET nagelopen in het Mecway-venster (`tests/test_bridge_med.py`; standaard uit, de Windows-job schrijft het fragment zelf) |
 | Voorbereidingsvenster en `aster_fast` (meshindex, vrije vlakken, leesbuffer op de heap) (V2026.16; eerder de fork-releases V2026.14-fast.1 … fast.3) | NIET nagelopen | NIET nagelopen | NIET nagelopen in het Mecway-venster (`tests/test_bridge_fast.py`; zonder `aster_fast.exe` blijft het Python-pad) |
+| Resultatenvenster met stap en balk (MED-veld, variabele, procent in de `.liml`, model openen) (V2026.17) | NIET nagelopen | NIET nagelopen | NIET nagelopen in het Mecway-venster (zelfde venster als de voorbereiding; `.comm` en `.export` ongewijzigd) |
 
 "Nagelopen" betekent de verificatie van §2 en een run in Mecway met die versie. Vergelijkingen
 met Mecway's eigen solver in de andere documenten noemen de Mecway-versie waarmee ze gemeten
