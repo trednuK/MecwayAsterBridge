@@ -91,6 +91,36 @@ def _values(xml, name):
             for i in range(0, len(raw), 8)]
 
 
+def _prefixed(src, plain_xml, model):
+    """Code_Aster names the group res_____DEPL, not DEPL."""
+    import h5py
+    dst = src + ".pref.med"
+    with h5py.File(src, "r") as s, h5py.File(dst, "w") as d:
+        for key in s.keys():
+            s.copy(key, d)
+        for name in list(d["CHA"].keys()):
+            d.move("CHA/" + name, "CHA/" + "res_____" + name)
+    out = dst + ".xml"
+    n = bridge_med.write_fragment(dst, out, model)
+    assert n >= 4
+    assert open(out, "rb").read() == open(plain_xml, "rb").read()
+    exe = _rust_exe()
+    if not exe:
+        return
+    import subprocess
+    liml = dst + ".liml"
+    open(liml, "w").write(
+        '<liml><elset name="Arm">'
+        '<elem eid="1" shape="line2" nodes="2 1"/>'
+        '</elset></liml>')
+    rust_out = dst + ".rust.xml"
+    proc = subprocess.Popen([exe, "med", dst, rust_out, liml],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    _stdout, err = proc.communicate()
+    assert proc.returncode == 0, err
+    assert open(rust_out, "rb").read() == open(plain_xml, "rb").read()
+
+
 def _rust_exe():
     here = os.path.dirname(os.path.abspath(__file__))
     root = os.path.join(here, "..", "rust", "aster_fast", "target", "release")
@@ -183,6 +213,7 @@ def main():
     # (only ELNO was written). One element, nodes 2 then 1 -> 7 then 3.
     assert abs(stress[0] - 7.0) < 1e-12 and abs(stress[1] - 3.0) < 1e-12, stress
     _rust_same(path, out, model)
+    _prefixed(path, out, model)
     saved = CONFIG_BRIDGE.get("results_from_med"), CONFIG_BRIDGE.get("exe_aster")
     try:
         CONFIG_BRIDGE["results_from_med"] = False

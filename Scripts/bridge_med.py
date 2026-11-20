@@ -80,6 +80,12 @@ def _tick(detail, fraction=None, force=False):
 def read_med(path):
     """Mesh nodes, cells and fields. fields[name] = list of steps
     (time, nodal {nid: [comps]}, elno {etype: {eid: [[comps per node]]}})."""
+    try:
+        import bridge_utils
+        _tick(bridge_utils.tr(
+            u"MED-bestand openen...", u"Opening the MED file..."), None, True)
+    except Exception:
+        pass
     fh = bridge_hdf5.File(path)
     try:
         mesh_name, body = _mesh_body(fh)
@@ -299,12 +305,43 @@ def _comp_index(info, comp, width):
     return None
 
 
+def _lookup(fields, name):
+    """(hdf5 key, field) for a Code-Aster name.
+
+    IMPR_RESU stores ``res_____DEPL`` (the result name padded to 8
+    characters, then the field). Shell results use NOM_RESU_MED the
+    same way (``res_sup_SIEQ_NOEU``). A file written without that
+    prefix (the tests) keeps the plain name.
+    """
+    if name in fields:
+        return name, fields[name]
+    hits = [k for k in fields if len(k) > 8 and k[8:] == name]
+    shell = ("res_sup_", "res_moy_", "res_inf_")
+    plain = [k for k in hits if not k.startswith(shell)]
+    use = plain or hits
+    if use:
+        key = sorted(use)[0]
+        return key, fields[key]
+    prefix = (name + "_" * 8)[:8]
+    hits = [k for k in fields
+            if len(k) > 8 and k.startswith(prefix)]
+    if not hits:
+        return None, None
+    key = sorted(hits)[0]
+    return key, fields[key]
+
+
 def _present(med):
     found = []
+    depl_key = flux_key = None
     for field, comp, name, elno in _MAP:
-        info = med["fields"].get(field)
+        key, info = _lookup(med["fields"], field)
         if not info or not info["steps"]:
             continue
+        if field == "DEPL":
+            depl_key = key
+        if field == "FLUX_NOEU":
+            flux_key = key
         _time, nodal, blocks = info["steps"][0]
         if elno:
             if not blocks:
@@ -319,12 +356,12 @@ def _present(med):
             continue
         if comp == "MAG":
             continue
-        found.append((field, comp, name, elno))
+        found.append((key, comp, name, elno))
     names = [row[2] for row in found]
-    if "displx" in names and "disply" in names and "displz" in names:
-        found.append(("DEPL", "MAG", "displmag", False))
-    if "heatfluxx" in names and "heatfluxy" in names:
-        found.append(("FLUX_NOEU", "MAG", "heatfluxmag", False))
+    if "displx" in names and "disply" in names and "displz" in names and depl_key:
+        found.append((depl_key, "MAG", "displmag", False))
+    if "heatfluxx" in names and "heatfluxy" in names and flux_key:
+        found.append((flux_key, "MAG", "heatfluxmag", False))
     return found
 
 

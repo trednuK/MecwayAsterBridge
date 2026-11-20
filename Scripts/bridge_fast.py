@@ -289,6 +289,12 @@ def write_med(rmed_path, out_path, liml_path=None):
         cmd.append(liml_path)
     out_path_tmp = err_path = None
     try:
+        try:
+            size = os.path.getsize(rmed_path)
+        except OSError:
+            size = -1
+        log("INFO: aster_fast med starting ({0}, {1} bytes).".format(
+            os.path.basename(rmed_path), size))
         fd, out_path_tmp = tempfile.mkstemp(prefix="mwfast_", suffix=".out")
         os.close(fd)
         fd, err_path = tempfile.mkstemp(prefix="mwfast_", suffix=".err")
@@ -297,10 +303,14 @@ def write_med(rmed_path, out_path, liml_path=None):
         out_f = open(out_path_tmp, "wb")
         err_f = open(err_path, "wb")
         try:
-            proc = subprocess.Popen(cmd, stdout=out_f, stderr=err_f)
+            proc = subprocess.Popen(
+                cmd, stdout=out_f, stderr=err_f, stdin=_devnull())
+            seen = 0
             while proc.poll() is None:
+                seen = _med_stages(section, err_path, seen)
                 progress(section, detail, None, False)
                 time.sleep(0.05)
+            _med_stages(section, err_path, seen)
         finally:
             out_f.close()
             err_f.close()
@@ -332,6 +342,44 @@ def write_med(rmed_path, out_path, liml_path=None):
                     os.remove(path)
                 except OSError:
                     pass
+
+
+def _devnull():
+    """stdin of aster_fast: not Mecway's stdin, so the program cannot wait
+    on a keystroke."""
+    try:
+        return open(os.devnull, "rb")
+    except OSError:
+        return None
+
+
+def _med_stages(section, err_path, pos):
+    """Log complete stderr lines of aster_fast and show the last one.
+    Returns how many bytes are already handled."""
+    try:
+        raw = open(err_path, "rb").read()
+    except OSError:
+        return pos
+    if not isinstance(pos, int) or pos < 0 or pos > len(raw):
+        pos = 0
+    chunk = raw[pos:]
+    nl = chunk.rfind(b"\n")
+    if nl < 0:
+        return pos
+    try:
+        text = chunk[:nl].decode("utf-8", "replace")
+    except Exception:
+        return pos + nl + 1
+    last = None
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        log("INFO: aster_fast: {0}".format(line))
+        last = line
+    if last:
+        progress(section, last, None, True)
+    return pos + nl + 1
 
 
 def _med_count(text):

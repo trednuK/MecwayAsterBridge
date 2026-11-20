@@ -1,5 +1,21 @@
 # Changelog
 
+## V2026.19 – 20 November 2026
+
+Reading the `.rmed` no longer stops on "Reading the MED file (aster_fast)".
+Code_Aster stores the fields as `res_____DEPL`, not `DEPL`. V2026.18 did not
+recognise those names, stopped, and the Python reader then froze the window
+without a further line. Both readers now accept the prefixed names. The log
+and the window show each step (`mesh … nodes`, `field …`, `writing …`).
+
+The `.comm` and the `.export` are the same as V2026.18. Without the new
+`aster_fast.exe` the old program still fails the same way.
+
+Not checked in the Mecway window. `tests/test_bridge_med.py` compares both
+readers, including a Code_Aster field name (`res_____DEPL`) and a
+gzip+shuffle file. A real Code_Aster `box.med` (8 nodes) matches too. The
+full regression was not re-run.
+
 ## V2026.18 – 20 November 2026
 
 Reading the `.rmed` back into Mecway no longer stays on "Reading the MED

@@ -91,26 +91,50 @@ struct Var {
 }
 
 pub fn write_fragment(rmed: &Path, out: &Path, liml: Option<&Path>) -> io::Result<()> {
+    stage("start");
     let model = match liml {
-        Some(path) => Some(scan::model_mesh(path)?),
+        Some(path) => {
+            stage("reading the model for element order");
+            match scan::model_mesh(path) {
+                Ok(m) => Some(m),
+                Err(e) => {
+                    stage(&format!("model skipped: {e}"));
+                    None
+                }
+            }
+        }
         None => None,
     };
+    let bytes = std::fs::metadata(rmed).map(|m| m.len()).unwrap_or(0);
+    stage(&format!("opening {bytes} bytes"));
     let file = H5File::open_streaming(rmed).or_else(|_| H5File::open(rmed)).map_err(err)?;
+    stage("mesh");
     let (nodes, cells) = mesh(&file)?;
+    let ncells: usize = cells.values().map(|v| v.len()).sum();
+    stage(&format!("mesh {} nodes, {} elements", nodes.len(), ncells));
     let fields = fields(&file, &nodes, &cells)?;
     let vars = present(&fields, &nodes, &cells, model.as_ref())?;
     if vars.is_empty() {
+        let names: Vec<&str> = fields.keys().map(|s| s.as_str()).collect();
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
-            "no Mecway field in the MED file",
+            format!("no Mecway field in the MED file (groups: {})", names.join(", ")),
         ));
     }
     let n = vars.len();
+    stage(&format!("writing {n} variables"));
     let mut w = BufWriter::new(File::create(out)?);
     write_xml(&mut w, &vars, &nodes, model.as_ref())?;
     w.flush()?;
     println!("variables {n}");
+    stage("done");
     Ok(())
+}
+
+fn stage(msg: &str) {
+    let mut err = io::stderr();
+    let _ = writeln!(err, "{msg}");
+    let _ = err.flush();
 }
 
 fn err(e: impl std::fmt::Display) -> io::Error {
@@ -196,6 +220,10 @@ fn fields(
     };
     let mut out = HashMap::new();
     for name in cha.groups().map_err(err)? {
+        if !wanted(&name) {
+            continue;
+        }
+        stage(&format!("field {name}"));
         let group = cha.group(&name).map_err(err)?;
         let comps = components(&attr_text_group(&group, "NOM"));
         let mut keys = group.groups().map_err(err)?;
@@ -317,9 +345,18 @@ fn present(
     cells: &HashMap<String, Vec<Cell>>,
     model: Option<&scan::ModelMesh>,
 ) -> io::Result<Vec<Var>> {
-    let mut found: Vec<(&str, &str, &str, bool)> = Vec::new();
+    let mut found: Vec<(String, &str, &str, bool)> = Vec::new();
+    let mut depl_key: Option<String> = None;
+    let mut flux_key: Option<String> = None;
     for &(field, comp, name, elno) in MAP {
-        let Some(info) = fields.get(field) else { continue };
+        let Some(key) = locate_key(fields, field) else { continue };
+        let info = &fields[&key];
+        if field == "DEPL" {
+            depl_key = Some(key.clone());
+        }
+        if field == "FLUX_NOEU" {
+            flux_key = Some(key.clone());
+        }
         if info.steps.is_empty() {
             continue;
         }
@@ -335,18 +372,22 @@ fn present(
                 continue;
             }
         }
-        found.push((field, comp, name, elno));
+        found.push((key, comp, name, elno));
     }
     let names: Vec<&str> = found.iter().map(|r| r.2).collect();
     if names.contains(&"displx") && names.contains(&"disply") && names.contains(&"displz") {
-        found.push(("DEPL", "MAG", "displmag", false));
+        if let Some(key) = depl_key {
+            found.push((key, "MAG", "displmag", false));
+        }
     }
     if names.contains(&"heatfluxx") && names.contains(&"heatfluxy") {
-        found.push(("FLUX_NOEU", "MAG", "heatfluxmag", false));
+        if let Some(key) = flux_key {
+            found.push((key, "MAG", "heatfluxmag", false));
+        }
     }
     let mut vars = Vec::new();
-    for (field, comp, name, elno) in found {
-        let info = &fields[field];
+    for (key, comp, name, elno) in found {
+        let info = &fields[&key];
         if elno {
             vars.push(elno_var(name, info, comp, cells, model));
         } else {
@@ -354,6 +395,55 @@ fn present(
         }
     }
     Ok(vars)
+}
+
+/// Code_Aster prefixes the result name, padded to 8 characters
+/// (`res_____DEPL`). Shell results use NOM_RESU_MED the same way
+/// (`res_sup_SIEQ_NOEU`). Tests use the plain name.
+fn locate_key(fields: &HashMap<String, Field>, name: &str) -> Option<String> {
+    if fields.contains_key(name) {
+        return Some(name.to_string());
+    }
+    let mut hits: Vec<&str> = fields
+        .keys()
+        .filter(|k| k.len() > 8 && &k[8..] == name)
+        .map(|k| k.as_str())
+        .collect();
+    let shell = ["res_sup_", "res_moy_", "res_inf_"];
+    let plain: Vec<&str> = hits
+        .iter()
+        .copied()
+        .filter(|k| !shell.iter().any(|p| k.starts_with(p)))
+        .collect();
+    let list: &[&str] = if plain.is_empty() { &hits } else { &plain };
+    if !list.is_empty() {
+        let mut owned: Vec<&str> = list.to_vec();
+        owned.sort_unstable();
+        return Some(owned[0].to_string());
+    }
+    let prefix = format!("{name:_<8}");
+    let prefix = &prefix[..8];
+    hits = fields
+        .keys()
+        .filter(|k| k.len() > 8 && k.starts_with(prefix))
+        .map(|k| k.as_str())
+        .collect();
+    if hits.is_empty() {
+        return None;
+    }
+    hits.sort_unstable();
+    Some(hits[0].to_string())
+}
+
+fn wanted(name: &str) -> bool {
+    if MAP.iter().any(|row| row.0 == name) {
+        return true;
+    }
+    if name.len() > 8 && MAP.iter().any(|row| row.0 == &name[8..]) {
+        return true;
+    }
+    let shell = ["res_sup_", "res_moy_", "res_inf_"];
+    shell.iter().any(|p| name.starts_with(p))
 }
 
 fn nodal_width(step: &Step) -> usize {
