@@ -1,6 +1,24 @@
 # Changelog
 
-## Unreleased
+## V2026.16 – 20 November 2026
+
+Optional PETSc and MPI, and results read on the host from the MED file when
+the Code-Aster job cannot see `Scripts` (a CAVE install stays behind
+`run_aster.bat` / `as_run`). The preparation window and `aster_fast` (mesh
+index, free-face count, the read buffer on the heap) are in this release as
+well; they were fork releases V2026.14-fast.1 to fast.3 and now sit on
+V2026.15.
+
+Defaults are unchanged, so a Windows install writes the same `.comm` and
+`.export` as V2026.15 until you change a setting: `mpi_nbcpu` 1,
+`matr_distribuee` auto, `lin_solver` MUMPS, `results_from_med` off.
+`mpi_nbcpu` above 1 sets `P no-mpi false` and needs a parallel Code-Aster.
+PETSc is not in the sequential Windows build (`FERMETUR_10`).
+
+Not checked in the Mecway window. Run here: `tests/test_bridge_petsc_mpi.py`,
+`tests/test_bridge_med.py`, `tests/test_bridge_mumps_memory.py` and
+`TestFiles/Tools/check_docs.py`. The full regression of V2026.15 was not
+re-run.
 
 - **PETSc and MPI.** `mpi_nbcpu` (default 1) is the number of MPI ranks in
   the `.export`; above 1 sets `P no-mpi false` and needs a parallel

@@ -12,9 +12,9 @@ in Mecway's *Custom model definition*.
 
 [![Architecture diagram](https://gitdiagram.com/diagram-badge.svg)](https://gitdiagram.com/trednuk/mecwayasterbridge?utm_source=readme&utm_medium=badge)
 
-Version: **V2026.15** (see [`CHANGELOG.md`](CHANGELOG.md)). Dutch documentation:
+Version: **V2026.16** (see [`CHANGELOG.md`](CHANGELOG.md)). Dutch documentation:
 [`docs/Handleiding.md`](docs/Handleiding.md). Large models can use the optional
-`aster_fast` helper (below). The version shown on the start screen stays **V2026.15**.
+`aster_fast` helper (below). The version shown on the start screen stays **V2026.16**.
 
 **Provided as is, without warranty (MPL-2.0, sections 6 and 7). Always check results
 independently before you rely on them.**
@@ -45,13 +45,14 @@ independently before you rely on them.**
    `%LOCALAPPDATA%\code_aster\v2025\17.4\bin\run_aster.bat`, which is the bridge's
    default; nothing needs to be set if you keep that location.
 2. **Get the bridge.** Download and unpack the Windows release of
-   [V2026.15](https://github.com/trednuK/MecwayAsterBridge/releases/tag/V2026.15),
+   [V2026.16](https://github.com/larsmei/MecwayAsterBridge/releases/tag/V2026.16),
    or clone this repository:
    ```
    git clone https://github.com/larsmei/MecwayAsterBridge.git
    ```
-   That release does not contain `aster_fast.exe`. To build the optional helper you
-   need [Rust](https://rustup.rs/) (the MSVC or GNU Windows target):
+   The zip already contains `Scripts\aster_fast.exe`. A clone does not. To build
+   the helper yourself you need [Rust](https://rustup.rs/) (the MSVC or GNU
+   Windows target):
    ```
    cargo build --release --manifest-path rust/aster_fast/Cargo.toml
    copy rust\aster_fast\target\release\aster_fast.exe Scripts\
@@ -74,11 +75,12 @@ The mesh text is the same as the pure Python writer. Materials, loads and constr
 still read by the bridge. While those steps run, the **Preparing** window shows each step
 and its status; it closes when the Code-Aster status window opens.
 
-The helper is not in the V2026.15 zip. Build it as above and copy `aster_fast.exe`
-next to `MecwayAsterBridgeMain.py`; the bridge then uses it on its own. If the file
-is missing, or the environment variable `ASTER_FAST` is `0` before Mecway starts, the
-bridge uses Python only. `ASTER_FAST` may also be the full path of the program, if
-you do not want it inside `Scripts\`.
+The helper is not required. This release's zip includes `Scripts\aster_fast.exe`
+(built for Windows). To build it yourself, use the commands above and copy
+`aster_fast.exe` next to `MecwayAsterBridgeMain.py`; the bridge then uses it on
+its own. If the file is missing, or the environment variable `ASTER_FAST` is `0`
+before Mecway starts, the bridge uses Python only. `ASTER_FAST` may also be the
+full path of the program, if you do not want it inside `Scripts\`.
 
 The program needs no settings screen. A log line `Mesh read with aster_fast` means it was
 used.
