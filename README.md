@@ -12,9 +12,9 @@ in Mecway's *Custom model definition*.
 
 [![Architecture diagram](https://gitdiagram.com/diagram-badge.svg)](https://gitdiagram.com/trednuk/mecwayasterbridge?utm_source=readme&utm_medium=badge)
 
-Version: **V2026.20** (see [`CHANGELOG.md`](CHANGELOG.md)). Dutch documentation:
+Version: **V2026.21** (see [`CHANGELOG.md`](CHANGELOG.md)). Dutch documentation:
 [`docs/Handleiding.md`](docs/Handleiding.md). Large models can use the optional
-`aster_fast` helper (below). The version shown on the start screen stays **V2026.20**.
+`aster_fast` helper (below). The version shown on the start screen stays **V2026.21**.
 
 **Provided as is, without warranty (MPL-2.0, sections 6 and 7). Always check results
 independently before you rely on them.**
@@ -45,7 +45,7 @@ independently before you rely on them.**
    `%LOCALAPPDATA%\code_aster\v2025\17.4\bin\run_aster.bat`, which is the bridge's
    default; nothing needs to be set if you keep that location.
 2. **Get the bridge.** Download and unpack the Windows release of
-   [V2026.20](https://github.com/larsmei/MecwayAsterBridge/releases/tag/V2026.20),
+   [V2026.21](https://github.com/larsmei/MecwayAsterBridge/releases/tag/V2026.21),
    or clone this repository:
    ```
    git clone https://github.com/larsmei/MecwayAsterBridge.git

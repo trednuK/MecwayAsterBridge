@@ -432,13 +432,15 @@ def _groups_for_nodes(ids, model_data):
     groups = []
     for name in elsets:
         nids = []
+        seen = set()
         for eid in elsets[name]:
             elem = elements.get(eid)
             if not elem:
                 continue
             nodes = elem[1] if isinstance(elem, (list, tuple)) else elem
             for nid in nodes:
-                if nid in pos and nid not in nids:
+                if nid in pos and nid not in seen:
+                    seen.add(nid)
                     nids.append(nid)
                     used.add(nid)
         if nids:

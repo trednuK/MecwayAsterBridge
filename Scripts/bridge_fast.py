@@ -327,10 +327,10 @@ def write_med(rmed_path, out_path, liml_path=None):
                     beat = now
                     msg = "aster_fast still running, {0:.0f} s, last: {1}".format(
                         now - t0, last)
-                    _say_console(msg)
+                    _say(msg)
                     progress(section, msg, None, True, True)
                 else:
-                    progress(section, detail, None, False)
+                    progress(section, last, None, False, True)
                 time.sleep(0.05)
             seen, last = _med_stages(section, status_path, seen, last)
             _say("aster_fast finished in {0:.0f} s (code {1}), last: {2}".format(

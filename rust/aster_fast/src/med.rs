@@ -3,7 +3,7 @@
 //! when this program is missing or the file uses an HDF5 feature it cannot
 //! read. No libhdf5: `hdf5-pure` (deflate and shuffle included).
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{self, BufWriter, Write};
 use std::path::Path;
@@ -624,8 +624,9 @@ fn write_xml(
                 py_g15(t)
             )?;
         }
-        for var in vars {
+        for (i, var) in vars.iter().enumerate() {
             let Some(values) = var.steps.get(k).or_else(|| var.steps.first()) else { continue };
+            stage(&format!("variable {} {}/{}", var.name, i + 1, vars.len()));
             write_var(w, var, values, nodes, model, indent)?;
         }
         if !static_case {
@@ -706,15 +707,16 @@ fn groups(var: &Var, nodes: &[Node], model: Option<&scan::ModelMesh>) -> Vec<(St
         return vec![("".to_string(), (0..var.ids.len()).collect())];
     }
     let pos: HashMap<i32, usize> = var.ids.iter().enumerate().map(|(i, id)| (*id, i)).collect();
-    let mut used = std::collections::HashSet::new();
+    let mut used = HashSet::new();
     let mut groups = Vec::new();
     for (name, eids) in &model.elsets {
+        let mut seen = HashSet::new();
         let mut nids = Vec::new();
         for eid in eids {
             let Some(conn) = model.elements.get(eid) else { continue };
             for nid in conn {
                 let nid = *nid as i32;
-                if pos.contains_key(&nid) && !nids.contains(&nid) {
+                if pos.contains_key(&nid) && seen.insert(nid) {
                     nids.push(nid);
                     used.insert(nid);
                 }
@@ -874,6 +876,38 @@ fn fortran_i64(flat: &[i64], nrow: usize, ncol: usize) -> Vec<Vec<i64>> {
     (0..nrow)
         .map(|i| (0..ncol).map(|k| flat[i + k * nrow]).collect())
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::Instant;
+
+    #[test]
+    fn groups_of_a_large_solid_are_not_quadratic() {
+        let n_elem = 40_000u32;
+        let mut elements = HashMap::new();
+        let mut eids = Vec::with_capacity(n_elem as usize);
+        for e in 0..n_elem {
+            let b = e * 4;
+            elements.insert(e + 1, vec![b, b + 1, b + 2, b + 3, b + 4, b + 5, b + 6, b + 7]);
+            eids.push(e + 1);
+        }
+        let model = scan::ModelMesh { elements, elsets: vec![("SOLID".into(), eids)] };
+        let n = n_elem * 4;
+        let var = Var {
+            name: "displx".into(),
+            elno: false,
+            ids: (1..=n as i32).collect(),
+            steps: vec![vec![0.0; n as usize]],
+            times: vec![0.0],
+        };
+        let t = Instant::now();
+        let g = groups(&var, &[], Some(&model));
+        assert!(t.elapsed().as_secs_f64() < 1.0, "groups took {:?}", t.elapsed());
+        assert_eq!(g.len(), 1);
+        assert_eq!(g[0].1.len(), n as usize);
+    }
 }
 
 fn read_ints(ds: &Dataset) -> io::Result<Vec<i64>> {

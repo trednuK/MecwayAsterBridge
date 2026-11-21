@@ -1,5 +1,18 @@
 # Changelog
 
+## V2026.21 – 21 November 2026
+
+Writing the 20 result variables took about 17 minutes on a model of
+822927 nodes. Reading the MED file itself took about 2 seconds. The
+slow step was the minimum and maximum per element set: each node was
+sought in a growing list, once per variable. That search is now a set.
+The results window keeps the current step instead of returning to
+"Reading the MED file" every half second.
+
+The `.comm` and the `.export` are the same as V2026.20.
+
+Not checked in the Mecway window.
+
 ## V2026.20 – 20 November 2026
 
 While the MED file is read, Mecway's console shows each step and, every
