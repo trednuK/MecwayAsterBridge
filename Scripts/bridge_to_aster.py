@@ -57,7 +57,10 @@ from bridge_results_liml import RESULTS_SUFFIX
 from bridge_utils import (log, tr, CONFIG_BRIDGE, get_active_analysis,
                           run_name, template_path, parse_yes_no,
                           mumps_keywords, mumps_memory, mumps_memory_note,
-                          mumps_solveur)
+                          mumps_solveur, progress, host_med_results,
+                          write_med_file, no_job_python, solveur_extra,
+                          export_mpi_line, export_parallel_lines, mpi_ranks,
+                          distributed_matrix)
 
 
 # ==========================================
@@ -94,7 +97,8 @@ def bonded_nprec(model_data, analysis, lin=False):
             int(analysis.get("solver_nprec", 8)) < 0:
         return analysis
     if lin and "{0}".format(analysis.get("lin_solver",
-                                         "MUMPS")).upper() == "GCPC":
+                                         "MUMPS")).upper() in (
+                                             "GCPC", "PETSC"):
         return analysis
     log(tr("WARNING: Verlijmd contact met een scheve of gekromde schaal als "
            "master (of met schalen met een element offset op eigen "
@@ -126,13 +130,15 @@ def _build_solveur_ref(analysis, low_rank=True):
     for MECA_STATIQUE (the residual of the solution is checked
     afterwards), -1 (no check) for STAT_NON_LINE, where Newton's own
     convergence criteria take over (catalogue c_solveur.py v17.4).
-    mumps_memory appends its keywords (bridge_utils.mumps_keywords);
+    mumps_memory appends its keywords (bridge_utils.solveur_extra);
     low_rank=False for explicit dynamics, where no Newton residual would
-    catch an inexact low-rank factor.
+    catch an inexact low-rank factor and where PETSc is not used.
     """
+    if _use_petsc(analysis, low_rank):
+        return _petsc_solveur(analysis)
     nprec = analysis.get("solver_nprec", 8)
     return "    SOLVEUR=_F(METHODE='MUMPS', NPREC={0}{1}),\n".format(
-        int(nprec), mumps_keywords(analysis, low_rank))
+        int(nprec), solveur_extra(analysis, low_rank))
 
 
 def _resi_rela(analysis):
@@ -164,20 +170,82 @@ def _static_step_solveur(analysis):
     """
     return "SOLVEUR=_F(METHODE='MUMPS', NPREC={0}, RESI_RELA={1}{2}),".format(
         int(analysis.get("solver_nprec", 8)), _resi_rela(analysis),
-        mumps_keywords(analysis))
+        solveur_extra(analysis))
 
 
-# Linear solvers for MECA_STATIQUE (setting "lin_solver").
+# Linear solvers for MECA_STATIQUE and for STAT_NON_LINE / implicit
+# DYNA_NON_LINE (setting "lin_solver").
 #   MUMPS : direct (catalogue c_solveur.py v17.4.0: default for 'LIN').
 #   GCPC  : conjugate gradient with incomplete LDLT as
 #           preconditioner (PRE_COND='LDLT_INC', default of GCPC);
 #           RESI_RELA = ||r|| / ||f|| (U4.50.01 par. 3.6, default 1e-6),
-#           NMAX_ITER 0 = neq / 2.
-# PETSC is in the catalogue, but the Windows version of Code-Aster 17.4
-# is sequential: <EXCEPTION> <FERMETUR_10> "Le solveur PETSc n'est pas
-# installé" (seen in a test run; U4.50.01 par. 3.7: PETSC only in the
-# parallel version). Hence not offered.
-LIN_SOLVERS = ("MUMPS", "GCPC")
+#           NMAX_ITER 0 = neq / 2. Static only.
+#   PETSC : Krylov methods (U4.50.01 par. 3.7). Catalogue defaults
+#           ALGORITHME='FGMRES', PRE_COND='LDLT_SP' are omitted.
+#           The sequential Windows build has no PETSc (FERMETUR_10);
+#           a parallel build (CAVE) does. Not for explicit dynamics,
+#           eigenvalues or the imperfection step.
+LIN_SOLVERS = ("MUMPS", "GCPC", "PETSC")
+PETSC_ALGOS = ("FGMRES", "GMRES", "CG", "CR", "GCR")
+PETSC_PRECONDS = ("LDLT_SP", "LDLT_INC", "JACOBI", "BOOMER", "GAMG",
+                  "ML", "SANS")
+_PETSC_WARNED = []
+
+
+def _lin_solver_name(analysis):
+    return "{0}".format((analysis or {}).get("lin_solver", "MUMPS")).strip(
+    ).upper()
+
+
+def _petsc_token(analysis, key, allowed, default):
+    raw = "{0}".format((analysis or {}).get(key, default)).strip().upper()
+    if raw in allowed:
+        return raw
+    if raw not in _PETSC_WARNED:
+        _PETSC_WARNED.append(raw)
+        log(tr("WARNING: Onbekende waarde '{0}' voor {1}; {2} gebruikt.",
+               "WARNING: Unknown value '{0}' for {1}; {2} used.").format(
+                   raw, key, default))
+    return default
+
+
+def _use_petsc(analysis, allow=True):
+    """True when this solve should be PETSc. allow=False: explicit."""
+    if _lin_solver_name(analysis) != "PETSC":
+        return False
+    if allow:
+        return True
+    if "explicit" not in _PETSC_WARNED:
+        _PETSC_WARNED.append("explicit")
+        log(tr("WARNING: lin_solver PETSC geldt niet voor expliciete "
+               "dynamica; MUMPS gebruikt.",
+               "WARNING: lin_solver PETSC does not apply to explicit "
+               "dynamics; MUMPS used."))
+    return False
+
+
+def _petsc_solveur(analysis, indent="    "):
+    """SOLVEUR line for METHODE='PETSC', with the trailing newline."""
+    if mpi_ranks() <= 1 and "windows" not in _PETSC_WARNED:
+        _PETSC_WARNED.append("windows")
+        log(tr("WARNING: PETSc zit niet in de sequentiele Windows-build "
+               "(FERMETUR_10). Een parallelle Code-Aster (CAVE) met "
+               "mpi_nbcpu > 1 wel.",
+               "WARNING: PETSc is not in the sequential Windows build "
+               "(FERMETUR_10). A parallel Code-Aster (CAVE) with "
+               "mpi_nbcpu > 1 has it."))
+    algo = _petsc_token(analysis, "petsc_algo", PETSC_ALGOS, "FGMRES")
+    pre = _petsc_token(analysis, "petsc_precond", PETSC_PRECONDS, "LDLT_SP")
+    parts = ["METHODE='PETSC'"]
+    if algo != "FGMRES":
+        parts.append("ALGORITHME='{0}'".format(algo))
+    if pre != "LDLT_SP":
+        parts.append("PRE_COND='{0}'".format(pre))
+    parts.append("RESI_RELA={0}".format(_resi_rela(analysis)))
+    dist = distributed_matrix()
+    if dist:
+        parts.append(dist.lstrip(", ").strip())
+    return "{0}SOLVEUR=_F({1}),\n".format(indent, ", ".join(parts))
 
 
 def _build_lin_solveur_ref(analysis, refine=False):
@@ -211,11 +279,13 @@ def _build_lin_solveur_ref(analysis, refine=False):
     (<EXCEPTION> FACTOR_57; condition number 1.2e10, scaled residual
     3.8e-17), with two refinement steps 3.9e-7.
     """
-    solver = "{0}".format(analysis.get("lin_solver", "MUMPS")).upper()
+    solver = _lin_solver_name(analysis)
     resi = _resi_rela(analysis)
     if solver == "GCPC":
         line = ("    SOLVEUR=_F(METHODE='GCPC', PRE_COND='LDLT_INC', "
                 "RESI_RELA={0}),\n".format(resi))
+    elif solver == "PETSC":
+        line = _petsc_solveur(analysis)
     else:
         if solver != "MUMPS":
             log(tr("WARNING: Onbekende lineaire oplosser '{0}' (lin_solver); "
@@ -226,7 +296,7 @@ def _build_lin_solveur_ref(analysis, refine=False):
                 "RESI_RELA={1}{2}{3}),\n".format(
                     int(analysis.get("solver_nprec", 8)), resi,
                     ", POSTTRAITEMENTS='FORCE'" if refine else "",
-                    mumps_keywords(analysis)))
+                    solveur_extra(analysis)))
     return line + "    INFO=2,\n"
 
 
@@ -2351,6 +2421,9 @@ def _static_check_block(model_data):
     exception into the .mess before Python catches it, and the bridge would
     then report the run as failed (KNOWN_BUGS 119); the reactions remain.
     """
+    if host_med_results():
+        return ("#-- mass check skipped (results are read from the MED "
+                "file on the host) --\n")
     scripts = os.path.dirname(os.path.abspath(__file__))
     mass = _GD_BEAM not in (model_data.get("elset_modelisations") or {}).values()
     if not mass:
@@ -2393,6 +2466,13 @@ def _results_route(work_dir, model_data, postreleve_block, impr_table_block,
                                quiet=True) if fields is None else [])
     scripts = os.path.dirname(os.path.abspath(__file__))
     fragment = results_file(work_dir)
+    if host_med_results():
+        log("INFO: Results will be read from the MED file on the host "
+            "after as_run (results_from_med); the job imports nothing "
+            "from Scripts.")
+        return ("#-- tables not needed (results read from the MED file "
+                "on the host) --\n",
+                "#-- no in-job result export (results_from_med) --\n")
     extra = _derived_args(model_data, chosen) + formulas_arg(model_data) + \
         bridge_plane.export_arg(model_data) + moved_nodes_arg(model_data) + \
         extra
@@ -2439,7 +2519,7 @@ def _build_impr_resu_block(model_data, with_plastic=False, fields=None):
     POST_CHAMP EXTR_COQUE) goes in as its own result (NOM_RESU_MED, max.
     8 characters).
     """
-    if not CONFIG_BRIDGE.get("med_export", False):
+    if not write_med_file():
         return "#-- no MED export (setting med_export off) --\n"
     cara = " CARA_ELEM=cara," if _has_cara(model_data) else ""
     lines = [
@@ -2470,7 +2550,7 @@ def _export_result_lines(work_dir, resu_name):
     route 'tabel'); the signature stays for the callers.
     """
     lines = []
-    if CONFIG_BRIDGE.get("med_export", False):
+    if write_med_file():
         lines.append("F rmed {0} R 80".format(
             os.path.join(work_dir, run_name(".rmed"))))
     return "".join("\n" + line for line in lines)
@@ -5017,16 +5097,14 @@ def _build_lin_static(work_dir, model_data, msh_path, resu_name, analysis):
             "P actions make_etude\n"
             "P time_limit {time_limit}\n"
             "P memory_limit {memory_limit}\n"
-            "P mpi_nbcpu 1\n"
-            "P ncpus {ncpus}\n"
-            "P no-mpi true\n"
+            "{parallel}"
             "F comm {comm} D 1\n"
             "F mail {msh} D 20\n"
             "F mess {mess} R 6"
         ).format(
             time_limit   = analysis.get("time_limit",   600),
             memory_limit = analysis.get("memory_limit", 2048),
-            ncpus    = CONFIG_BRIDGE["ncpus"],
+            parallel = "\n".join(export_parallel_lines()) + "\n",
             comm     = comm_path,
             msh      = msh_path,
             mess     = os.path.join(work_dir, run_name(".mess")),
@@ -7795,6 +7873,9 @@ def _jump_check_block(model_data, load_funcs):
                     if m == _GD_BEAM)
     if not groups:
         return ""
+    if host_med_results():
+        return ("#-- jump check skipped (results are read from the MED "
+                "file on the host) --\n")
     scripts = os.path.dirname(os.path.abspath(__file__))
     return (
         "# Jump to another equilibrium branch (POU_D_T_GD beams)\n"
@@ -8026,7 +8107,7 @@ def _imperfection_blocks(model_data, analysis, plan, charges, excit_clause,
         "mesh = MODI_MAILLAGE(reuse=mesh, MAILLAGE=mesh,\n"
         "                     DEFORME=_F(OPTION='TRAN', DEPL=imp_def))\n"
     ).format(k=k, t_end=float(t_end), cara=cara_ref, nprec=nprec,
-             mumps=mumps_keywords(analysis, low_rank=False),
+             mumps=solveur_extra(analysis, low_rank=False),
              charge=charge_ref, amp=float(amp), aux=aux, model=model_ref,
              imp_step=_stress_step("imp_stat", model_data, excit, cara_ref,
                                    analysis, model=model_ref,
@@ -8507,16 +8588,14 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
             "P actions make_etude\n"
             "P time_limit {time_limit}\n"
             "P memory_limit {memory_limit}\n"
-            "P mpi_nbcpu 1\n"
-            "P ncpus {ncpus}\n"
-            "P no-mpi true\n"
+            "{parallel}"
             "F comm {comm} D 1\n"
             "F mail {msh} D 20\n"
             "F mess {mess} R 6"
         ).format(
             time_limit   = analysis.get("time_limit",   1800),
             memory_limit = analysis.get("memory_limit", 4096),
-            ncpus    = CONFIG_BRIDGE["ncpus"],
+            parallel = "\n".join(export_parallel_lines()) + "\n",
             comm     = comm_path,
             msh      = msh_path,
             mess     = os.path.join(work_dir, run_name(".mess")),
@@ -9070,7 +9149,7 @@ def _calc_modes_block(model_data, analysis, buckling, cara_ref, free=False,
                   "%.10g" % float(analysis.get("modal_tolerance", 1.0e-6))),
               "    SOLVEUR=_F(METHODE='MUMPS', NPREC={0}{1}),".format(
                   int(analysis.get("solver_nprec", 8)),
-                  mumps_keywords(analysis, low_rank=False)),
+                  solveur_extra(analysis, low_rank=False)),
               ")"]
     log("INFO: CALC_MODES {0}: {1} modes, normalisation {2}.".format(
         "MODE_FLAMB" if buckling else "DYNAMIQUE", n, norm))
@@ -9088,6 +9167,9 @@ def _modes_export_block(work_dir, model_data, stiffness_norm=False,
     pass the mass matrix 'masse' (effective mass for the rotations).
     complex_modes: complex modes (bridge_modal_damping); export_results
     then also gets 'masse' (normalisation of the real part)."""
+    if host_med_results():
+        return ("#-- modes are read from the MED file on the host "
+                "(results_from_med) --\n")
     scripts = os.path.dirname(os.path.abspath(__file__))
     extra = ""
     if len(fields) > 1:
@@ -9554,7 +9636,7 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
             "))\n" + _DEAD_CHECK_BLOCK.replace(
                 "SOLVEUR=_F(METHODE='MUMPS')",
                 "SOLVEUR=_F(METHODE='MUMPS'{0})".format(
-                    mumps_keywords(analysis, low_rank=False))))
+                    solveur_extra(analysis, low_rank=False))))
     if prestress:
         terms = ["rigi_ela", "rigi_geo"] + (["rigi_rot"] if rotation else [])
         assemblage_block += (
@@ -9583,7 +9665,7 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
                             analysis, buckling, quiet=True) == "RIGI_GENE",
                         fields=fields, mass=not buckling,
                         complex_modes=bool(damping)))
-    if CONFIG_BRIDGE.get("med_export", False):
+    if write_med_file():
         impr_resu_block = ("IMPR_RESU(FORMAT='MED', UNITE=80, "
                            "RESU=_F(RESULTAT=res, NOM_CHAM=('DEPL',)))\n")
     else:
@@ -9611,16 +9693,14 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
             "P actions make_etude\n"
             "P time_limit {time_limit}\n"
             "P memory_limit {memory_limit}\n"
-            "P mpi_nbcpu 1\n"
-            "P ncpus {ncpus}\n"
-            "P no-mpi true\n"
+            "{parallel}"
             "F comm {comm} D 1\n"
             "F mail {msh} D 20\n"
             "F mess {mess} R 6"
         ).format(
             time_limit   = analysis.get("time_limit",   900),
             memory_limit = analysis.get("memory_limit", 2048),
-            ncpus    = CONFIG_BRIDGE["ncpus"],
+            parallel = "\n".join(export_parallel_lines()) + "\n",
             comm     = comm_path,
             msh      = msh_path,
             mess     = os.path.join(work_dir, run_name(".mess")),
@@ -9745,6 +9825,9 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
     mumps_memory_note(analysis, CONFIG_BRIDGE.get("active_analysis"))
 
     solver_cmd = analysis.get("solver_command")
+    progress(tr("Solverbestanden", "Solver files"), tr(
+        ".comm en .export ({0})", ".comm and .export ({0})").format(
+            solver_cmd or "?"), None, True)
     builder    = SOLVER_BUILDERS_ASTER.get(solver_cmd)
     # Thermal and acoustic: no mechanical preparation (LINE_QUAD,
     # material check E/rho, beam loads); own materials in

@@ -1,5 +1,156 @@
 # Changelog
 
+## V2026.22 – 21 November 2026
+
+After the elements were ordered, the mesh writer stayed quiet for 39
+seconds on the crank (41720 boundary faces). Each face recomputed the
+same shape functions. Those are computed once per element type now, and
+Mecway is asked for the face nodes once per element type, not once per
+face. The window shows `Boundary faces (5000 / 41720)`.
+
+While the `.liml` is scanned, the console names the step: reading,
+parsing, mesh size, writing the mesh index.
+
+The integrals match the previous ones, so the `.comm` and the `.export`
+stay the same.
+
+Not checked in the Mecway window.
+
+## V2026.21 – 21 November 2026
+
+Writing the 20 result variables took about 17 minutes on a model of
+822927 nodes. Reading the MED file itself took about 2 seconds. The
+slow step was the minimum and maximum per element set: each node was
+sought in a growing list, once per variable. That search is now a set.
+The results window keeps the current step instead of returning to
+"Reading the MED file" every half second.
+
+The `.comm` and the `.export` are the same as V2026.20.
+
+Not checked in the Mecway window.
+
+## V2026.20 – 20 November 2026
+
+While the MED file is read, Mecway's console shows each step and, every
+5 seconds, how long it has been running and the last step. Errors are
+printed there too, not only in the log file. The window text follows the
+same lines.
+
+The `.comm` and the `.export` are the same as V2026.19.
+
+Not checked in the Mecway window.
+
+## V2026.19 – 20 November 2026
+
+Reading the `.rmed` no longer stops on "Reading the MED file (aster_fast)".
+Code_Aster stores the fields as `res_____DEPL`, not `DEPL`. V2026.18 did not
+recognise those names, stopped, and the Python reader then froze the window
+without a further line. Both readers now accept the prefixed names. The log
+and the window show each step (`mesh … nodes`, `field …`, `writing …`).
+
+The `.comm` and the `.export` are the same as V2026.18. Without the new
+`aster_fast.exe` the old program still fails the same way.
+
+Not checked in the Mecway window. `tests/test_bridge_med.py` compares both
+readers, including a Code_Aster field name (`res_____DEPL`) and a
+gzip+shuffle file. A real Code_Aster `box.med` (8 nodes) matches too. The
+full regression was not re-run.
+
+## V2026.18 – 20 November 2026
+
+Reading the `.rmed` back into Mecway no longer stays on "Reading the MED
+file". `aster_fast med` writes the result fragment. The `.comm` and the
+`.export` are the same as V2026.17. Without `aster_fast.exe`, or if it
+cannot read the file, the Python reader is still used.
+
+Not checked in the Mecway window. `tests/test_bridge_med.py` compares the
+fragment with the Python reader, including a gzip+shuffle file. The full
+regression was not re-run.
+
+- **MED results read by `aster_fast`.** Same program as the mesh helper.
+  HDF5 is inside the program (deflate and shuffle), nothing else to
+  install. The window keeps its step while the program runs.
+
+## V2026.17 – 20 November 2026
+
+The window while the results go into Mecway shows the step and a bar.
+V2026.16 used the "Please wait" window: one line, no bar, and it did not
+refresh while the result file was read or written. Same `.comm` and
+`.export` as V2026.16.
+
+Not checked in the Mecway window. `tests/test_bridge_med.py` still passes.
+The full regression was not re-run.
+
+- **Results window shows the step.** That phase now uses the same window
+  as the preparation, with the step (MED field, variable, percent written
+  into the `.liml`, opening the model) and a bar.
+
+## V2026.16 – 20 November 2026
+
+Optional PETSc and MPI, and results read on the host from the MED file when
+the Code-Aster job cannot see `Scripts` (a CAVE install stays behind
+`run_aster.bat` / `as_run`). The preparation window and `aster_fast` (mesh
+index, free-face count, the read buffer on the heap) are in this release as
+well; they were fork releases V2026.14-fast.1 to fast.3 and now sit on
+V2026.15.
+
+Defaults are unchanged, so a Windows install writes the same `.comm` and
+`.export` as V2026.15 until you change a setting: `mpi_nbcpu` 1,
+`matr_distribuee` auto, `lin_solver` MUMPS, `results_from_med` off.
+`mpi_nbcpu` above 1 sets `P no-mpi false` and needs a parallel Code-Aster.
+PETSc is not in the sequential Windows build (`FERMETUR_10`).
+
+Not checked in the Mecway window. Run here: `tests/test_bridge_petsc_mpi.py`,
+`tests/test_bridge_med.py`, `tests/test_bridge_mumps_memory.py` and
+`TestFiles/Tools/check_docs.py`. The full regression of V2026.15 was not
+re-run.
+
+- **PETSc and MPI.** `mpi_nbcpu` (default 1) is the number of MPI ranks in
+  the `.export`; above 1 sets `P no-mpi false` and needs a parallel
+  Code-Aster (CAVE). The Windows build stays sequential. `matr_distribuee`
+  (`auto` / `oui` / `non`) adds `MATR_DISTRIBUEE='OUI'` on MUMPS and PETSc
+  when more than one rank is used. `lin_solver` can be `PETSC` on Static,
+  Nonlinear static and implicit Dynamic, with `petsc_algo` (default
+  `FGMRES`) and `petsc_precond` (default `LDLT_SP`); the catalogue defaults
+  are not written. Off the defaults, `.comm` and `.export` are unchanged.
+  `tests/test_bridge_petsc_mpi.py`.
+
+- **Results on the host when the job Python cannot see Scripts.** The
+  call stays `run_aster.bat` / `as_run`; a CAVE install is transparent
+  behind that. Its Python runs in a container and cannot import
+  `Scripts` or open the `.liml`. With **Results on the host from the
+  MED file** (`results_from_med`) the job writes the `.rmed` and does
+  not import a host script. Afterwards the bridge reads the file
+  (`bridge_med.py`, HDF5 reader included) and writes the `<results>`
+  fragment. Off by default, so a Windows install is unchanged.
+  `tests/test_bridge_med.py`.
+
+- **Preparation window, and a faster mesh index.** Until Code-Aster starts, Mecway
+  showed nothing: the log file was the only trace, and on an 800k-node model that
+  silent stretch was still about three minutes. A window now stays open for each
+  step (reading the model, node groups, ordering elements, free faces, `.mail`,
+  `.comm`/`.export`) with the counts so far and the elapsed time. `aster_fast` also
+  stores nodes, plain elements and numeric node groups as arrays, and counts the
+  free faces of the solids while it reads the `.liml` (the same faces the error
+  estimator used to count in IronPython). The `.mail` bytes are unchanged.
+  Build `aster_fast` as in the README. `ASTER_FAST=0` still uses Python only.
+
+- **Large meshes: optional Rust helper for the .liml read and the ASTER mesh.**
+  `aster_fast` (crate `rust/aster_fast`, no dependencies) does the two steps that
+  dominate the time before Code-Aster starts on an 800k-node model under IronPython 2.7:
+  streaming the mesh out of the `.liml` (the slim XML that ElementTree then parses has
+  no nodes, elements or selection members; `<solution>` is still not read) and writing
+  the `.mail` numbers. The bytes of the `.mail` match the Python writer. Without the
+  executable, or when `ASTER_FAST=0`, the bridge behaves as before. Build with
+  `cargo build --release --manifest-path rust/aster_fast/Cargo.toml` and copy
+  `target/release/aster_fast` (Windows: `aster_fast.exe`) next to `Scripts/`, or set
+  `ASTER_FAST` to that path. That executable was fork release **V2026.14-fast.2**
+  (superseded by **V2026.14-fast.3**, which adds the preparation window and the
+  mesh index above). fast.1 aborted on Windows before reading the file: a 1 MiB read buffer sat
+  on the 1 MiB stack (`STATUS_STACK_OVERFLOW`). The buffer is on the heap now,
+  and the Windows build reserves 8 MiB of stack. IronPython
+  cannot load a Rust extension, so this is a separate program. `tests/test_bridge_fast.py`.
+
 ## V2026.15 – 19 November 2026
 
 Route `tabel` is removed: the results always go through the `.liml`, and they can still be

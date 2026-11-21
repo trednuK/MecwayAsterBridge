@@ -67,7 +67,7 @@ import os
 import re
 from collections import OrderedDict
 
-from bridge_utils import log, tr, CONFIG_BRIDGE, run_name, mumps_keywords
+from bridge_utils import log, tr, CONFIG_BRIDGE, run_name, solveur_extra, no_job_python, write_med_file, export_parallel_lines
 
 TAG = "cyclicsymmetry"
 
@@ -838,7 +838,7 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
             "%.10g" % float(analysis.get("modal_tolerance", 1.0e-6))),
         "    SOLVEUR=_F(METHODE='MUMPS', NPREC={0}{1}),".format(
             int(analysis.get("solver_nprec", 8)),
-            mumps_keywords(analysis, low_rank=False)),
+            solveur_extra(analysis, low_rank=False)),
         ")",
         "lint = DEFI_INTERF_DYNA(",
         "    NUME_DDL=numedd,",
@@ -910,7 +910,8 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
         ")",
         "# Modes on sector 1 (field DEPL per mode)",
         "modsec = REST_SOUS_STRUC(RESU_GENE=modcyc, SECTEUR=1, NOM_CHAM='DEPL')",
-    ] + wheel_lines + [
+    ] + wheel_lines + (
+        ["res = modsec"] if no_job_python("cyclic results") else [
         "import sys",
         "sys.path.insert(0, {0})".format(b2a._py_str(scripts)),
         "import aster_cyclic",
@@ -918,8 +919,8 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
         "axis='{3}', "
         "angle={4!r}{5})".format(n_seg, n, diameters, axis_name,
                                  ROTATION.get(axis_name, 0.0), wheel_args),
-    ]) + "\n"
-    export_block = b2a._custom_code(model_data, "post") + (
+    ])) + "\n"
+    export_block = no_job_python("cyclic results") or (b2a._custom_code(model_data, "post") + (
         "# Results in Mecway's own format (bridge: result_route='liml')@N"
         "import aster_results_export@N"
         "aster_results_export.export_results(@N"
@@ -930,8 +931,8 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
         fragment=b2a._py_str(b2a.results_file(work_dir)),
         liml=b2a._py_str(liml),
         cyclic="{{'axis': {0}, 'segments': {1}}}".format(axis, n_seg),
-        formulas=b2a.formulas_arg(model_data))
-    if CONFIG_BRIDGE.get("med_export", False):
+        formulas=b2a.formulas_arg(model_data)))
+    if write_med_file():
         impr_resu_block = ("IMPR_RESU(FORMAT='MED', UNITE=80, "
                            "RESU=_F(RESULTAT=res, NOM_CHAM=('DEPL',)))\n")
     else:
@@ -965,16 +966,14 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
             "P actions make_etude\n"
             "P time_limit {time_limit}\n"
             "P memory_limit {memory_limit}\n"
-            "P mpi_nbcpu 1\n"
-            "P ncpus {ncpus}\n"
-            "P no-mpi true\n"
+            "{parallel}"
             "F comm {comm} D 1\n"
             "F mail {msh} D 20\n"
             "F mess {mess} R 6"
         ).format(
             time_limit=analysis.get("time_limit", 900),
             memory_limit=analysis.get("memory_limit", 2048),
-            ncpus=CONFIG_BRIDGE["ncpus"],
+            parallel="\n".join(export_parallel_lines()) + "\n",
             comm=comm_path, msh=msh_path,
             mess=os.path.join(work_dir, run_name(".mess")),
         ) + b2a._export_result_lines(work_dir, resu_name)

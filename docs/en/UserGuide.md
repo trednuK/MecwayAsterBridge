@@ -64,6 +64,10 @@ Related documents:
   `Scripts/MecwayAsterBridgeMain.py`; Code-Aster loads
   `Scripts/aster_results_export.py` from that location during the run. The `.comm`
   templates (`AsterTemplate_*.comm`) are also in `Scripts/`; they need no setting.
+- **Large meshes (optional).** `Scripts/aster_fast.exe`, included in the Windows release,
+  reads the mesh and writes the Code-Aster mesh file outside IronPython. Without that
+  file the bridge still runs, but a model of hundreds of thousands of nodes can take a
+  long time before Code-Aster starts. Installation: [`README.md`](../../README.md).
 - **Optional: [MecwaySectionProps](https://github.com/trednuK/MecwaySectionProps)**, for
   beams with a General section (§4.3). A separate Mecway script with its own installation.
 - A work folder with a short path: work folder plus file name together may not exceed
@@ -218,7 +222,9 @@ value was chosen: [`Default_settings_and_assumptions.md`](Default_settings_and_a
 | "Code-Aster launcher (run_aster.bat)" | `%LOCALAPPDATA%\code_aster\v2025\17.4\bin\run_aster.bat` | path to `run_aster.bat`; environment variables such as `%LOCALAPPDATA%` are allowed. If the file does not exist, the status box says so at start; choose it with "Browse..." |
 | "Work folder" | empty = `WorkDir` next to the `Scripts` folder (the window shows that path) | folder for the mesh, `<model>_<run-id>.*`, log and results (§5); created if it does not exist |
 | "Work folder next to the model (<model>_aster)" | off | on: the files of a run go to the subfolder `<model>_aster` next to the open `.liml` file (e.g. `C:\Projects\Beam.liml` → `C:\Projects\Beam_aster`), also for "Results...", the convergence window and adaptive refinement; the folder in use is shown next to the checkbox. A model that has not been saved yet uses the "Work folder" |
-| "Number of CPU cores (ncpus)" | 1 | `ncpus` (threads) in the `.export`; the bridge runs without MPI (`mpi_nbcpu 1`) |
+| "Number of CPU cores (ncpus)" | 1 | `ncpus` (OpenMP threads) in the `.export` |
+| "MPI processes (mpi_nbcpu)" | 1 | `mpi_nbcpu` in the `.export`. 1 keeps `P no-mpi true`. Above 1 sets `P no-mpi false` and needs a parallel Code-Aster (CAVE); the Windows build is sequential |
+| "Distribute the matrix (auto / oui / non)" | `auto` | `MATR_DISTRIBUEE='OUI'` on MUMPS and PETSc when `mpi_nbcpu` > 1. `oui` always, `non` never |
 | "Active analysis (auto = follow Mecway)" | `auto` | `auto` follows the Mecway analysis type: S30 → Static, S20 and SA0 (2D, axisymmetric) → Static, D20 and DA0 → Dynamic (implicit) ([`2D_and_axisymmetric.md`](2D_and_axisymmetric.md)), L30 → Nonlinear static, D30 with *Mode superposition* → Mode superposition, D30 without and D31 → Dynamic (implicit), T30/T31 → Thermal, V30 → Modal (with a fluid part: Vibroacoustics (modes)), B30 → Buckling, A30 → Acoustics (cavity modes; with a source, `SOURCE_` selection, Acoustics (harmonic)), A20 → Acoustics (cavity modes, 2D); applies only to that run. Or choose an analysis yourself (Dynamic (explicit) is always chosen by hand). Another Mecway type (E30, ...) with `auto`: the bridge stops with a message |
 | "Configuration (auto = by rule)" | `auto` | which configuration the bridge solves and which solution receives the results; the list shows the configurations of the open model (last saved version). `auto`: the only configuration, else the only one without suppressed items, else the first (WARNING). A name that is not in the model: WARNING and `auto` (§4) |
 | "Mecway solve first as a check" | off | solves in Mecway first and stops on an error. Writes `<model>_<run-id>_vergelijking.csv` (Mecway and Code-Aster value per node) and logs the largest difference per variable; for modal and buckling the log compares the frequency or factor per mode. If the solve leaves no solution (Mecway cannot solve the model), a WARNING follows and the run goes on without a comparison |
@@ -272,7 +278,9 @@ analysis:
 | "Time limit run_aster [s]" | all | 600 (static), 1800 (nonlinear static, thermal, mode superposition, harmonic response, response spectrum, vibroacoustics (harmonic)), 7200 (dynamic), 900 (modal, buckling, acoustics, vibroacoustics (modes)) |
 | "Memory limit run_aster [MB]" | all | 4096 (nonlinear static, dynamic, thermal), 2048 (others) |
 | "MUMPS NPREC (-1 = check off)" | all | 8 |
-| "Linear solver (MUMPS / GCPC)" | static | `MUMPS` |
+| "Linear solver (MUMPS / GCPC / PETSC)" | static, nonlinear static, implicit dynamic | `MUMPS` |
+| "PETSc algorithm" | those with `lin_solver` | `FGMRES` |
+| "PETSc preconditioner" | those with `lin_solver` | `LDLT_SP` |
 | "Solver accuracy (RESI_RELA)" | static | 1e-5 |
 | "Error estimator (CALC_ERREUR, solids only)" | static | on ([`Error_estimator.md`](Error_estimator.md)) |
 | "Crack: R_INF [m] (0 = automatic)" / "Crack: R_SUP [m] (0 = automatic)", "Crack: smoothing along the front", "Crack: Legendre degree (0 .. 7)" | static (only with `CRACK_` selections or `#ASTER-XFEM`; smoothing and degree not for XFEM) | 0 / 0, `LINEAIRE`, 5 ([`Fracture_mechanics.md`](Fracture_mechanics.md)) |

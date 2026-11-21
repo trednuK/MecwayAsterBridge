@@ -121,11 +121,12 @@ from bridge_utils       import (CONFIG_BRIDGE, log, resolve_auto_analysis,
                                 run_names, path_too_long, work_dir_path,
                                 exe_aster_path, set_model_path,
                                 BRIDGE_VERSION, log_size, log_errors,
-                                legacy_route_note)
+                                legacy_route_note, progress, host_med_results)
 from bridge_gui         import (run_settings_dialog, results_dialog,
                                 claim_instance, release_instance,
                                 instance_busy_text, wait_open, wait_step,
-                                wait_close)
+                                wait_close, open_prep_progress,
+                                close_prep_progress)
 from bridge_from_liml   import extract_aster_data_from_liml
 from bridge_mesh        import write_mesh
 from bridge_to_aster    import generate_AsterSolver_files, results_file
@@ -316,11 +317,18 @@ def _run(settings):
     # after a Code-Aster job that did not end cleanly (keep: the .comm
     # names it, for a run of the .export by hand).
     model_copy = {"path": None, "keep": False}
+    prep_open = False
     try:
+        prep_open = open_prep_progress(run_name(""))
+        progress(tr("Start", "Start"), tr(
+            "Run {0}", "Run {0}").format(run_name("")), None, True)
         # --- Step 1: Solve in Mecway (optional check for errors) ---
         # The Mecway API documents no return value for mw.solve(); an
         # error is therefore only detected if mw.solve() raises an exception.
         if CONFIG_BRIDGE.get("mecway_solve_first", False):
+            progress(tr("Controle", "Check"), tr(
+                "Mecway-solve ter controle...",
+                "Mecway solve as a check..."), None, True)
             log("INFO: Mecway solve started as a check.")
             try:
                 mw.solve()
@@ -359,6 +367,9 @@ def _run(settings):
         # results leaves the file as it was. Without the API, and an
         # untitled model: save first, as before.
         model_liml = None
+        progress(tr("Model", "Model"), tr(
+            "Modelkopie maken...", "Making a copy of the model..."),
+            None, True)
         if bridge_liml_text.wants_snapshot(bridge_liml_text.available(mw),
                                            mw.file_name()):
             save_error = _save_check()
@@ -391,6 +402,8 @@ def _run(settings):
         wait_open(tr(u"Model lezen", u"Reading the model"),
                   settings.get("gui") == "winforms")
         mark = log_size()
+        progress(tr("Model lezen", "Reading the model"), tr(
+            ".liml openen...", "Opening the .liml..."), None, True)
         model_data = extract_aster_data_from_liml(model_liml)
         _LAST["model_data"] = model_data      # adaptive refinement
         if model_data is None:
@@ -462,6 +475,8 @@ def _run(settings):
         mesh_file = os.path.join(work_dir_path(), run_name(".mail"))
         wait_step(tr(u"Mesh schrijven (.mail)", u"Writing the mesh (.mail)"))
         mark = log_size()
+        progress(tr("Mesh schrijven", "Writing the mesh"), tr(
+            "Mesh opbouwen...", "Building the mesh..."), None, True)
         if not write_mesh(mesh_file, model_data, face_nodes=_face_nodes):
             _notify(_prep_failed(tr("Schrijven van het mesh mislukt.",
                                     "Writing the mesh failed."), mark))
@@ -479,6 +494,9 @@ def _run(settings):
         wait_step(tr(u"Code-Aster-bestanden schrijven (.comm, .export)",
                      u"Writing the Code-Aster files (.comm, .export)"))
         mark = log_size()
+        progress(tr("Solverbestanden", "Solver files"), tr(
+            ".comm en .export schrijven...",
+            "Writing .comm and .export..."), None, True)
         export_file = generate_AsterSolver_files(
             work_dir_path(), model_data, mesh_file, resu_name
         )
@@ -493,6 +511,12 @@ def _run(settings):
         # can handle pop-ups and results outside the scripting context.
         run_start = time.time()
         model_copy["keep"] = True     # until the job is known to be clean
+        progress(tr("Code-Aster starten", "Starting Code-Aster"), tr(
+            "Code-Aster wordt gestart...", "Code-Aster is starting..."),
+            None, True)
+        if prep_open:
+            close_prep_progress()
+            prep_open = False
         wait_close()                  # the status window of the job follows
         job = run_AsterSolver(export_file, work_dir_path(), resu_name, mw)
         if not job:
@@ -548,11 +572,24 @@ def _run(settings):
         bridge_manifest.finish_run(
             work_dir_path(), model_data, export_file,
             not (stopped or job.exit_code or mess_errors), mess_version)
-        # Wait window while the results go into Mecway (opening a large
-        # .liml takes as long as the preparation)
-        wait_open(tr(u"Resultaten in Mecway laden",
-                     u"Loading the results into Mecway"),
-                  settings.get("gui") == "winforms")
+        # The results window is the preparation window: it has a bar and
+        # it refreshes on this thread. The small "Please wait" window has
+        # no bar and does not move while this thread is busy.
+        if open_prep_progress(
+                run_name(""),
+                tr(u"Resultaten", u"Results"),
+                tr(u"Mecway is geblokkeerd tot de resultaten erin staan. "
+                   u"Elke stap staat hier, met de status.",
+                   u"Mecway is locked until the results are in. Each step "
+                   u"is shown here, with its status.")):
+            prep_open = True
+        else:
+            wait_open(tr(u"Resultaten in Mecway laden",
+                         u"Loading the results into Mecway"),
+                      settings.get("gui") == "winforms")
+        progress(tr(u"Resultaten", u"Results"), tr(
+            u"Resultaatbestand zoeken...",
+            u"Looking for the result file..."), None, True)
         # Failed elements (bridge_failure.py) in the log and a message
         failure_note = report_failures(
             os.path.join(work_dir_path(), run_name(".mess")),
@@ -567,6 +604,9 @@ def _run(settings):
         loaded = _load_liml_results(active_liml, model_data, run_start,
                                     monitor, mess_errors,
                                     snapshot=model_copy["path"])
+        if prep_open:
+            close_prep_progress()
+            prep_open = False
         wait_close()
         # results not in Mecway: the copy stays for a run by hand too
         model_copy["keep"] = model_copy["keep"] or not loaded
@@ -657,6 +697,8 @@ def _run(settings):
         raise  # Pass the error on so that the except block below logs it
     finally:
         wait_close()                  # also after an error or early return
+        if prep_open:
+            close_prep_progress()
         if model_copy["path"] and model_copy["keep"]:
             log("INFO: Model copy kept: {0} (the .comm of this run reads it; "
                 "the run did not end cleanly).".format(model_copy["path"]))
@@ -807,6 +849,31 @@ def _load_liml_results(active_liml, model_data, run_start, monitor=None,
     Mecway.
     """
     fragment = results_file(work_dir_path())
+    if host_med_results():
+        rmed = os.path.join(work_dir_path(), run_name(".rmed"))
+        fresh = (os.path.isfile(rmed) and
+                 os.path.getmtime(rmed) >= run_start - 1.0)
+        if fresh:
+            progress(tr(u"Resultaten", u"Results"), tr(
+                u"MED-bestand lezen...",
+                u"Reading the MED file..."), None, True)
+            try:
+                import bridge_fast
+                mesh_liml = (snapshot if snapshot and
+                             os.path.isfile(snapshot) else active_liml)
+                nvars = bridge_fast.write_med(rmed, fragment, mesh_liml)
+                if nvars is None:
+                    import bridge_med
+                    nvars = bridge_med.write_fragment(
+                        rmed, fragment, model_data)
+                log(tr("INFO: Resultaten gelezen uit het MED-bestand "
+                       "({0} variabelen).",
+                       "INFO: Results read from the MED file "
+                       "({0} variables).").format(nvars))
+            except Exception as exc:
+                log(tr("ERROR: MED-bestand niet gelezen ({0}): {1}",
+                       "ERROR: MED file not read ({0}): {1}").format(
+                           rmed, exc))
     if (not os.path.exists(fragment) or
             os.path.getmtime(fragment) < run_start - 1.0):
         log(tr("ERROR: Geen resultaatfragment van deze run ({0}); zie "
@@ -843,6 +910,9 @@ def _load_liml_results(active_liml, model_data, run_start, monitor=None,
         log("INFO: Vibro-acoustics: Mecway has no coupled analysis; "
             "no comparison with the Mecway solve.")
     elif CONFIG_BRIDGE.get("mecway_solve_first", False):
+        progress(tr(u"Resultaten", u"Results"), tr(
+            u"Vergelijken met de Mecway-oplossing...",
+            u"Comparing with the Mecway solution..."), None, True)
         if modes:
             # Vibration/buckling shapes have an arbitrary sign and are not
             # unique for multiple modes: compare only the values.
@@ -868,8 +938,13 @@ def _load_liml_results(active_liml, model_data, run_start, monitor=None,
             arrays = read_step(fragment, -1, len(model_data["mesh_nodes"]))
             _compare_with_mecway(solution, arrays, sorted(arrays),
                                  work_dir_path())
+    progress(tr(u"Resultaten", u"Results"), tr(
+        u"Model opslaan...", u"Saving the model..."), None, True)
     if not _save_before_write(snapshot, fragment):
         return False
+    progress(tr(u"Resultaten", u"Results"), tr(
+        u"Resultaten in de .liml schrijven...",
+        u"Writing the results into the .liml..."), None, True)
     configuration, warning = pick_configuration(active_liml)
     if warning:
         log("WARNING: " + warning)
@@ -895,6 +970,9 @@ def _load_liml_results(active_liml, model_data, run_start, monitor=None,
     # .liml (small .liml).
     log("INFO: Result file (can be reloaded with "
         "the Results... button): {0}".format(fragment))
+    progress(tr(u"Resultaten", u"Results"), tr(
+        u"Model in Mecway openen...",
+        u"Opening the model in Mecway..."), None, True)
     if harmonic:
         report = (bridge_acoustic.report_harmonic
                   if bridge_acoustic.is_acoustic(active)

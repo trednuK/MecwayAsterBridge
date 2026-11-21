@@ -41,7 +41,7 @@ import os
 import re
 
 import bridge_to_aster as b2a
-from bridge_utils import log, tr, CONFIG_BRIDGE, run_name, mumps_solveur
+from bridge_utils import log, tr, CONFIG_BRIDGE, run_name, mumps_solveur, export_parallel_lines
 
 
 _DIRS = ("X", "Y", "Z")
@@ -592,16 +592,14 @@ def build_spectrum(work_dir, model_data, msh_path, resu_name, analysis):
             "P actions make_etude\n"
             "P time_limit {time_limit}\n"
             "P memory_limit {memory_limit}\n"
-            "P mpi_nbcpu 1\n"
-            "P ncpus {ncpus}\n"
-            "P no-mpi true\n"
+            "{parallel}"
             "F comm {comm} D 1\n"
             "F mail {msh} D 20\n"
             "F mess {mess} R 6"
         ).format(
             time_limit=analysis.get("time_limit", 1800),
             memory_limit=analysis.get("memory_limit", 2048),
-            ncpus=CONFIG_BRIDGE["ncpus"],
+            parallel="\n".join(export_parallel_lines()) + "\n",
             comm=comm_path, msh=msh_path,
             mess=os.path.join(work_dir, run_name(".mess")),
         ) + b2a._export_result_lines(work_dir, resu_name)

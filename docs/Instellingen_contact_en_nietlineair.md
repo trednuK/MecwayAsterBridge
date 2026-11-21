@@ -549,6 +549,9 @@ bij, zodat de statistiek van de oplosser in de `.mess` komt (convergentiescherm,
 |---|---|---|
 | `lin_solver` (Lineaire oplosser) | `MUMPS` (standaard): directe oplosser, factoriseert de matrix | `SOLVEUR=_F(METHODE='MUMPS', NPREC=..., RESI_RELA=...)` |
 | | `GCPC`: iteratief, geconjugeerde gradiënt met onvolledige factorisatie | `SOLVEUR=_F(METHODE='GCPC', PRE_COND='LDLT_INC', RESI_RELA=...)` |
+| | `PETSC`: iteratieve Krylov-methode. Vraagt een parallelle Code-Aster (CAVE). De Windows-build stopt met `FERMETUR_10` | `SOLVEUR=_F(METHODE='PETSC', RESI_RELA=...)` plus `ALGORITHME` / `PRE_COND` alleen als ze niet de catalogusstandaard zijn |
+| `petsc_algo` | `FGMRES` (standaard), `GMRES`, `CG`, `CR`, `GCR` | `ALGORITHME` |
+| `petsc_precond` | `LDLT_SP` (standaard), `LDLT_INC`, `JACOBI`, `BOOMER`, `GAMG`, `ML`, `SANS` | `PRE_COND` |
 | `lin_solver_resi` (Nauwkeurigheid oplosser) | `RESI_RELA`, standaard 1e-5 (CA-standaard bij `MECA_STATIQUE` 1e-6; fijne meshes van dunne delen schatten ongeveer 2e-6 zonder singulier te zijn) | |
 
 - **MUMPS**: `RESI_RELA` is de grens voor de *geschatte relatieve fout in de
@@ -575,9 +578,7 @@ bij, zodat de statistiek van de oplosser in de `.mess` komt (convergentiescherm,
   232 iteraties bij 20 169 vergelijkingen en 499 bij 141 321, met dezelfde uitkomst
   als MUMPS binnen de tolerantie (R-GCPC). Zie je in het convergentiescherm een lange
   vlakke lijn, gebruik dan MUMPS.
-- **PETSC** staat in de catalogus, maar de Windows-versie van Code-Aster is
-  sequentieel en heeft geen PETSc (`FERMETUR_10`, gezien in een testrun;
-  U4.50.01 §3.7). De bridge biedt het daarom niet aan.
+- **PETSC** (statisch, niet-lineair statisch en impliciet dynamisch): Krylov-methode uit PETSc (U4.50.01 §3.7). De catalogusstandaard `ALGORITHME='FGMRES'` en `PRE_COND='LDLT_SP'` (MUMPS in enkele precisie) staat niet in de `.comm`. `RESI_RELA` is `lin_solver_resi` (‖r‖/‖f‖). De sequentiële Windows-build heeft geen PETSc (`FERMETUR_10`). Een parallelle installatie (CAVE) wel: zet `mpi_nbcpu` boven 1 (`P no-mpi false`). Niet bij expliciete dynamica, eigenwaarden of de imperfectiestap (die blijven MUMPS). `mumps_memory` doet met PETSc niets.
 
 **Grote modellen: `mumps_memory` (MUMPS-geheugen, alle analyses).** MUMPS houdt de
 factorisatie in het geheugen als die past in het geheugen van de job (`memory_limit`,

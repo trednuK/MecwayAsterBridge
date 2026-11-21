@@ -16,12 +16,13 @@ import io
 import os
 import re
 import math
+import time
 from datetime import datetime
 
 
 # Version of the bridge (start screen, log header, CHANGELOG.md). Kept
 # outside CONFIG_BRIDGE on purpose: the start screen rewrites only that block.
-BRIDGE_VERSION = "V2026.15"
+BRIDGE_VERSION = "V2026.22"
 
 # Tested versions (bridge_version.py): a different version only gives a
 # WARNING, the run continues. Mecway: the version attribute of <liml>;
@@ -57,8 +58,16 @@ CONFIG_BRIDGE = {
     # model work_dir is used (work_dir_path(), set_model_path()).
     "work_dir_beside_model": False,
 
-    # Number of CPU cores (threads) for Code-Aster (ncpus=1 = no parallelism)
+    # Number of CPU cores (threads) for Code-Aster (ncpus=1 = no OpenMP).
+    # mpi_nbcpu is the number of MPI ranks in the .export (1 = no MPI).
+    # The Windows build is sequential: mpi_nbcpu > 1 needs a parallel
+    # Code-Aster (CAVE). matr_distribuee: "auto" writes
+    # MATR_DISTRIBUEE='OUI' on MUMPS and PETSc only when mpi_nbcpu > 1;
+    # "oui" always, "non" never. Default auto with mpi_nbcpu 1 writes
+    # nothing.
     "ncpus":           1,
+    "mpi_nbcpu":       1,
+    "matr_distribuee": "auto",
     # First run a Mecway solve as a check for model errors
     # (mw.solve(); the Mecway API documents no return value).
     "mecway_solve_first": False,
@@ -73,6 +82,12 @@ CONFIG_BRIDGE = {
     # Also write a MED file (<model>_<run_id>.rmed) for
     # ParaView/Salome. Mecway does not use it; it can reach hundreds of MB.
     "med_export":      False,
+    # Read the results from the .rmed on the host instead of importing
+    # aster_results_export inside the job. The call stays run_aster.bat /
+    # as_run. A CAVE install is transparent, but its Python cannot see
+    # Scripts or the .liml on the host. Off: the job writes the fragment
+    # itself (the Windows install).
+    "results_from_med": False,
     # Keep the Code-Aster base of a linear or nonlinear static run, with a
     # manifest, for a follow-up run (MecwayFreebody, bridge_manifest.py). A
     # base is 125-450 MB; the newest "keep_base_runs" per model stay.
@@ -195,10 +210,14 @@ CONFIG_BRIDGE = {
             # 'OUT_OF_CORE'). Not for GCPC.
             "mumps_memory":   "auto",
             # Linear solver (bridge_to_aster._build_lin_solveur_ref):
-            # "MUMPS" (direct, default) or "GCPC" (iterative, conjugate
-            # gradient with PRE_COND='LDLT_INC'; residual per iteration in the
-            # convergence window). PETSC is not in the Windows version.
+            # "MUMPS" (direct, default), "GCPC" (iterative) or "PETSC"
+            # (iterative, parallel Code-Aster only; the Windows build
+            # stops with FERMETUR_10). petsc_algo / petsc_precond are
+            # the catalogue defaults and are left out of the .comm until
+            # changed (U4.50.01 par. 3.7).
             "lin_solver":     "MUMPS",
+            "petsc_algo":     "FGMRES",
+            "petsc_precond":  "LDLT_SP",
             # SOLVEUR RESI_RELA: MUMPS = limit for the estimated relative
             # error of the solution; GCPC = convergence criterion ||r||/||f||.
             # 1e-5 instead of Code-Aster's 1e-6 (user, 13 Nov 2026): fine
@@ -318,6 +337,11 @@ CONFIG_BRIDGE = {
             # MUMPS NPREC (see lin_static_3d).
             "solver_nprec":          8,
             "mumps_memory":          "auto",
+            # Same solver words as Static. PETSc replaces the MUMPS line
+            # of STAT_NON_LINE; the imperfection step stays MUMPS.
+            "lin_solver":            "MUMPS",
+            "petsc_algo":            "FGMRES",
+            "petsc_precond":         "LDLT_SP",
             # Element failure (bridge_failure.py): elements with a
             # plastic strain above the limit get E x stiffness_factor and
             # zero stress. Limit per material: #ASTER-BEZWIJKEN, PLAS_TAB
@@ -408,6 +432,10 @@ CONFIG_BRIDGE = {
             "memory_limit":          4096,
             "solver_nprec":          8,
             "mumps_memory":          "auto",
+            # Same solver words as Static. Not for the explicit scheme.
+            "lin_solver":            "MUMPS",
+            "petsc_algo":            "FGMRES",
+            "petsc_precond":         "LDLT_SP",
             # Element failure: see nonlin_static_3d (checked at the
             # output times).
             "element_failure":       True,
@@ -946,6 +974,30 @@ def exe_aster_path():
     return expand_path(CONFIG_BRIDGE.get("exe_aster"))
 
 
+def host_med_results():
+    """True when the <results> fragment is built on the host from the
+    .rmed, not by a Python script inside the Code-Aster job.
+    The job is still started with run_aster.bat / as_run. A CAVE
+    install hides behind that, and its Python cannot read the host."""
+    return bool(CONFIG_BRIDGE.get("results_from_med", False))
+
+
+def write_med_file():
+    """True when the job must write the .rmed (ParaView, or the host
+    reads the results from it)."""
+    return bool(CONFIG_BRIDGE.get("med_export", False) or host_med_results())
+
+
+def no_job_python(what="results"):
+    """Comment that replaces an import of a host script inside the job,
+    or None when the job may import Scripts (normal Windows install)."""
+    if not host_med_results():
+        return None
+    return ("#-- {0}: not imported in the job. The container Python "
+            "cannot see the host; the bridge reads the .rmed after "
+            "as_run. --\n".format(what))
+
+
 def template_path(template):
     """
     Full path of a .comm template from CONFIG_BRIDGE["analyses"][..]
@@ -1042,12 +1094,98 @@ def mumps_solveur(analysis, indent="    "):
     """
     SOLVEUR line for a command that has none in the .comm and then uses
     MUMPS with Code-Aster's defaults (MACRO_ELAS_MULT, MODE_STATIQUE):
-    "" for auto, else indent + "SOLVEUR=_F(METHODE='MUMPS', ...),".
+    "" for auto without a distributed matrix, else indent +
+    "SOLVEUR=_F(METHODE='MUMPS', ...),".
     """
-    tail = mumps_keywords(analysis)
+    tail = solveur_extra(analysis)
     if not tail:
         return ""
     return "{0}SOLVEUR=_F(METHODE='MUMPS'{1}),".format(indent, tail)
+
+
+# MPI ranks and distributed matrix (all analyses, .export and SOLVEUR).
+# Catalogue c_solveur.py v17.4: MATR_DISTRIBUEE on MUMPS and PETSc
+# (default NON). The .export line is always "P mpi_nbcpu N"; N = 1 is
+# the previous text.
+MATR_DISTRIBUEE = ("auto", "oui", "non")
+_MPI_LOGGED = []
+_DIST_LOGGED = []
+
+
+def mpi_ranks():
+    """mpi_nbcpu as an integer >= 1. A bad value is 1."""
+    raw = CONFIG_BRIDGE.get("mpi_nbcpu", 1)
+    try:
+        n = int(raw)
+    except (TypeError, ValueError):
+        n = 1
+    return n if n >= 1 else 1
+
+
+def _parallel_numbers():
+    """(mpi ranks, OpenMP threads), both >= 1. Logs once when ranks > 1."""
+    n = mpi_ranks()
+    try:
+        threads = int(CONFIG_BRIDGE.get("ncpus", 1))
+    except (TypeError, ValueError):
+        threads = 1
+    if threads < 1:
+        threads = 1
+    if n > 1 and not _MPI_LOGGED:
+        _MPI_LOGGED.append(True)
+        log(tr("INFO: mpi_nbcpu {0}: dit vraagt een parallelle "
+               "Code-Aster (CAVE). De Windows-build is sequentieel "
+               "(P no-mpi true).",
+               "INFO: mpi_nbcpu {0}: this needs a parallel Code-Aster "
+               "(CAVE). The Windows build is sequential "
+               "(P no-mpi true).").format(n))
+    return n, threads
+
+
+def export_parallel_lines():
+    """
+    The three .export lines for the processors, without a trailing
+    newline. With mpi_nbcpu 1 they are exactly the previous text:
+    P mpi_nbcpu 1 / P ncpus <n> / P no-mpi true.
+    """
+    n, threads = _parallel_numbers()
+    return ("P mpi_nbcpu {0}".format(n),
+            "P ncpus {0}".format(threads),
+            "P no-mpi {0}".format("false" if n > 1 else "true"))
+
+
+def export_mpi_line():
+    """One .export line: P mpi_nbcpu N."""
+    return export_parallel_lines()[0]
+
+
+def matr_distribuee_mode():
+    """matr_distribuee: auto, oui or non. Unknown text is auto."""
+    mode = "{0}".format(CONFIG_BRIDGE.get("matr_distribuee", "auto"))
+    mode = mode.strip().lower()
+    return mode if mode in MATR_DISTRIBUEE else "auto"
+
+
+def distributed_matrix():
+    """
+    Text to append inside SOLVEUR=_F(METHODE='MUMPS' or 'PETSC', ...)
+    (with the leading comma), or "". auto writes the keyword only when
+    mpi_nbcpu > 1. Not for FACTORISER and not for GCPC.
+    """
+    mode = matr_distribuee_mode()
+    if mode == "non" or (mode == "auto" and mpi_ranks() <= 1):
+        return ""
+    if not _DIST_LOGGED:
+        _DIST_LOGGED.append(True)
+        log("INFO: MATR_DISTRIBUEE='OUI' on MUMPS and PETSc "
+            "(matr_distribuee {0}, mpi_nbcpu {1}).".format(
+                mode, mpi_ranks()))
+    return ", MATR_DISTRIBUEE='OUI'"
+
+
+def solveur_extra(analysis, low_rank=True):
+    """mumps_keywords plus the distributed-matrix keyword, for a SOLVEUR."""
+    return mumps_keywords(analysis, low_rank) + distributed_matrix()
 
 
 # Analyses whose harmonic solve has complex matrices: Code-Aster keeps
@@ -1083,11 +1221,12 @@ def mumps_memory_note(analysis, name=None):
         log("INFO: mumps_memory out_of_core: GESTION_MEMOIRE='OUT_OF_CORE' "
             "in every MUMPS solve (factors on disk).")
     solver = "{0}".format((analysis or {}).get("lin_solver", "MUMPS"))
-    if solver.strip().upper() == "GCPC":
+    if solver.strip().upper() in ("GCPC", "PETSC"):
         log(tr("WARNING: mumps_memory {0} geldt alleen voor MUMPS; met "
-               "lin_solver GCPC heeft het geen effect.",
+               "lin_solver {1} heeft het geen effect.",
                "WARNING: mumps_memory {0} only applies to MUMPS; with "
-               "lin_solver GCPC it has no effect.").format(mode))
+               "lin_solver {1} it has no effect.").format(
+                   mode, solver.strip().upper()))
     if mode == "out_of_core" and name in _COMPLEX_ANALYSES:
         log(tr("WARNING: mumps_memory out_of_core: Code-Aster houdt "
                "complexe matrices op Windows toch in het geheugen "
@@ -1260,6 +1399,7 @@ def set_run_log(run_id, model=None):
     (run_name). run_id None: back to bridge_log.txt. Returns the
     file name of the log.
     """
+    _close_log_fh()
     _RUN_LOG["id"] = run_id
     stem = model_stem(model)
     # Windows paths up to 259 characters (MAX_PATH): seen in a test with a
@@ -1291,6 +1431,62 @@ _LONGEST_SUFFIX = "_monitor_log.txt"
 def log_file_name():
     """Name of the current log file in the working directory."""
     return _RUN_LOG["name"]
+
+
+# One open log file for the whole run. Opening and closing it for every
+# line (thousands of node groups) was slower than the line itself.
+_LOG_FH = {"path": None, "fh": None}
+# User-visible preparation status. fn(section, detail, fraction) paints
+# the window; pump() only refreshes the elapsed time. Both None in tests.
+_PROGRESS = {"fn": None, "pump": None, "last": 0.0}
+
+
+def _close_log_fh():
+    fh = _LOG_FH.get("fh")
+    _LOG_FH["fh"] = None
+    _LOG_FH["path"] = None
+    if fh is not None:
+        try:
+            fh.close()
+        except (IOError, OSError):
+            pass
+
+
+def set_progress_hook(fn, pump=None):
+    """Register the preparation window. fn is None to detach it."""
+    _PROGRESS["fn"] = fn
+    _PROGRESS["pump"] = pump
+    _PROGRESS["last"] = 0.0
+
+
+def progress(section, detail, fraction=None, force=False, quiet=False):
+    """
+    One step, shown in the preparation window (bridge_gui). Also one
+    STATUS line in the log, at most a few times a second unless force is
+    set (a new step). fraction is 0..1 or None (the bar just moves).
+    quiet: paint the window but do not log (a long copy that reports a
+    percentage). A missing window still writes the log line, unless quiet.
+    """
+    now = time.time()
+    show = force or (now - _PROGRESS["last"]) >= 0.4
+    if not show:
+        pump = _PROGRESS["pump"]
+        if pump is not None:
+            try:
+                pump()
+            except Exception:
+                pass
+        return
+    _PROGRESS["last"] = now
+    if not quiet:
+        log(u"STATUS: {0} | {1}".format(section, detail))
+    fn = _PROGRESS["fn"]
+    if fn is None:
+        return
+    try:
+        fn(section, detail, fraction)
+    except Exception:
+        pass
 
 
 def run_name(suffix):
@@ -1351,20 +1547,24 @@ def log(text):
     """Write a time-stamped log line to the log file of the
     run. If the working directory is missing (e.g. a fresh installation),
     it is created; if writing fails, the message is lost instead of
-    making the action fail."""
+    making the action fail. The file stays open for the run."""
     work_dir = _log_dir()
     path = os.path.join(work_dir, _RUN_LOG["name"])
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    line = u"[{0}] {1}\n".format(timestamp, run_names(text))
     try:
         if not os.path.isdir(work_dir):
             os.makedirs(work_dir)
-        # io.open with UTF-8: messages from study.mess contain French
-        # accents (e.g. "numéro"), which plain open() cannot always
-        # handle.
-        with io.open(path, "a", encoding="utf-8") as f:
-            f.write(u"[{0}] {1}\n".format(timestamp, run_names(text)))
+        fh = _LOG_FH.get("fh")
+        if fh is None or _LOG_FH.get("path") != path:
+            _close_log_fh()
+            fh = io.open(path, "a", encoding="utf-8")
+            _LOG_FH["fh"] = fh
+            _LOG_FH["path"] = path
+        fh.write(line)
+        fh.flush()
     except (IOError, OSError):
-        pass
+        _close_log_fh()
 
 
 def log_size():

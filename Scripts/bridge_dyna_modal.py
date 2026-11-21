@@ -51,7 +51,7 @@ import re
 from collections import OrderedDict
 
 import bridge_to_aster as b2a
-from bridge_utils import log, tr, CONFIG_BRIDGE, run_name, mumps_solveur
+from bridge_utils import log, tr, CONFIG_BRIDGE, run_name, mumps_solveur, no_job_python, write_med_file, export_parallel_lines
 
 
 # Fields of the physical response (REST_GENE_PHYS NOM_CHAM) per group from
@@ -417,7 +417,9 @@ def build_dyna_modal(work_dir, model_data, msh_path, resu_name, analysis):
     calc_modes_block = b2a._calc_modes_block(
         model_data, analysis, False, cara_ref).replace(
             "res = CALC_MODES(", "modes = CALC_MODES(", 1)
-    calc_modes_block += (
+    _skip = no_job_python("modal response")
+    if not _skip:
+        calc_modes_block += (
         "# Mode overview (frequency, effective mass) in the .mess\n"
         "import sys\n"
         "sys.path.insert(0, {0})\n"
@@ -434,7 +436,7 @@ def build_dyna_modal(work_dir, model_data, msh_path, resu_name, analysis):
             "vec_{0} = ASSE_VECTEUR(VECT_ELEM=vel_{0}, NUME_DDL=numedd)"
             .format(k + 1),
         ]
-    if excitations:
+    if excitations and not _skip:
         # Load resultant for the warning on missing modal mass
         # (MecwayAsterBridgeMain._warn_modal_mass)
         proj.append("aster_results_export.print_excitation([{0}])".format(
@@ -497,7 +499,7 @@ def build_dyna_modal(work_dir, model_data, msh_path, resu_name, analysis):
             "# Stresses on the physical response (linear in the "
             "displacements)\n" + _with_model(b2a._build_calc_champ_block(
                 model_data, reactions=False), bool(cara_ref)))
-    export_block = b2a._custom_code(model_data, "post") + (
+    export_block = _skip or (b2a._custom_code(model_data, "post") + (
         "# Results in Mecway's own format (bridge: "
         "result_route='liml')@N"
         "aster_results_export.export_results(@N"
@@ -511,8 +513,8 @@ def build_dyna_modal(work_dir, model_data, msh_path, resu_name, analysis):
         fragment=b2a._py_str(b2a.results_file(work_dir)),
         liml=b2a._py_str(model_data.get("liml_path", "")),
         fields=[str(f) for f in fields],
-        formulas=b2a.formulas_arg(model_data))
-    if CONFIG_BRIDGE.get("med_export", False):
+        formulas=b2a.formulas_arg(model_data)))
+    if write_med_file():
         impr_resu_block = ("IMPR_RESU(FORMAT='MED', UNITE=80, "
                            "RESU=_F(RESULTAT=res, NOM_CHAM=('DEPL',)))\n")
     else:
@@ -547,16 +549,14 @@ def build_dyna_modal(work_dir, model_data, msh_path, resu_name, analysis):
             "P actions make_etude\n"
             "P time_limit {time_limit}\n"
             "P memory_limit {memory_limit}\n"
-            "P mpi_nbcpu 1\n"
-            "P ncpus {ncpus}\n"
-            "P no-mpi true\n"
+            "{parallel}"
             "F comm {comm} D 1\n"
             "F mail {msh} D 20\n"
             "F mess {mess} R 6"
         ).format(
             time_limit=analysis.get("time_limit", 1800),
             memory_limit=analysis.get("memory_limit", 2048),
-            ncpus=CONFIG_BRIDGE["ncpus"],
+            parallel="\n".join(export_parallel_lines()) + "\n",
             comm=comm_path, msh=msh_path,
             mess=os.path.join(work_dir, run_name(".mess")),
         ) + b2a._export_result_lines(work_dir, resu_name)

@@ -77,7 +77,8 @@ import os
 from collections import OrderedDict
 
 from bridge_utils import (log, parse_and_convert, CONFIG_BRIDGE, tr,
-                          run_name, mumps_keywords)
+                          run_name, solveur_extra, no_job_python,
+                          write_med_file, export_parallel_lines)
 
 ANALYSIS = "vibroacoustic_modes_3d"
 
@@ -542,7 +543,7 @@ def _mode_search_block(model_data, analysis, n):
                "(spurious modes at 0 Hz); 0.1 Hz used."))
         fmin = 0.1
     nprec = int(analysis.get("solver_nprec", 8))
-    mumps = mumps_keywords(analysis, low_rank=False)    # Sturm count
+    mumps = solveur_extra(analysis, low_rank=False)    # Sturm count
     seuil = "%.10g" % float(analysis.get("modal_tolerance", 1.0e-6))
     log("INFO: CALC_MODES vibro-acoustic: the first {0} modes above {1} "
         "Hz (OPTION 'BANDE', band searched with INFO_MODE).".format(
@@ -618,6 +619,9 @@ def _export_block(work_dir, model_data):
     Code-Aster has no meaning for U_P_PHI modes, adlv100a: 4.6e-20
     for the piston mode) and aster_results_export with displacements
     (structure) and the pressure (fluid, component PRES of DEPL)."""
+    skip = no_job_python("vibro-acoustic results")
+    if skip:
+        return skip
     import bridge_to_aster as bta
     scripts = os.path.dirname(os.path.abspath(__file__))
     return ("# Results in Mecway's own format (result_route 'liml')\n"
@@ -845,7 +849,7 @@ def build_vibroacoustic_modes(work_dir, model_data, msh_path, resu_name,
     calc_modes_block = _mode_search_block(model_data, analysis, n)
     export_block = (bta._custom_code(model_data, "post") +
                     _export_block(work_dir, model_data))
-    if CONFIG_BRIDGE.get("med_export", False):
+    if write_med_file():
         impr_resu_block = ("IMPR_RESU(FORMAT='MED', UNITE=80, "
                            "RESU=_F(RESULTAT=res, NOM_CHAM=('DEPL',)))\n")
     else:
@@ -874,9 +878,7 @@ def build_vibroacoustic_modes(work_dir, model_data, msh_path, resu_name,
                 "P time_limit {0}".format(analysis.get("time_limit", 900)),
                 "P memory_limit {0}".format(analysis.get("memory_limit",
                                                          2048)),
-                "P mpi_nbcpu 1",
-                "P ncpus {0}".format(CONFIG_BRIDGE["ncpus"]),
-                "P no-mpi true",
+            ] + list(export_parallel_lines()) + [
                 "F comm {0} D 1".format(comm_path),
                 "F mail {0} D 20".format(msh_path),
                 "F mess {0} R 6".format(os.path.join(work_dir,

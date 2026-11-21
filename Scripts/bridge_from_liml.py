@@ -44,7 +44,8 @@ import math
 import xml.etree.ElementTree as ET
 from bridge_utils import (log, parse_and_convert, CONFIG_BRIDGE,
                           resolve_auto_analysis, tr,
-                          choose_configuration, configuration_warning)
+                          choose_configuration, configuration_warning,
+                          progress)
 from bridge_bcs import (SUPPORTED_BCS, _parse_direction, _parse_value,
                         is_position)
 import bridge_radioss
@@ -2090,6 +2091,8 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
           unexpected error during parsing (ERROR in the log).
     """
     log("START: Analyseren van .liml")
+    progress(tr("Model lezen", "Reading the model"), tr(
+        "Analyseren van .liml", "Analysing the .liml"), None, True)
     hex8_mod  = _elem_choice("elem_hex8")
     shell_mod = _elem_choice("elem_shell")
     beam_mod  = _elem_choice("elem_beam")
@@ -2170,8 +2173,19 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
         "flexible_joints":      [],
     }
 
+    fast_paths = None
     try:
-        root = _parse_model_root(file_path)
+        try:
+            import bridge_fast
+            fast_paths = bridge_fast.prepare(file_path)
+        except Exception as exc:
+            log("WARNING: aster_fast could not be used ({0}); reading the "
+                ".liml in Python.".format(exc))
+            fast_paths = None
+        if fast_paths:
+            root = _parse_model_root(fast_paths[0])
+        else:
+            root = _parse_model_root(file_path)
         # Items suppressed per configuration or via a group get
         # suppressed="true".
         _apply_suppression(root, model_data)
@@ -2181,97 +2195,132 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
         # ==========================================
         # Nodes and elements of the model (not those of <solution>):
         # bridge_mesh.py writes the Code-Aster mesh with these.
-        for node in root.findall("node"):
-            model_data["mesh_nodes"][int(node.get("nid"))] = (
-                float(node.get("x", "0")), float(node.get("y", "0")),
-                float(node.get("z", "0")))
-        elset_shapes_map = {}
-        truss_eids = {}             # {elset: set(eid)} with truss="true"
-        line_eids = {}              # {elset: set(eid)} all 1D elements
-        for elset_elem in root.findall("elset"):
-            ename  = elset_elem.get("name", "Default")
-            shapes = set()
-            elem_shapes = model_data["elem_shapes"]
-            mesh_elements = model_data["mesh_elements"]
-            # Per element as few calls as possible (int(eid) once, no
-            # generators): this loop took 8 s in IronPython on a generated
-            # 804k-node hex8 block (19 Nov 2026); the result is the same.
-            for e in elset_elem.findall("elem"):
-                s = e.get("shape")
-                if s:
-                    shapes.add(s)
-                    eid = e.get("eid")
-                    eid_i = int(eid) if eid else None
-                    if eid and s in _DIM_1D_SHAPES:
-                        line_eids.setdefault(ename, set()).add(eid_i)
-                        if e.get("truss") == "true":
-                            truss_eids.setdefault(ename, set()).add(eid_i)
+        # aster_fast prep already pulled nodes, elements and selections
+        # out of a large file. The slim XML still has every other tag.
+        # The Python loop below is the upstream reader (faster element
+        # walk); it runs when the helper is absent or fails.
+        if fast_paths:
+            try:
+                elset_shapes_map, truss_eids, line_eids = bridge_fast.load_mesh(
+                    fast_paths[1], model_data)
+            except Exception as exc:
+                log("WARNING: aster_fast mesh could not be read ({0}); "
+                    "reading the .liml in Python.".format(exc))
+                bridge_fast.cleanup(fast_paths[0], fast_paths[1])
+                fast_paths = None
+                model_data["mesh_nodes"].clear()
+                del model_data["mesh_elements"][:]
+                model_data["elem_shapes"].clear()
+                model_data["beam_orientations"].clear()
+                model_data["face_selections"].clear()
+                model_data["face_selection_faces"].clear()
+                model_data["element_selections"].clear()
+                model_data["node_groups"].clear()
+                for key in ("elem_u_axes", "elem_v_axes", "elem_angles",
+                            "_fast_mesh", "_fast_boundary"):
+                    model_data.pop(key, None)
+                root = _parse_model_root(file_path)
+                _apply_suppression(root, model_data)
+        if not fast_paths:
+            # ==========================================
+            # STEP 0: COLLECT ELEMENT SHAPES PER ELSET
+            # ==========================================
+            # Nodes and elements of the model (not those of <solution>):
+            # bridge_mesh.py writes the Code-Aster mesh with these.
+            for node in root.findall("node"):
+                model_data["mesh_nodes"][int(node.get("nid"))] = (
+                    float(node.get("x", "0")), float(node.get("y", "0")),
+                    float(node.get("z", "0")))
+            elset_shapes_map = {}
+            truss_eids = {}             # {elset: set(eid)} with truss="true"
+            line_eids = {}              # {elset: set(eid)} all 1D elements
+            for elset_elem in root.findall("elset"):
+                ename  = elset_elem.get("name", "Default")
+                shapes = set()
+                elem_shapes = model_data["elem_shapes"]
+                mesh_elements = model_data["mesh_elements"]
+                # Per element as few calls as possible (int(eid) once, no
+                # generators): this loop took 8 s in IronPython on a generated
+                # 804k-node hex8 block (19 Nov 2026); the result is the same.
+                for e in elset_elem.findall("elem"):
+                    s = e.get("shape")
+                    if s:
+                        shapes.add(s)
+                        eid = e.get("eid")
+                        eid_i = int(eid) if eid else None
+                        if eid and s in _DIM_1D_SHAPES:
+                            line_eids.setdefault(ename, set()).add(eid_i)
+                            if e.get("truss") == "true":
+                                truss_eids.setdefault(ename, set()).add(eid_i)
+                        if eid:
+                            elem_shapes[eid_i] = s
+                            mesh_elements.append((
+                                eid_i, s,
+                                list(map(int, e.get("nodes", "").split())),
+                                ename))
+                        if eid and (e.get("orientationux") is not None or
+                                    e.get("orientationuy") is not None or
+                                    e.get("orientationuz") is not None):
+                            # U axis (gap direction, manual v33 par. 7.9)
+                            model_data.setdefault("elem_u_axes", {})[eid_i] = \
+                                tuple(float(e.get(k, "0")) for k in (
+                                    "orientationux", "orientationuy",
+                                    "orientationuz"))
+                        if eid and s in _DIM_3D_SHAPES:
+                            # Material axes of a solid (orthotropic material,
+                            # bridge_orthotropic): V vector and angle next to
+                            # the U axis above (manual v34 par. 8.5)
+                            if (e.get("orientationvx") is not None or
+                                    e.get("orientationvy") is not None or
+                                    e.get("orientationvz") is not None):
+                                model_data.setdefault("elem_v_axes", {})[
+                                    int(eid)] = tuple(float(e.get(k, "0"))
+                                                      for k in (
+                                        "orientationvx", "orientationvy",
+                                        "orientationvz"))
+                            if e.get("angle") is not None:
+                                model_data.setdefault("elem_angles", {})[
+                                    int(eid)] = parse_and_convert(
+                                        e.get("angle"), "angle")
+                        if (eid and s in _DIM_1D_SHAPES and
+                                e.get("truss") != "true"):
+                            # A truss needs no orientation (manual
+                            # v33 par. 7.6); BARRE has no VECT_Y.
+                            orient = _parse_beam_orientation(e)
+                            if orient is not None:
+                                model_data["beam_orientations"][int(eid)] = \
+                                    orient
+                elset_shapes_map[ename] = shapes
+
+            # Faceselections: which elements carry the selected faces.
+            # Needed to decide whether a face belongs to a volume element
+            # (boundary element in AFFE_MODELE) or to a shell. With
+            # aster_fast these were already loaded.
+            for fs in root.findall("faceselection"):
+                fname = fs.get("name")
+                eids = []
+                faces = []
+                for face in fs.findall("face"):
+                    eid = face.get("eid")
                     if eid:
-                        elem_shapes[eid_i] = s
-                        mesh_elements.append((
-                            eid_i, s,
-                            list(map(int, e.get("nodes", "").split())),
-                            ename))
-                    if eid and (e.get("orientationux") is not None or
-                                e.get("orientationuy") is not None or
-                                e.get("orientationuz") is not None):
-                        # U axis (gap direction, manual v33 par. 7.9)
-                        model_data.setdefault("elem_u_axes", {})[eid_i] = \
-                            tuple(float(e.get(k, "0")) for k in (
-                                "orientationux", "orientationuy",
-                                "orientationuz"))
-                    if eid and s in _DIM_3D_SHAPES:
-                        # Material axes of a solid (orthotropic material,
-                        # bridge_orthotropic): V vector and angle next to
-                        # the U axis above (manual v34 par. 8.5)
-                        if (e.get("orientationvx") is not None or
-                                e.get("orientationvy") is not None or
-                                e.get("orientationvz") is not None):
-                            model_data.setdefault("elem_v_axes", {})[
-                                int(eid)] = tuple(float(e.get(k, "0"))
-                                                  for k in (
-                                    "orientationvx", "orientationvy",
-                                    "orientationvz"))
-                        if e.get("angle") is not None:
-                            model_data.setdefault("elem_angles", {})[
-                                int(eid)] = parse_and_convert(
-                                    e.get("angle"), "angle")
-                    if (eid and s in _DIM_1D_SHAPES and
-                            e.get("truss") != "true"):
-                        # A truss needs no orientation (manual
-                        # v33 par. 7.6); BARRE has no VECT_Y.
-                        orient = _parse_beam_orientation(e)
-                        if orient is not None:
-                            model_data["beam_orientations"][int(eid)] = \
-                                orient
-            elset_shapes_map[ename] = shapes
+                        eids.append(int(eid))
+                        faces.append((int(eid), int(face.get("faceid", "0"))))
+                if fname:
+                    model_data["face_selections"][fname] = eids
+                    model_data["face_selection_faces"][fname] = faces
+            for es in root.findall("elementselection"):
+                ename = es.get("name")
+                eids = [int(e.get("eid")) for e in es.findall("element")
+                        if e.get("eid")]
+                if ename:
+                    model_data["element_selections"][ename] = eids
+
+
         truss_elsets, truss_parts = _split_trusses(
             model_data, elset_shapes_map, truss_eids, line_eids)
         # For the manifest of a kept base (bridge_manifest): which elset is
         # the truss part of which component
         model_data["truss_parts"] = truss_parts
-
-        # Faceselections: which elements carry the selected faces.
-        # Needed to decide whether a face belongs to a volume element
-        # (boundary element in AFFE_MODELE) or to a shell.
-        for fs in root.findall("faceselection"):
-            fname = fs.get("name")
-            eids = []
-            faces = []
-            for face in fs.findall("face"):
-                eid = face.get("eid")
-                if eid:
-                    eids.append(int(eid))
-                    faces.append((int(eid), int(face.get("faceid", "0"))))
-            if fname:
-                model_data["face_selections"][fname] = eids
-                model_data["face_selection_faces"][fname] = faces
-        for es in root.findall("elementselection"):
-            ename = es.get("name")
-            eids = [int(e.get("eid")) for e in es.findall("element")
-                    if e.get("eid")]
-            if ename:
-                model_data["element_selections"][ename] = eids
 
         # ==========================================
         # STEP 0b: ANALYSIS, TIME STEPS, OPENRADIOSS FUNCTIONS
@@ -2466,21 +2515,25 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
         # ==========================================
         # STEP 1: READ NODE GROUPS
         # ==========================================
-        for ns in root.findall("nodeselection"):
-            name     = ns.get("name")
-            node_ids = []
-            for node in ns.findall("node"):
-                nid = node.get("nid")
-                if nid:
-                    node_ids.append("N{0}".format(nid))
-            if name and node_ids:
-                model_data["node_groups"][name] = node_ids
-                log("INFO: NodeGroup '{0}' -> {1} nodes".format(
-                    name, len(node_ids)))
+        if not model_data.get("_fast_mesh"):
+            for ns in root.findall("nodeselection"):
+                name     = ns.get("name")
+                node_ids = []
+                for node in ns.findall("node"):
+                    nid = node.get("nid")
+                    if nid:
+                        node_ids.append("N{0}".format(nid))
+                if name and node_ids:
+                    model_data["node_groups"][name] = node_ids
+                    log("INFO: NodeGroup '{0}' -> {1} nodes".format(
+                        name, len(node_ids)))
 
         # ==========================================
         # STEP 2: PROCESS REMAINING ELEMENTS
         # ==========================================
+        progress(tr("Model lezen", "Reading the model"), tr(
+            "Materialen, belastingen en randvoorwaarden",
+            "Materials, loads and boundary conditions"), None, True)
         for item in root:
             tag = item.tag
 
@@ -3757,6 +3810,13 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
                ".liml cannot be translated.").format(
             file_path, type(e).__name__, str(e)))
         return None
+    finally:
+        if fast_paths:
+            try:
+                import bridge_fast
+                bridge_fast.cleanup(fast_paths[0], fast_paths[1])
+            except Exception:
+                pass
 
     dropped = model_data.get("_dropped_elsets")
     if dropped:
