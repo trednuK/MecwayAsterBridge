@@ -191,6 +191,7 @@ het laatst is nagelopen:
 | Code_Aster-veldnamen `res_____DEPL` en een stapregel in het log (V2026.19) | NIET nagelopen | NIET nagelopen | NIET nagelopen in het Mecway-venster (`tests/test_bridge_med.py` en een echt Code_Aster-`box.med`; `.comm` en `.export` ongewijzigd) |
 | MED-lezen schrijft elke stap en fouten naar de Mecway-console (V2026.20) | NIET nagelopen | NIET nagelopen | NIET nagelopen in het Mecway-venster (elke 5 s een regel met de laatste stap; `.comm` en `.export` ongewijzigd) |
 | Minimum en maximum per elementset zoeken niet meer in een groeiende lijst (V2026.21) | NIET nagelopen | NIET nagelopen | NIET nagelopen in het Mecway-venster (40 000 elementen onder 1 s in `cargo test`; `.comm` en `.export` ongewijzigd) |
+| Integralen van randvlakken hergebruiken de vormfuncties (V2026.22) | NIET nagelopen | NIET nagelopen | NIET nagelopen in het Mecway-venster (QUAD4, QUAD8, TRIA3 en TRIA6 gelijk aan de oude integralen; `tests/test_bridge_face_selections.py`; `.comm` en `.export` ongewijzigd) |
 
 "Nagelopen" betekent de verificatie van §2 en een run in Mecway met die versie. Vergelijkingen
 met Mecway's eigen solver in de andere documenten noemen de Mecway-versie waarmee ze gemeten

@@ -193,6 +193,7 @@ it was last verified:
 | Code_Aster field names `res_____DEPL` and a step line in the log (V2026.19) | NOT verified | NOT verified | NOT verified in the Mecway window (`tests/test_bridge_med.py` and a real Code_Aster `box.med`; the `.comm` and the `.export` are unchanged) |
 | MED read prints each step and errors on Mecway's console (V2026.20) | NOT verified | NOT verified | NOT verified in the Mecway window (a line every 5 s with the last step; the `.comm` and the `.export` are unchanged) |
 | Minimum and maximum per element set no longer scan a growing list (V2026.21) | NOT verified | NOT verified | NOT verified in the Mecway window (40 000 elements under 1 s in `cargo test`; the `.comm` and the `.export` are unchanged) |
+| Boundary-face integrals reuse the shape functions (V2026.22) | NOT verified | NOT verified | NOT verified in the Mecway window (QUAD4, QUAD8, TRIA3 and TRIA6 match the old integrals exactly; `tests/test_bridge_face_selections.py`; the `.comm` and the `.export` are unchanged) |
 
 "Verified" means the verification of §2 and a run in Mecway with that version. Comparisons
 with Mecway's own solver in the other documents name the Mecway version they were measured

@@ -1,5 +1,21 @@
 # Changelog
 
+## V2026.22 – 21 November 2026
+
+After the elements were ordered, the mesh writer stayed quiet for 39
+seconds on the crank (41720 boundary faces). Each face recomputed the
+same shape functions. Those are computed once per element type now, and
+Mecway is asked for the face nodes once per element type, not once per
+face. The window shows `Boundary faces (5000 / 41720)`.
+
+While the `.liml` is scanned, the console names the step: reading,
+parsing, mesh size, writing the mesh index.
+
+The integrals match the previous ones, so the `.comm` and the `.export`
+stay the same.
+
+Not checked in the Mecway window.
+
 ## V2026.21 – 21 November 2026
 
 Writing the 20 result variables took about 17 minutes on a model of

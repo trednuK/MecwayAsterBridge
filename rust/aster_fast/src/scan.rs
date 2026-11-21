@@ -77,22 +77,43 @@ impl Mesh {
 }
 
 pub fn prepare(liml: &Path, slim_path: &Path, bin_path: &Path) -> io::Result<()> {
+    stage("reading the model");
     let (data, cut) = read_model(liml)?;
+    stage(&format!("parsing {} bytes", data.len()));
     let mut slim = Vec::with_capacity(data.len() / 8 + 64);
     let mut mesh = Mesh::new();
     parse(&data, &mut slim, &mut mesh)?;
     if cut {
         slim.extend_from_slice(b"</liml>");
     }
+    stage(&format!(
+        "mesh {} nodes, {} elements",
+        mesh.nodes.len(),
+        mesh.elsets.iter().map(|s| s.elems.len()).sum::<usize>()
+    ));
     {
         let mut f = File::create(slim_path)?;
         f.write_all(&slim)?;
     }
+    stage("writing the mesh index");
     {
         let mut f = File::create(bin_path)?;
         write_bin(&mut f, &mesh)?;
     }
+    stage("done");
     Ok(())
+}
+
+fn stage(msg: &str) {
+    let mut err = io::stderr();
+    let _ = writeln!(err, "{msg}");
+    let _ = err.flush();
+    if let Ok(path) = std::env::var("ASTER_FAST_STATUS") {
+        if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
+            let _ = writeln!(f, "{msg}");
+            let _ = f.flush();
+        }
+    }
 }
 
 pub struct ModelMesh {

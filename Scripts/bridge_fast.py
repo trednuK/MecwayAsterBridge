@@ -58,7 +58,7 @@ def prepare(liml_path):
     if not exe:
         return None
     slim = bin_path = None
-    out_path = err_path = None
+    out_path = err_path = status_path = None
     try:
         fd, slim = tempfile.mkstemp(prefix="mwfast_", suffix=".liml")
         os.close(fd)
@@ -68,33 +68,60 @@ def prepare(liml_path):
         os.close(fd)
         fd, err_path = tempfile.mkstemp(prefix="mwfast_", suffix=".err")
         os.close(fd)
-        progress(tr_scan()[0], tr_scan()[1], None, True)
+        fd, status_path = tempfile.mkstemp(prefix="mwfast_", suffix=".status")
+        os.close(fd)
+        section, detail = tr_scan()
+        progress(section, detail, None, True)
+        _say("aster_fast prep: {0}".format(os.path.basename(liml_path)))
         out_f = open(out_path, "wb")
         err_f = open(err_path, "wb")
         try:
-            proc = subprocess.Popen(
-                [exe, "prep", liml_path, slim, bin_path],
-                stdout=out_f, stderr=err_f)
+            try:
+                proc = subprocess.Popen(
+                    [exe, "prep", liml_path, slim, bin_path],
+                    stdout=out_f, stderr=err_f, stdin=_devnull(),
+                    env=_status_env(status_path))
+            except Exception as exc:
+                _say("WARNING: status file was not passed ({0}).".format(exc))
+                proc = subprocess.Popen(
+                    [exe, "prep", liml_path, slim, bin_path],
+                    stdout=out_f, stderr=err_f, stdin=_devnull())
+            seen = 0
+            last = detail
+            t0 = time.time()
+            beat = t0
             while proc.poll() is None:
-                progress(tr_scan()[0], tr_scan()[1], None, False)
+                seen, last = _med_stages(section, status_path, seen, last)
+                now = time.time()
+                if now - beat >= 5.0:
+                    beat = now
+                    msg = "aster_fast still running, {0:.0f} s, last: {1}".format(
+                        now - t0, last)
+                    _say(msg)
+                    progress(section, msg, None, True, True)
+                else:
+                    progress(section, last, None, False, True)
                 time.sleep(0.05)
+            _med_stages(section, status_path, seen, last)
+            _say("aster_fast prep finished in {0:.0f} s (code {1}).".format(
+                time.time() - t0, proc.returncode))
         finally:
             out_f.close()
             err_f.close()
         err = open(err_path, "rb").read()
         if proc.returncode != 0:
-            log("WARNING: aster_fast prep failed ({0}); reading the .liml "
-                "in Python. {1}".format(proc.returncode, _err_text(err)))
+            _say("ERROR: aster_fast prep failed ({0}). {1}".format(
+                proc.returncode, _err_text(err)))
             cleanup(slim, bin_path)
             return None
         return slim, bin_path
     except Exception as exc:
-        log("WARNING: aster_fast prep could not start ({0}); reading the "
-            ".liml in Python.".format(exc))
+        _say("ERROR: aster_fast prep could not start ({0}). "
+             "Reading the .liml in Python.".format(exc))
         cleanup(slim, bin_path)
         return None
     finally:
-        for path in (out_path, err_path):
+        for path in (out_path, err_path, status_path):
             if path and os.path.isfile(path):
                 try:
                     os.remove(path)

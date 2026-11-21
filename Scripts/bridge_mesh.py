@@ -197,6 +197,32 @@ def _face_shape(stype, xi, eta):
                 0.5 * (1 - xi * xi) * (1 + eta), 0.5 * (1 - xi) * (1 - eta * eta)]
 
 
+def _shape_rows(stype):
+    """Shape values and derivatives at the Gauss points. They do not
+    depend on the face, so a selection of tens of thousands of faces
+    computes them once."""
+    hit = _SHAPE_ROWS.get(stype)
+    if hit is not None:
+        return hit
+    rule = _TRI_GAUSS if stype.startswith("TRIA") else _QUAD_GAUSS
+    h = 1.0e-3   # central difference: exact for quadratic N
+    rows = []
+    for xi, eta, gw in rule:
+        n = _face_shape(stype, xi, eta)
+        np_ = _face_shape(stype, xi + h, eta)
+        nm = _face_shape(stype, xi - h, eta)
+        ep = _face_shape(stype, xi, eta + h)
+        em = _face_shape(stype, xi, eta - h)
+        dxi = [(np_[i] - nm[i]) / (2.0 * h) for i in range(len(n))]
+        deta = [(ep[i] - em[i]) / (2.0 * h) for i in range(len(n))]
+        rows.append((gw, n, dxi, deta))
+    _SHAPE_ROWS[stype] = rows
+    return rows
+
+
+_SHAPE_ROWS = {}
+
+
 def _face_integrals(stype, pts):
     """
     Integrals over the face (Gauss):
@@ -205,31 +231,49 @@ def _face_integrals(stype, pts):
       m[i] = int(N_i x dA)    - first moments per node (vector)
       S    = int(x x^T dA)    - second moment (3x3), for moment distribution
     """
-    rule = _TRI_GAUSS if stype.startswith("TRIA") else _QUAD_GAUSS
-    h = 1.0e-3   # central difference: exact for quadratic N
-    w = [0.0] * len(pts)
-    m = [[0.0, 0.0, 0.0] for _ in pts]
+    nnode = len(pts)
+    w = [0.0] * nnode
+    m = [[0.0, 0.0, 0.0] for _ in range(nnode)]
     S = [[0.0] * 3 for _ in range(3)]
-    for xi, eta, gw in rule:
-        n = _face_shape(stype, xi, eta)
-        np_ = _face_shape(stype, xi + h, eta)
-        nm = _face_shape(stype, xi - h, eta)
-        ep = _face_shape(stype, xi, eta + h)
-        em = _face_shape(stype, xi, eta - h)
-        dx = [sum((np_[i] - nm[i]) / (2 * h) * pts[i][c]
-                  for i in range(len(pts))) for c in range(3)]
-        de = [sum((ep[i] - em[i]) / (2 * h) * pts[i][c]
-                  for i in range(len(pts))) for c in range(3)]
-        cr = _vcross(dx, de)
-        jac = math.sqrt(_vdot(cr, cr))
-        x = [sum(n[i] * pts[i][c] for i in range(len(pts))) for c in range(3)]
-        for i in range(len(pts)):
-            w[i] += gw * jac * n[i]
-            for c in range(3):
-                m[i][c] += gw * jac * n[i] * x[c]
-        for a in range(3):
-            for b in range(3):
-                S[a][b] += gw * jac * x[a] * x[b]
+    for gw, n, dxi, deta in _shape_rows(stype):
+        dx0 = dx1 = dx2 = 0.0
+        de0 = de1 = de2 = 0.0
+        x0 = x1 = x2 = 0.0
+        for i in range(nnode):
+            px, py, pz = pts[i]
+            sx = dxi[i]
+            se = deta[i]
+            ni = n[i]
+            dx0 += sx * px
+            dx1 += sx * py
+            dx2 += sx * pz
+            de0 += se * px
+            de1 += se * py
+            de2 += se * pz
+            x0 += ni * px
+            x1 += ni * py
+            x2 += ni * pz
+        cr0 = dx1 * de2 - dx2 * de1
+        cr1 = dx2 * de0 - dx0 * de2
+        cr2 = dx0 * de1 - dx1 * de0
+        jac = math.sqrt(cr0 * cr0 + cr1 * cr1 + cr2 * cr2)
+        g = gw * jac
+        for i in range(nnode):
+            t = g * n[i]
+            w[i] += t
+            mi = m[i]
+            mi[0] += t * x0
+            mi[1] += t * x1
+            mi[2] += t * x2
+        S[0][0] += g * x0 * x0
+        S[0][1] += g * x0 * x1
+        S[0][2] += g * x0 * x2
+        S[1][0] += g * x1 * x0
+        S[1][1] += g * x1 * x1
+        S[1][2] += g * x1 * x2
+        S[2][0] += g * x2 * x0
+        S[2][1] += g * x2 * x1
+        S[2][2] += g * x2 * x2
     return w, m, S
 
 
@@ -1430,22 +1474,30 @@ def write_mesh(mail_path, model_data, face_nodes=None):
                 gi[2][a][b] += fs[a][b]
         return fw
     checked = set()
+    agreed = set()
 
     def faces_of(eid, fid):
         atype, cn = conn[eid]
         table = _face_from_table(atype, cn, fid)
         if face_nodes is None:
             return table
-        api = list(face_nodes(eid, fid))
         key = (atype, fid)
+        if key in agreed:
+            return table
+        api = list(face_nodes(eid, fid))
         if table is not None and key not in checked:
             checked.add(key)
-            if set(table) != set(api) - set(cn[_N_CORNERS[atype]:]):
-                log(tr("WARNING: Vlak {0} van {1}: Mecway geeft {2}, de "
-                       "tabel {3}. De Mecway-waarde wordt gebruikt.",
-                       "WARNING: Face {0} of {1}: Mecway gives {2}, the "
-                       "table {3}. The Mecway value is used.").format(
-                        fid, atype, api, table))
+            n_corner = _N_CORNERS[atype]
+            mid = set(cn[n_corner:])
+            corners = [n for n in api if n not in mid]
+            if corners == table:
+                agreed.add(key)
+                return table
+            log(tr("WARNING: Vlak {0} van {1}: Mecway geeft {2}, de "
+                   "tabel {3}. De Mecway-waarde wordt gebruikt.",
+                   "WARNING: Face {0} of {1}: Mecway gives {2}, the "
+                   "table {3}. The Mecway value is used.").format(
+                    fid, atype, api, table))
         return api
 
     # XFEM_ face selections are a crack (step 2e, bridge_xfem.mesh_cells),
@@ -1453,11 +1505,23 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     import bridge_xfem
     xfem_sel = (set(bridge_xfem.selection_names(model_data))
                 if bridge_xfem.active_here() else set())
-    for fname, faces in model_data.get("face_selection_faces", {}).items():
-        if fname in xfem_sel:
-            continue
+    face_items = [(fname, faces)
+                  for fname, faces in model_data.get(
+                      "face_selection_faces", {}).items()
+                  if fname not in xfem_sel]
+    n_faces = 0
+    for _fname, faces in face_items:
+        n_faces += len(faces)
+    i_face = 0
+    for fname, faces in face_items:
         members = []
         for eid, fid in faces:
+            i_face += 1
+            if n_faces and i_face % 5000 == 0:
+                progress(tr("Mesh schrijven", "Writing the mesh"), tr(
+                    "Randvlakken ({0} / {1})",
+                    "Boundary faces ({0} / {1})").format(i_face, n_faces),
+                    None, True)
             if eid not in conn:
                 log(tr("ERROR: Vlakselectie '{0}': element {1} bestaat niet.",
                        "ERROR: Face selection '{0}': element {1} does not "
